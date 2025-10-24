@@ -20,8 +20,7 @@ const { data: surround } = await useAsyncData(
   () => `blog-post-surround-${locale.value}-${contentPath.value}`,
   () => queryCollectionItemSurroundings(
     locale.value === 'en' ? 'posts_en' : 'posts_nl',
-    contentPath.value,
-    { fields: ['description'] }
+    contentPath.value
   )
 )
 

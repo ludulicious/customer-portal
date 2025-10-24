@@ -130,5 +130,24 @@ export const collections = {
       date: z.date(),
       badge: z.object({ label: z.string().nonempty() })
     })
+  }),
+  posts_nl: defineCollection({
+    type: 'page',
+    source: {
+      include: 'nl/blog/**/*',
+      prefix: 'blog/',
+    },
+    schema: z.object({
+      image: z.object({ src: z.string().nonempty().editor({ input: 'media' }) }),
+      authors: z.array(
+        z.object({
+          name: z.string().nonempty(),
+          to: z.string().nonempty(),
+          avatar: z.object({ src: z.string().nonempty().editor({ input: 'media' }) })
+        })
+      ),
+      date: z.date(),
+      badge: z.object({ label: z.string().nonempty() })
+    })
   })
 }
