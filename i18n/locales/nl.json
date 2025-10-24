@@ -1,0 +1,146 @@
+{
+  "nav": {
+    "language": "Taal",
+    "portfolio": "Portfolio",
+    "blog": "Blog",
+    "contact": "Contact"
+  },
+  "home": {
+    "title": "Ludulicious - Innovatieve Software Oplossingen",
+    "description": "Wij zijn een softwareontwikkelingsbedrijf dat innovatieve webapplicaties en digitale oplossingen creëert. Van e-commerce platforms tot educatieve tools, wij brengen uw ideeën tot leven met geavanceerde technologie.",
+    "hero": {
+      "viewPortfolio": "Bekijk Ons Portfolio",
+      "getInTouch": "Neem Contact Op"
+    },
+    "sections": {
+      "developmentExpertise": {
+        "title": "Onze Ontwikkelingsexpertise",
+        "description": "Wij specialiseren ons in het creëren van moderne, schaalbare webapplicaties met de nieuwste technologieën. Van concept tot implementatie, wij beheren elk aspect van uw digitale project.",
+        "features": {
+          "fullStack": {
+            "name": "Full-Stack Ontwikkeling",
+            "description": "Volledige webapplicatie-ontwikkeling van frontend tot backend, met moderne frameworks en best practices."
+          },
+          "ecommerce": {
+            "name": "E-commerce Oplossingen",
+            "description": "Aangepaste e-commerce platforms met betalingsintegratie, voorraadbeheer en gebruiksvriendelijke interfaces."
+          },
+          "mobileFirst": {
+            "name": "Mobile-First Ontwerp",
+            "description": "Responsieve applicaties die perfect werken op alle apparaten, met focus op gebruikerservaring en prestaties."
+          }
+        }
+      },
+      "whyChoose": {
+        "title": "Waarom Kiezen voor Ludulicious",
+        "description": "Wij combineren technische expertise met creatieve visie om oplossingen te leveren die niet alleen aan uw vereisten voldoen, maar deze overtreffen.",
+        "features": {
+          "smallTeam": {
+            "name": "Klein Team, Grote Impact",
+            "description": "Als klein bedrijf bieden wij persoonlijke aandacht en directe communicatie met ons ontwikkelteam."
+          },
+          "modernTech": {
+            "name": "Moderne Technologieën",
+            "description": "Wij gebruiken geavanceerde technologieën zoals Vue, Nuxt, Node.js, Asp.Net Core en cloud platforms om toekomstbestendige applicaties te bouwen."
+          },
+          "provenResults": {
+            "name": "Bewezen Resultaten",
+            "description": "Ons portfolio omvat succesvolle projecten voor verschillende industrieën, van educatieve tools tot marketplace platforms."
+          }
+        }
+      }
+    },
+    "services": {
+      "title": "Onze Diensten",
+      "description": "Van eerste concept tot finale implementatie, wij bieden uitgebreide softwareontwikkelingsdiensten afgestemd op uw bedrijfsbehoeften.",
+      "items": {
+        "webApp": {
+          "title": "Webapplicatie Ontwikkeling",
+          "description": "Aangepaste webapplicaties gebouwd met moderne frameworks zoals Vue.js, Nuxt.js en Asp.Net Core voor optimale prestaties en gebruikerservaring."
+        },
+        "marketplace": {
+          "title": "Marketplace Platforms",
+          "description": "Volledige marketplace oplossingen met geavanceerde zoek- en filtermogelijkheden en geavanceerd biedsysteem."
+        },
+        "api": {
+          "title": "API Ontwikkeling",
+          "description": "RESTful API endpoints die uw applicaties aandrijven en third-party integraties mogelijk maken."
+        },
+        "cloud": {
+          "title": "Cloud Implementatie",
+          "description": "Schaalbare cloud oplossingen met AWS, Google Cloud, Azure, Vercel, Coolify of Dokploy met geautomatiseerde implementatie en monitoring."
+        },
+        "maintenance": {
+          "title": "Onderhoud & Ondersteuning",
+          "description": "Doorlopend onderhoud, updates en technische ondersteuning om uw applicaties soepel te laten draaien."
+        }
+      }
+    },
+    "testimonials": {
+      "headline": "Klant Succesverhalen",
+      "title": "Wat Onze Klanten Zeggen",
+      "description": "Geloof ons niet zomaar. Hier is wat onze klanten zeggen over het werken met Ludulicious."
+    },
+    "cta": {
+      "title": "Klaar om uw idee tot leven te brengen?",
+      "description": "Laten we uw project bespreken en kijken hoe wij u kunnen helpen iets geweldigs te creëren. Wij zijn altijd enthousiast om aan nieuwe uitdagingen te werken.",
+      "viewPortfolio": "Bekijk Ons Portfolio",
+      "getInTouch": "Neem Contact Op"
+    }
+  },
+  "contact": {
+    "title": "Neem contact op",
+    "description": "Klaar om uw bedrijf te transformeren met AI-aangedreven ontwikkeling? Laten we uw project bespreken en kijken hoe wij u kunnen helpen uw doelen te bereiken.",
+    "info" : {
+      "phone": "085-0271 711",
+      "address": "Tauber 52, Den Haag, Nederland"
+    },
+    "company": {
+      "name": "Ludulicious",
+      "tagline": "Innovatieve software oplossingen",
+      "description": "Wij gebruiken onze 15+ jaar ervaring om u te helpen uw systemen sneller en slimmer te ontwikkelen. Wij gebruiken de nieuwste AI technologieën om dit mogelijk te maken.",
+      "founded": "2010",
+      "experience": "15+ jaar"
+    },
+    "cards": {
+      "email": {
+        "title": "E-mail Ons",
+        "description": "Stuur ons een e-mail en wij reageren binnen 24 uur"
+      },
+      "phone": {
+        "title": "Bel Ons",
+        "description": "Spreek direct met ons team"
+      },
+      "visit": {
+        "title": "Bezoek Ons",
+        "description": "Gevestigd in Den Haag, Nederland"
+      },
+      "follow": {
+        "title": "Volg Ons",
+        "description": "Verbind met ons op sociale media"
+      }
+    },
+    "cta": {
+      "title": "Klaar om uw project te starten?",
+      "description": "Laten we bespreken hoe wij u kunnen helpen uw doelen te bereiken met onze AI-aangedreven ontwikkelingsoplossingen.",
+      "schedule": "Plan een consultatie",
+      "viewPortfolio": "Bekijk ons portfolio"
+    }
+  },
+  "footer": {
+    "copyright": "Alle rechten voorbehouden."
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Er is een fout opgetreden",
+    "success": "Succesvol!",
+    "close": "Sluiten",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "view": "Bekijken",
+    "readMore": "Lees meer",
+    "learnMore": "Meer informatie"
+  }
+}

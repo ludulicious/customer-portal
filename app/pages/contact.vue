@@ -1,0 +1,139 @@
+<script setup lang="ts">
+const { t, locale } = useI18n()
+const toast = useToast()
+const localePath = useLocalePath()
+
+// Contact form state
+const form = ref({
+  name: '',
+  email: '',
+  company: '',
+  subject: '',
+  message: '',
+  service: ''
+})
+
+const loading = ref(false)
+
+// SEO
+useSeoMeta({
+  title: `${t('contact.title')} - ${t('contact.company.name')}`,
+  ogTitle: `${t('contact.title')} - ${t('contact.company.name')}`,
+  description: t('contact.description'),
+  ogDescription: t('contact.description')
+})
+</script>
+
+<template>
+  <div>
+    <!-- Hero Section -->
+
+
+    <!-- Contact Information Cards -->
+    <UPageSection :title="t('contact.title')" :description="t('contact.description')">
+      <template #top>
+        <HeroBackground />
+      </template>
+      <UPageGrid>
+        <UPageCard
+          :title="t('contact.cards.email.title')"
+          :description="t('contact.cards.email.description')"
+          icon="i-lucide-mail"
+          :ui="{ leading: 'bg-primary/10 p-3 rounded-lg' }"
+        >
+          <template #footer>
+            <UButton
+              to="mailto:info@ludulicious.nl"
+              variant="ghost"
+              color="primary"
+              icon="i-lucide-external-link"
+            >
+              info@ludulicious.nl
+            </UButton>
+          </template>
+        </UPageCard>
+
+        <UPageCard
+          :title="t('contact.cards.phone.title')"
+          :description="t('contact.cards.phone.description')"
+          icon="i-lucide-phone"
+          :ui="{ leading: 'bg-primary/10 p-3 rounded-lg' }"
+        >
+          <template #footer>
+            <UButton
+              :to="`tel:${t('contact.info.phone')}`"
+              variant="ghost"
+              color="primary"
+              icon="i-lucide-phone"
+            >
+              {{ t('contact.info.phone') }}
+            </UButton>
+          </template>
+        </UPageCard>
+
+        <UPageCard
+          :title="t('contact.cards.visit.title')"
+          :description="t('contact.cards.visit.description')"
+          icon="i-lucide-map-pin"
+          :ui="{ leading: 'bg-primary/10 p-3 rounded-lg' }"
+        >
+          <template #footer>
+            <UButton
+              :to="`https://maps.google.com/?q=${t('contact.info.address')}`"
+              target="_blank"
+              variant="ghost"
+              color="primary"
+              icon="i-lucide-external-link"
+            >
+              {{ t('contact.info.address') }}
+            </UButton>
+          </template>
+        </UPageCard>
+
+        <UPageCard
+          :title="t('contact.cards.follow.title')"
+          :description="t('contact.cards.follow.description')"
+          icon="i-lucide-users"
+          :ui="{ leading: 'bg-primary/10 p-3 rounded-lg' }"
+        >
+          <template #footer>
+            <div class="flex gap-2">
+              <UButton
+                to="https://github.com/ludulicious"
+                target="_blank"
+                variant="ghost"
+                color="primary"
+                icon="i-simple-icons-github"
+                size="sm"
+              />
+            </div>
+          </template>
+        </UPageCard>
+      </UPageGrid>
+    </UPageSection>
+
+    <!-- CTA Section -->
+    <UPageCTA
+      :title="t('contact.cta.title')"
+      :description="t('contact.cta.description')"
+      :links="[
+        {
+          label: t('contact.cta.schedule'),
+          to: `mailto:info@ludulicious.nl`,
+          color: 'primary',
+          size: 'lg'
+        },
+        {
+          label: t('contact.cta.viewPortfolio'),
+          to: localePath('/portfolio'),
+          variant: 'outline',
+          size: 'lg'
+        }
+      ]"
+      variant="naked"
+      class="overflow-hidden"
+    >
+      <LazyStarsBg />
+    </UPageCTA>
+  </div>
+</template>

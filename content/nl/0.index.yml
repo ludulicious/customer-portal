@@ -1,0 +1,115 @@
+title: "Ludulicious - Innovatieve Software Oplossingen"
+description: Wij zijn een softwareontwikkelingsbedrijf dat innovatieve webapplicaties en digitale oplossingen creëert. Van e-commerce platforms tot educatieve tools, wij brengen uw ideeën tot leven met geavanceerde technologie.
+seo:
+  title: Ludulicious - Software Ontwikkelingsbedrijf
+  description: Professionele softwareontwikkelingsdiensten. Wij creëren innovatieve webapplicaties, e-commerce platforms en digitale oplossingen voor bedrijven van alle groottes.
+navigation: false
+hero:
+  links:
+    - label: Bekijk Ons Portfolio
+      icon: i-lucide-briefcase
+      trailing: true
+      to: /portfolio
+      size: xl
+    - label: Neem Contact Op
+      icon: i-lucide-mail
+      size: xl
+      color: neutral
+      variant: subtle
+      to: /contact
+      target: _blank
+sections:
+  - title: Onze Ontwikkelingsexpertise
+    description: Wij specialiseren ons in het creëren van moderne, schaalbare webapplicaties met de nieuwste technologieën. Van concept tot implementatie, wij beheren elk aspect van uw digitale project.
+    id: features
+    orientation: horizontal
+    features:
+      - name: Full-Stack Ontwikkeling
+        description: Volledige webapplicatie-ontwikkeling van frontend tot backend, met moderne frameworks en best practices.
+        icon: i-lucide-code-2
+      - name: E-commerce Oplossingen
+        description: Aangepaste e-commerce platforms met betalingsintegratie, voorraadbeheer en gebruiksvriendelijke interfaces.
+        icon: i-lucide-shopping-cart
+      - name: Mobile-First Ontwerp
+        description: Responsieve applicaties die perfect werken op alle apparaten, met focus op gebruikerservaring en prestaties.
+        icon: i-lucide-smartphone
+  - title: Waarom Kiezen voor Ludulicious
+    description: Wij combineren technische expertise met creatieve visie om oplossingen te leveren die niet alleen aan uw vereisten voldoen, maar deze overtreffen.
+    orientation: horizontal
+    reverse: true
+    features:
+      - name: Klein Team, Grote Impact
+        description: Als klein bedrijf bieden wij persoonlijke aandacht en directe communicatie met ons ontwikkelteam.
+        icon: i-lucide-users
+      - name: Moderne Technologieën
+        description: Wij gebruiken geavanceerde technologieën zoals Vue, Nuxt, Node.js, Asp.Net Core en cloud platforms om toekomstbestendige applicaties te bouwen.
+        icon: i-lucide-zap
+      - name: Bewezen Resultaten
+        description: Ons portfolio omvat succesvolle projecten voor verschillende industrieën, van educatieve tools tot marketplace platforms.
+        icon: i-lucide-trophy
+features:
+  title: Onze Diensten
+  description: Van eerste concept tot finale implementatie, wij bieden uitgebreide softwareontwikkelingsdiensten afgestemd op uw bedrijfsbehoeften.
+  items:
+    - title: Webapplicatie Ontwikkeling
+      description: Aangepaste webapplicaties gebouwd met moderne frameworks zoals Vue.js, Nuxt.js en Asp.Net Core voor optimale prestaties en gebruikerservaring.
+      icon: i-lucide-globe
+    - title: Marketplace Platforms
+      description: Volledige marketplace oplossingen met geavanceerde zoek- en filtermogelijkheden en geavanceerd biedsysteem.
+      icon: i-lucide-shopping-bag
+    - title: API Ontwikkeling
+      description: RESTful API endpoints die uw applicaties aandrijven en third-party integraties mogelijk maken.
+      icon: i-lucide-database
+    - title: Cloud Implementatie
+      description: Schaalbare cloud oplossingen met AWS, Google Cloud, Azure, Vercel, Coolify of Dokploy met geautomatiseerde implementatie en monitoring.
+      icon: i-lucide-cloud
+    - title: Onderhoud & Ondersteuning
+      description: Doorlopend onderhoud, updates en technische ondersteuning om uw applicaties soepel te laten draaien.
+      icon: i-lucide-wrench
+testimonials:
+  headline: Klant Succesverhalen
+  title: Wat Onze Klanten Zeggen
+  description: Geloof ons niet zomaar. Hier is wat onze klanten zeggen over het werken met Ludulicious.
+  items:
+    - quote: Ludulicious heeft ons duikgemeenschap platform getransformeerd. De gebruikerservaring is ongelooflijk en de technische implementatie is stevig. Zeer aanbevolen!
+      user:
+        name: Mariene Bioloog
+        description: divers-guide.com
+        avatar:
+          src: https://i.pravatar.cc/120?img=1
+    - quote: Het advertentie-analytics platform dat zij voor ons hebben gebouwd heeft onze marketingcampagnes gerevolutioneerd. ROI steeg met 40% in het eerste kwartaal.
+      user:
+        name: Marketing Directeur
+        description: UpstreamAds.com
+        avatar:
+          src: https://i.pravatar.cc/120?img=7
+    - quote: Werken met Ludulicious was een game-changer. Zij begrepen onze visie voor het coupon platform en leverden boven onze verwachtingen.
+      user:
+        name: E-commerce Manager
+        description: Gratisaftehalen.nl
+        avatar:
+          src: https://i.pravatar.cc/120?img=3
+    - quote: Het ambachtsmarkt platform dat zij hebben gecreëerd heeft honderden lokale ambachtslieden verbonden met klanten. Het platform is mooi en functioneel.
+      user:
+        name: Community Manager
+        description: Markanda.nl
+        avatar:
+          src: https://i.pravatar.cc/120?img=5
+    - quote: Het rijmwoordenboek project overtrof al onze verwachtingen. De natuurlijke taalverwerking implementatie is geavanceerd en gebruiksvriendelijk.
+      user:
+        name: Taalspecialist
+        description: Van Dale
+        avatar:
+          src: https://i.pravatar.cc/120?img=8
+cta:
+  title: Klaar om uw idee tot leven te brengen?
+  description: Laten we uw project bespreken en kijken hoe wij u kunnen helpen iets geweldigs te creëren. Wij zijn altijd enthousiast om aan nieuwe uitdagingen te werken.
+  links:
+    - label: Bekijk Ons Portfolio
+      to: '/portfolio'
+      trailingIcon: i-lucide-arrow-right
+    - label: Neem Contact Op
+      to: '/contact'
+      target: _blank
+      variant: subtle
+      icon: i-lucide-mail

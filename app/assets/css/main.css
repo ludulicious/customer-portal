@@ -1,0 +1,267 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+:root {
+  --font-sans: 'Bricolage Grotesque', sans-serif;
+
+  /* Cosmic Aurora Color Palette */
+
+  /* Primary - Solar Orange */
+  --color-primary-50: #fff7ed;
+  --color-primary-100: #ffedd5;
+  --color-primary-200: #fed7aa;
+  --color-primary-300: #fdba74;
+  --color-primary-400: #fb923c;
+  --color-primary-500: #f97316;
+  --color-primary-600: #ea580c;
+  --color-primary-700: #c2410c;
+  --color-primary-800: #9a3412;
+  --color-primary-900: #7c2d12;
+  --color-primary-950: #431407;
+
+  /* Secondary - Electric Blue */
+  --color-secondary-50: #eff6ff;
+  --color-secondary-100: #dbeafe;
+  --color-secondary-200: #bfdbfe;
+  --color-secondary-300: #93c5fd;
+  --color-secondary-400: #60a5fa;
+  --color-secondary-500: #3b82f6;
+  --color-secondary-600: #2563eb;
+  --color-secondary-700: #1d4ed8;
+  --color-secondary-800: #1e40af;
+  --color-secondary-900: #1e3a8a;
+  --color-secondary-950: #172554;
+
+  /* Success - Neon Green */
+  --color-success-50: #f0fdf4;
+  --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-300: #86efac;
+  --color-success-400: #4ade80;
+  --color-success-500: #22c55e;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+  --color-success-800: #166534;
+  --color-success-900: #14532d;
+  --color-success-950: #052e16;
+
+  /* Warning - Solar Orange */
+  --color-warning-50: #fff7ed;
+  --color-warning-100: #ffedd5;
+  --color-warning-200: #fed7aa;
+  --color-warning-300: #fdba74;
+  --color-warning-400: #fb923c;
+  --color-warning-500: #f97316;
+  --color-warning-600: #ea580c;
+  --color-warning-700: #c2410c;
+  --color-warning-800: #9a3412;
+  --color-warning-900: #7c2d12;
+  --color-warning-950: #431407;
+
+  /* Error - Plasma Red */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #fca5a5;
+  --color-error-400: #f87171;
+  --color-error-500: #ef4444;
+  --color-error-600: #dc2626;
+  --color-error-700: #b91c1c;
+  --color-error-800: #991b1b;
+  --color-error-900: #7f1d1d;
+  --color-error-950: #450a0a;
+
+  /* Info - Cyber Cyan */
+  --color-info-50: #ecfeff;
+  --color-info-100: #cffafe;
+  --color-info-200: #a5f3fc;
+  --color-info-300: #67e8f9;
+  --color-info-400: #22d3ee;
+  --color-info-500: #06b6d4;
+  --color-info-600: #0891b2;
+  --color-info-700: #0e7490;
+  --color-info-800: #155e75;
+  --color-info-900: #164e63;
+  --color-info-950: #083344;
+
+  /* Neutral - Deep Space */
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-300: #cbd5e1;
+  --color-neutral-400: #94a3b8;
+  --color-neutral-500: #64748b;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1e293b;
+  --color-neutral-900: #0f172a;
+  --color-neutral-950: #020617;
+
+  /* Special Accent Colors - Coral Pink */
+  --color-accent-50: #fef2f2;
+  --color-accent-100: #fee2e2;
+  --color-accent-200: #fecaca;
+  --color-accent-300: #fca5a5;
+  --color-accent-400: #f87171;
+  --color-accent-500: #ef4444;
+  --color-accent-600: #dc2626;
+  --color-accent-700: #b91c1c;
+  --color-accent-800: #991b1b;
+  --color-accent-900: #7f1d1d;
+  --color-accent-950: #450a0a;
+}
+
+/* Light Mode - Cosmic Dawn */
+:root {
+  /* Primary colors */
+  --ui-primary: var(--color-primary-600);
+  --ui-secondary: var(--color-secondary-600);
+  --ui-success: var(--color-success-600);
+  --ui-warning: var(--color-warning-600);
+  --ui-error: var(--color-error-600);
+  --ui-info: var(--color-info-600);
+
+  /* Text colors */
+  --ui-text-dimmed: var(--color-neutral-400);
+  --ui-text-muted: var(--color-neutral-500);
+  --ui-text-toned: var(--color-neutral-600);
+  --ui-text: var(--color-neutral-800);
+  --ui-text-highlighted: var(--color-neutral-900);
+  --ui-text-inverted: var(--color-neutral-50);
+
+  /* Background colors */
+  --ui-bg: #fafbff;
+  --ui-bg-muted: #f1f5ff;
+  --ui-bg-elevated: #e8f2ff;
+  --ui-bg-accented: #dbeafe;
+  --ui-bg-inverted: var(--color-neutral-900);
+
+  /* Border colors */
+  --ui-border: var(--color-neutral-200);
+  --ui-border-muted: var(--color-neutral-200);
+  --ui-border-accented: var(--color-neutral-300);
+  --ui-border-inverted: var(--color-neutral-800);
+
+  /* Special effects */
+  --ui-radius: 0.75rem;
+  --ui-container: var(--container-7xl);
+  --ui-header-height: 4.5rem;
+}
+
+/* Dark Mode - Deep Space */
+.dark {
+  /* Primary colors - brighter for dark mode */
+  --ui-primary: var(--color-primary-400);
+  --ui-secondary: var(--color-secondary-400);
+  --ui-success: var(--color-success-400);
+  --ui-warning: var(--color-warning-400);
+  --ui-error: var(--color-error-400);
+  --ui-info: var(--color-info-400);
+
+  /* Text colors */
+  --ui-text-dimmed: var(--color-neutral-500);
+  --ui-text-muted: var(--color-neutral-400);
+  --ui-text-toned: var(--color-neutral-300);
+  --ui-text: var(--color-neutral-200);
+  --ui-text-highlighted: var(--color-neutral-50);
+  --ui-text-inverted: var(--color-neutral-900);
+
+  /* Background colors - deep space theme */
+  --ui-bg: #0a0f1a;
+  --ui-bg-muted: #0f172a;
+  --ui-bg-elevated: #1e293b;
+  --ui-bg-accented: #334155;
+  --ui-bg-inverted: var(--color-neutral-50);
+
+  /* Border colors */
+  --ui-border: var(--color-neutral-700);
+  --ui-border-muted: var(--color-neutral-800);
+  --ui-border-accented: var(--color-neutral-600);
+  --ui-border-inverted: var(--color-neutral-200);
+}
+
+/* Page Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
+
+/* UMain Content Transitions */
+.main-content {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Nuxt Page Transitions */
+.main-fade-enter-active {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.main-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.55, 0.06, 0.68, 0.19);
+}
+
+.main-fade-enter-from {
+  opacity: 0;
+  transform: translateY(20px) scale(0.98);
+}
+
+.main-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(1.02);
+}
+
+.main-fade-enter-to,
+.main-fade-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Enhanced cosmic transition effects for page content */
+.main-fade-enter-active {
+  position: relative;
+}
+
+.main-fade-enter-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+    rgba(59, 130, 246, 0.05) 0%,
+    rgba(249, 115, 22, 0.05) 50%,
+    rgba(34, 197, 94, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: var(--ui-radius);
+}
+
+.main-fade-enter-active::before {
+  opacity: 1;
+}
+
+/* Smooth scroll behavior for better UX */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced focus states for accessibility */
+.main-content:focus-within {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+  border-radius: var(--ui-radius);
+}
