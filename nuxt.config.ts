@@ -56,19 +56,17 @@ export default defineNuxtConfig({
   },
   css: ['~/assets/css/main.css'],
 
-  compatibilityDate: '2024-07-11',
+  compatibilityDate: '2025-10-24',
 
   nitro: {
     routeRules: {
       '/': { swr: 300 },
       '/en': { swr: 300 },
       '/blog/**': { swr: 600 },
-      '/en/blog/**': { swr: 600 },
-      '/portfolio/**': { swr: 600 },
-      '/en/portfolio/**': { swr: 600 }
+      '/en/blog/**': { swr: 600 }
     },
     prerender: {
-      routes: ['/', '/en', '/blog', '/en/blog', '/portfolio', '/en/portfolio', '/contact', '/en/contact'],
+      routes: ['/', '/en', '/contact', '/en/contact'],
       crawlLinks: false,
       failOnError: false
     }
@@ -96,14 +94,14 @@ export default defineNuxtConfig({
         file: 'nl.json'
       }
     ],
-    defaultLocale: 'nl',
+    defaultLocale: 'en',
     strategy: 'prefix_except_default',
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'i18n_redirected',
       redirectOn: 'root',
       alwaysRedirect: false,
-      fallbackLocale: 'nl'
+      fallbackLocale: 'en'
     },
     langDir: 'locales/'
   }

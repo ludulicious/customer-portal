@@ -8,9 +8,6 @@ const path = computed(() => route.path)
 
 // Define static navigation items without active state to avoid hydration mismatch
 const baseItems = computed(() => [{
-  label: t('nav.portfolio'),
-  to: localePath('/portfolio')
-}, {
   label: t('nav.blog'),
   to: localePath('/blog')
 }, {

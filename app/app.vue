@@ -39,25 +39,6 @@ useSeoMeta({
 
 // Simplified navigation - no content queries to avoid server errors
 const navigation = ref([])
-const files = ref([])
-
-const links = [{
-  label: 'Portfolio',
-  icon: 'i-lucide-briefcase',
-  to: '/portfolio'
-}, {
-  label: 'Blog',
-  icon: 'i-lucide-pencil',
-  to: '/blog'
-}, {
-  label: 'Theme Demo',
-  icon: 'i-lucide-palette',
-  to: '/theme-demo'
-}, {
-  label: 'UI Demo',
-  icon: 'i-lucide-layout',
-  to: '/nuxt-ui-demo'
-}]
 
 provide('navigation', navigation)
 
@@ -74,16 +55,5 @@ provide('navigation', navigation)
         mode: 'out-in'
       }" />
     </NuxtLayout>
-
-    <!-- Content search disabled to prevent server errors -->
-    <!-- <ClientOnly>
-      <LazyUContentSearch
-        :files="files"
-        shortcut="meta_k"
-        :navigation="navigation"
-        :links="links"
-        :fuse="{ resultLimit: 42 }"
-      />
-    </ClientOnly> -->
   </UApp>
 </template>

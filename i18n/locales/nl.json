@@ -1,7 +1,6 @@
 {
   "nav": {
     "language": "Taal",
-    "portfolio": "Portfolio",
     "blog": "Blog",
     "contact": "Contact"
   },
@@ -89,16 +88,16 @@
     }
   },
   "contact": {
-    "title": "Neem contact op",
-    "description": "Klaar om uw bedrijf te transformeren met AI-aangedreven ontwikkeling? Laten we uw project bespreken en kijken hoe wij u kunnen helpen uw doelen te bereiken.",
+    "title": "Contact met ApexPro",
+    "description": "Wij helpen graag met diensten, offertes en portaalondersteuning.",
     "info" : {
-      "phone": "085-0271 711",
-      "address": "Tauber 52, Den Haag, Nederland"
+      "phone": "+31 10 123 4567",
+      "address": "Commerce Ave 1200, Suite 500, Rotterdam, NL"
     },
     "company": {
-      "name": "Ludulicious",
-      "tagline": "Innovatieve software oplossingen",
-      "description": "Wij gebruiken onze 15+ jaar ervaring om u te helpen uw systemen sneller en slimmer te ontwikkelen. Wij gebruiken de nieuwste AI technologieën om dit mogelijk te maken.",
+      "name": "ApexPro",
+      "tagline": "Facilitaire diensten voor bedrijven",
+      "description": "ApexPro levert betrouwbare schoonmaak-, onderhouds- en coördinatiediensten voor bedrijven, ondersteund door een modern en transparant klantenportaal.",
       "founded": "2010",
       "experience": "15+ jaar"
     },
@@ -113,7 +112,7 @@
       },
       "visit": {
         "title": "Bezoek Ons",
-        "description": "Gevestigd in Den Haag, Nederland"
+        "description": "Gevestigd in Rotterdam, Nederland"
       },
       "follow": {
         "title": "Volg Ons",
@@ -121,10 +120,10 @@
       }
     },
     "cta": {
-      "title": "Klaar om uw project te starten?",
-      "description": "Laten we bespreken hoe wij u kunnen helpen uw doelen te bereiken met onze AI-aangedreven ontwikkelingsoplossingen.",
-      "schedule": "Plan een consultatie",
-      "viewPortfolio": "Bekijk ons portfolio"
+      "title": "Waarmee kunnen we helpen?",
+      "description": "Neem contact op met verkoop voor diensten en offertes, of met portaalondersteuning.",
+      "sales": "Contact verkoop",
+      "support": "Portaalondersteuning"
     }
   },
   "footer": {

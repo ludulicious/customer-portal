@@ -43,12 +43,12 @@ useSeoMeta({
         >
           <template #footer>
             <UButton
-              to="mailto:info@ludulicious.nl"
+              to="mailto:support@apexpro.example"
               variant="ghost"
               color="primary"
               icon="i-lucide-external-link"
             >
-              info@ludulicious.nl
+              support@apexpro.example
             </UButton>
           </template>
         </UPageCard>
@@ -118,14 +118,14 @@ useSeoMeta({
       :description="t('contact.cta.description')"
       :links="[
         {
-          label: t('contact.cta.schedule'),
-          to: `mailto:info@ludulicious.nl`,
+          label: t('contact.cta.sales'),
+          to: 'mailto:sales@apexpro.example',
           color: 'primary',
           size: 'lg'
         },
         {
-          label: t('contact.cta.viewPortfolio'),
-          to: localePath('/portfolio'),
+          label: t('contact.cta.support'),
+          to: 'mailto:support@apexpro.example',
           variant: 'outline',
           size: 'lg'
         }

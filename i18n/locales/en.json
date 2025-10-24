@@ -89,16 +89,16 @@
     }
   },
   "contact": {
-    "title": "Get in touch",
-    "description": "Ready to transform your business with AI-powered development? Let's discuss your project and how we can help you achieve your goals.",
+    "title": "Contact ApexPro",
+    "description": "We’re here to help with services, quotes and portal support.",
     "info" : {
-      "phone": "+31 (0)85 0271 711",
-      "address": "Tauber 52, The Hague, Netherlands"
+      "phone": "+31 10 123 4567",
+      "address": "1200 Commerce Ave, Suite 500, Rotterdam, NL"
     },
     "company": {
-      "name": "Ludulicious",
-      "tagline": "Innovative software solutions",
-      "description": "We are using our 15+ years of experience to help you develop your system faster and smarter. We are using the latest AI technologies to make it possible for you.",
+      "name": "ApexPro",
+      "tagline": "Facility services for businesses",
+      "description": "ApexPro delivers reliable cleaning, maintenance and coordination services for businesses, backed by a modern, transparent customer portal.",
       "founded": "2010",
       "experience": "15+ years"
     },
@@ -113,7 +113,7 @@
       },
       "visit": {
         "title": "Visit Us",
-        "description": "Based in The Hague, Netherlands"
+        "description": "Based in Rotterdam, Netherlands"
       },
       "follow": {
         "title": "Follow Us",
@@ -121,10 +121,10 @@
       }
     },
     "cta": {
-      "title": "Ready to start your project?",
-      "description": "Let's discuss how we can help you achieve your goals with our AI-powered development solutions.",
-      "schedule": "Schedule a consultation",
-      "viewPortfolio": "View our portfolio"
+      "title": "How can we help?",
+      "description": "Contact sales for services and quotes, or reach portal support.",
+      "sales": "Contact sales",
+      "support": "Portal support"
     }
   },
   "footer": {
