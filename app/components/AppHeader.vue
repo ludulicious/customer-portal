@@ -6,6 +6,47 @@ const localePath = useLocalePath()
 const router = useRouter()
 const path = computed(() => route.path)
 
+// User store
+const userStore = useUserStore()
+const { currentUser, userInitials } = storeToRefs(userStore)
+
+// Dropdown menu items for user avatar
+const userMenuItems = computed(() => [
+  [
+    {
+      label: currentUser.value?.name || currentUser.value?.email || 'User',
+      avatar: {
+        src: currentUser.value?.image,
+        alt: currentUser.value?.name || currentUser.value?.email || 'User'
+      },
+      type: 'label' as const
+    }
+  ],
+  [
+    {
+      label: 'Profile',
+      icon: 'i-lucide-user',
+      to: localePath('/profile')
+    }
+  ],
+  [
+    {
+      label: 'Logout',
+      icon: 'i-lucide-log-out',
+      onSelect: async () => {
+        await userStore.clearUserData()
+        await navigateTo(localePath('/login'))
+      }
+    }
+  ]
+])
+
+// Logout function
+const handleLogout = async () => {
+  await userStore.clearUserData()
+  await navigateTo(localePath('/'))
+}
+
 // Define static navigation items without active state to avoid hydration mismatch
 const baseItems = computed(() => [{
   label: t('nav.blog'),
@@ -56,6 +97,17 @@ watch(currentLocale, (newLocale) => {
     <template #right>
       <ULocaleSelect class="hidden lg:flex" v-model="currentLocale" :locales="[en, nl]" />
       <UColorModeButton />
+
+      <!-- User Avatar Dropdown (only show when user is logged in) -->
+      <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
+        <UAvatar
+          :src="currentUser.image"
+          :alt="currentUser.name || currentUser.email || 'User'"
+          :text="userInitials"
+          size="sm"
+          class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+        />
+      </UDropdownMenu>
     </template>
 
     <template #body>
@@ -67,6 +119,20 @@ watch(currentLocale, (newLocale) => {
       </nav>
 
       <USeparator class="my-6" />
+
+      <!-- User Avatar Dropdown for Mobile (only show when user is logged in) -->
+      <div v-if="currentUser" class="mb-6">
+        <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-48' }">
+          <UAvatar
+            :src="currentUser.image"
+            :alt="currentUser.name || currentUser.email || 'User'"
+            :text="userInitials"
+            size="md"
+            class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
+          />
+        </UDropdownMenu>
+      </div>
+
       <UFormField :label="t('nav.language')" name="language">
         <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-48" />
       </UFormField>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { locale } = useI18n()
-
+const userStore = useUserStore()
+const { currentUser } = storeToRefs(userStore)
 const { data: page } = await useAsyncData(
   () => `index-${locale.value}`,
   () => queryCollection(locale.value === 'en' ? 'index_en' : 'index_nl' as any).first()
@@ -8,7 +9,41 @@ const { data: page } = await useAsyncData(
 
 const title = page.value?.seo?.title || page.value?.title
 const description = page.value?.seo?.description || page.value?.description
+const isLoggedIn = computed(() => currentUser.value !== null)
+const localePath = useLocalePath()
 
+// Dynamic hero links based on login status
+const heroLinks = computed(() => {
+  if (isLoggedIn.value) {
+    return [
+      {
+        label: locale.value === 'en' ? 'My Dashboard' : 'Mijn Dashboard',
+        icon: 'i-lucide-layout-dashboard',
+        to: localePath('/dashboard'),
+        size: 'xl',
+        color: 'primary'
+      }
+    ]
+  }
+  return page.value?.hero?.links || []
+})
+
+// Dynamic CTA links based on login status
+const ctaLinks = computed(() => {
+  if (isLoggedIn.value) {
+    return [
+      {
+        label: locale.value === 'en' ? 'Go to Dashboard' : 'Ga naar Dashboard',
+        to: localePath('/dashboard'),
+        color: 'primary',
+        icon: 'i-lucide-layout-dashboard'
+      }
+    ]
+  }
+  return page.value?.cta?.links || []
+})
+
+console.log(currentUser.value)
 useSeoMeta({
   titleTemplate: '',
   title,
@@ -16,13 +51,18 @@ useSeoMeta({
   description,
   ogDescription: description
 })
+definePageMeta({
+  meta: {
+    public: true
+  }
+})
 </script>
 
 <template>
   <div>
 
     <div v-if="page">
-      <UPageHero :title="page.title" v-if="page.hero" :description="page.description" :links="page.hero.links"
+      <UPageHero :title="page.title" v-if="page.hero" :description="page.description" :links="heroLinks"
         class="py-2 md:py-4 mb-0">
         <template #top>
           <HeroBackground />
@@ -58,7 +98,7 @@ useSeoMeta({
 
       <USeparator />
 
-      <UPageCTA v-bind="page.cta" variant="naked" class="overflow-hidden">
+      <UPageCTA v-bind="{ ...page.cta, links: ctaLinks }" variant="naked" class="overflow-hidden">
         <LazyStarsBg />
       </UPageCTA>
     </div>

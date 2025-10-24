@@ -45,6 +45,11 @@ if (post.value.image?.src) {
     headline: 'Blog'
   })
 }
+definePageMeta({
+  meta: {
+    public: true
+  }
+})
 </script>
 
 <template>

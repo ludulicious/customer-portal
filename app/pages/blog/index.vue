@@ -23,6 +23,11 @@ useSeoMeta({
 })
 
 defineOgImageComponent('Saas')
+definePageMeta({
+  meta: {
+    public: true
+  }
+})
 </script>
 
 <template>

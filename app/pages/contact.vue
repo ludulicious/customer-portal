@@ -22,6 +22,11 @@ useSeoMeta({
   description: t('contact.description'),
   ogDescription: t('contact.description')
 })
+definePageMeta({
+  meta: {
+    public: true
+  }
+})
 </script>
 
 <template>

@@ -5,17 +5,17 @@ const sizeEnum = z.enum(['xs', 'sm', 'md', 'lg', 'xl'])
 const orientationEnum = z.enum(['vertical', 'horizontal'])
 
 const createBaseSchema = () => z.object({
-  title: z.string().nonempty(),
-  description: z.string().nonempty()
+  title: z.string().min(1),
+  description: z.string().min(1)
 })
 
 const createFeatureItemSchema = () => createBaseSchema().extend({
-  icon: z.string().nonempty().editor({ input: 'icon' })
+  icon: z.string().min(1).editor({ input: 'icon' })
 })
 
 const createLinkSchema = () => z.object({
-  label: z.string().nonempty(),
-  to: z.string().nonempty(),
+  label: z.string().min(1),
+  to: z.string().min(1),
   icon: z.string().optional().editor({ input: 'icon' }),
   size: sizeEnum.optional(),
   trailing: z.boolean().optional(),
@@ -25,7 +25,7 @@ const createLinkSchema = () => z.object({
 })
 
 const createImageSchema = () => z.object({
-  src: z.string().nonempty().editor({ input: 'media' }),
+  src: z.string().min(1).editor({ input: 'media' }),
   alt: z.string().optional(),
   loading: z.string().optional(),
   srcset: z.string().optional()
@@ -54,10 +54,10 @@ export const collections = {
         headline: z.string().optional(),
         items: z.array(
           z.object({
-            quote: z.string().nonempty(),
+            quote: z.string().min(1),
             user: z.object({
-              name: z.string().nonempty(),
-              description: z.string().nonempty(),
+              name: z.string().min(1),
+              description: z.string().min(1),
               avatar: createImageSchema()
             })
           })
@@ -90,10 +90,10 @@ export const collections = {
         headline: z.string().optional(),
         items: z.array(
           z.object({
-            quote: z.string().nonempty(),
+            quote: z.string().min(1),
             user: z.object({
-              name: z.string().nonempty(),
-              description: z.string().nonempty(),
+              name: z.string().min(1),
+              description: z.string().min(1),
               avatar: createImageSchema()
             })
           })
@@ -119,16 +119,16 @@ export const collections = {
       prefix: 'blog/',
     },
     schema: z.object({
-      image: z.object({ src: z.string().nonempty().editor({ input: 'media' }) }),
+      image: z.object({ src: z.string().min(1).editor({ input: 'media' }) }),
       authors: z.array(
         z.object({
-          name: z.string().nonempty(),
-          to: z.string().nonempty(),
-          avatar: z.object({ src: z.string().nonempty().editor({ input: 'media' }) })
+          name: z.string().min(1),
+          to: z.string().min(1),
+          avatar: z.object({ src: z.string().min(1).editor({ input: 'media' }) })
         })
       ),
       date: z.date(),
-      badge: z.object({ label: z.string().nonempty() })
+      badge: z.object({ label: z.string().min(1) })
     })
   }),
   posts_nl: defineCollection({
@@ -138,16 +138,16 @@ export const collections = {
       prefix: 'blog/',
     },
     schema: z.object({
-      image: z.object({ src: z.string().nonempty().editor({ input: 'media' }) }),
+      image: z.object({ src: z.string().min(1).editor({ input: 'media' }) }),
       authors: z.array(
         z.object({
-          name: z.string().nonempty(),
-          to: z.string().nonempty(),
-          avatar: z.object({ src: z.string().nonempty().editor({ input: 'media' }) })
+          name: z.string().min(1),
+          to: z.string().min(1),
+          avatar: z.object({ src: z.string().min(1).editor({ input: 'media' }) })
         })
       ),
       date: z.date(),
-      badge: z.object({ label: z.string().nonempty() })
+      badge: z.object({ label: z.string().min(1) })
     })
   })
 }

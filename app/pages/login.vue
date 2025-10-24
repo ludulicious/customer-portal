@@ -4,7 +4,10 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { signIn } from '../../lib/auth-client'
 
 definePageMeta({
-  layout: 'auth'
+  layout: 'auth',
+  meta: {
+    public: true
+  }
 })
 
 useSeoMeta({

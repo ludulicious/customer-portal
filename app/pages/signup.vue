@@ -3,7 +3,10 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 definePageMeta({
-  layout: 'auth'
+  layout: 'auth',
+  meta: {
+    public: true
+  }
 })
 
 useSeoMeta({
@@ -55,6 +58,7 @@ type Schema = z.output<typeof schema>
 function onSubmit(payload: FormSubmitEvent<Schema>) {
   console.log('Submitted', payload)
 }
+
 </script>
 
 <template>
