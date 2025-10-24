@@ -20,6 +20,7 @@ useHead({
     { name: 'msapplication-TileColor', content: color }
   ],
   link: [
+    { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
     { rel: 'icon', href: '/favicon.ico' },
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }
@@ -31,9 +32,9 @@ useHead({
 })
 
 useSeoMeta({
-  titleTemplate: '%s - Ludulicious',
-  ogImage: 'https://ludu.odmdata.com/images/ogimage.png',
-  twitterImage: 'https://ludu.odmdata.com/images/ogimage.png',
+  titleTemplate: '%s - ApexPro',
+  ogImage: '/images/ogimage.png',
+  twitterImage: '/images/ogimage.png',
   twitterCard: 'summary_large_image'
 })
 
