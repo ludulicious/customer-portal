@@ -18,5 +18,14 @@
         "titleBar.inactiveBackground": "#75cbfe99",
         "titleBar.inactiveForeground": "#15202b99"
     },
-    "peacock.color": "#75cbfe"
+    "peacock.color": "#75cbfe",
+    "i18n-ally.pathMatcher": "{locale}.json",
+    "i18n-ally.sortKeys": true,
+    "i18n-ally.translate.overrideExisting": true,
+    "i18n-ally.keystyle": "nested",
+    "i18n-ally.localesPaths": [
+      "i18n",
+      "locales",
+      "i18n/locales"
+    ]
 }

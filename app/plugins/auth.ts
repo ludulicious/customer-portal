@@ -7,7 +7,8 @@ export default defineNuxtPlugin(async () => {
 
   // Initialize session watcher
   const session = await authClient.useSession(useFetch)
-
+  console.log('session in auth plugin', session)
+  console.log('session.data.value?.user?', session.data.value?.user)
   // Watch for session changes
   watch(() => session.data.value?.user, async (newUser) => {
     userStore.setUser(newUser) // Set the user in the store

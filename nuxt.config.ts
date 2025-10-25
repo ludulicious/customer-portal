@@ -111,6 +111,6 @@ export default defineNuxtConfig({
       alwaysRedirect: false,
       fallbackLocale: 'en'
     },
-    langDir: 'locales/'
+    langDir: 'locales'
   }
 })

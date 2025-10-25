@@ -109,7 +109,7 @@ export const auth = betterAuth({
     customSession(async (sessionData) => {
       // Destructure user and session from the input object
       const { user, session } = sessionData
-
+      console.log('custom session sessionData', sessionData)
       // Fetch the account for the user
       const account = await prisma.account.findFirst({
         where: { userId: user.id },
