@@ -22,7 +22,6 @@ useSeoMeta({
   ogDescription: description
 })
 
-defineOgImageComponent('Saas')
 definePageMeta({
   meta: {
     public: true

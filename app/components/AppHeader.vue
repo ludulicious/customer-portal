@@ -1,15 +1,19 @@
 <script setup lang="ts">
+
+import { en, nl } from '@nuxt/ui/locale'
+import { authClient } from '../../lib/auth-client'
+
+const localePath = useLocalePath()
 const route = useRoute()
 const { t, locale, setLocale } = useI18n()
-import { en, nl } from '@nuxt/ui/locale'
-const localePath = useLocalePath()
 const router = useRouter()
 const path = computed(() => route.path)
+
 
 // User store
 const userStore = useUserStore()
 const { currentUser, userInitials } = storeToRefs(userStore)
-
+const { data: session } = await authClient.useSession(useFetch);
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => [
   [
@@ -34,8 +38,8 @@ const userMenuItems = computed(() => [
       label: 'Logout',
       icon: 'i-lucide-log-out',
       onSelect: async () => {
-        await userStore.clearUserData()
-        await navigateTo(localePath('/login'))
+        await authClient.signOut()
+        await navigateTo(localePath('/'))
       }
     }
   ]

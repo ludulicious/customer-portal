@@ -30,22 +30,18 @@ export default defineNuxtPlugin({
       console.log('getSession error:', error)
     }
 
-    // Also set up the reactive session watcher
-    const { data: session } = await authClient.useSession(useFetch)
-    console.log('session in auth plugin', session)
-    console.log('session.value?.user?', session.value?.user)
+    // Set up reactive session watcher (client-side only)
+    if (!import.meta.server) {
+      const { data: session } = await authClient.useSession(useFetch)
 
-    // Watch for session changes
-    watch(() => session.value?.user, async (newUser) => {
-      console.log('Session user changed:', newUser)
-      userStore.setUser(newUser) // Set the user in the store
-      if (newUser) {
-        // User is logged in, fetch permissions
-        await userStore.fetchUserPermissions()
-      } else {
-        // User is logged out, clear store
-        userStore.clearUserData()
-      }
-    }, { immediate: true })
+      watch(() => session.value?.user, async (newUser) => {
+        userStore.setUser(newUser)
+        if (newUser) {
+          await userStore.fetchUserPermissions()
+        } else {
+          userStore.clearUserData()
+        }
+      }, { immediate: true })
+    }
   }
 })
