@@ -94,13 +94,13 @@ const slaChartData = computed(() => ({
 // Status colors for activity items
 const getStatusColor = (status: string) => {
   const colors = {
-    completed: 'green',
-    paid: 'green',
-    'in-progress': 'blue',
-    scheduled: 'yellow',
-    overdue: 'red'
+    completed: 'success',
+    paid: 'primary',
+    'in-progress': 'info',
+    scheduled: 'warning',
+    overdue: 'error'
   }
-  return colors[status as keyof typeof colors] || 'gray'
+  return colors[status as keyof typeof colors] || 'neutral'
 }
 
 const getStatusIcon = (type: string, status: string) => {
@@ -153,7 +153,7 @@ useSeoMeta({
             </UButton>
             <UButton
               :to="localePath('/invoices')"
-              color="gray"
+              color="neutral"
               variant="outline"
               icon="i-lucide-file-text"
             >
@@ -239,7 +239,7 @@ useSeoMeta({
             </div>
           </div>
           <div class="mt-4">
-            <UProgress :value="dashboardData.slaMetrics.complianceRate" color="green" />
+            <UProgress :value="dashboardData.slaMetrics.complianceRate" color="success" />
           </div>
         </UCard>
 
@@ -417,7 +417,7 @@ useSeoMeta({
               </UButton>
               <UButton
                 :to="localePath('/requests/new')"
-                color="gray"
+                color="neutral"
                 variant="outline"
                 block
                 icon="i-lucide-life-buoy"
@@ -426,7 +426,7 @@ useSeoMeta({
               </UButton>
               <UButton
                 :to="localePath('/reports')"
-                color="gray"
+                color="neutral"
                 variant="outline"
                 block
                 icon="i-lucide-file-text"
