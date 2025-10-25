@@ -130,6 +130,48 @@
   "footer": {
     "copyright": "All rights reserved."
   },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome back! Here's what's happening with your facility services.",
+    "buttons": {
+      "viewAllOrders": "View All Orders",
+      "viewInvoices": "View Invoices",
+      "export": "Export",
+      "viewAll": "View All",
+      "newOrder": "New Order",
+      "newRequest": "New Request",
+      "generateReport": "Generate Report"
+    },
+    "cards": {
+      "totalOrders": "Total Orders",
+      "invoices": "Invoices",
+      "slaCompliance": "SLA Compliance",
+      "satisfaction": "Satisfaction",
+      "completed": "completed",
+      "pending": "pending",
+      "paid": "paid",
+      "overdue": "overdue"
+    },
+    "charts": {
+      "ordersCompleted": "Orders Completed",
+      "slaPerformance": "SLA Performance",
+      "chartPlaceholder": "Chart visualization would go here",
+      "integrationNote": "Integration with chart library needed",
+      "slaChartPlaceholder": "SLA performance chart would go here"
+    },
+    "activity": {
+      "recentActivity": "Recent Activity"
+    },
+    "stats": {
+      "avgResponseTime": "Avg Response Time",
+      "avgResolutionTime": "Avg Resolution Time",
+      "quickActions": "Quick Actions"
+    },
+    "seo": {
+      "title": "Dashboard - ApexPro Portal",
+      "description": "Manage your facility services, orders, and invoices with ApexPro"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",

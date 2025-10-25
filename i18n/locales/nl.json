@@ -129,6 +129,48 @@
   "footer": {
     "copyright": "Alle rechten voorbehouden."
   },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welkom terug! Hier is wat er gebeurt met uw facilitaire diensten.",
+    "buttons": {
+      "viewAllOrders": "Bekijk Alle Orders",
+      "viewInvoices": "Bekijk Facturen",
+      "export": "Exporteren",
+      "viewAll": "Bekijk Alles",
+      "newOrder": "Nieuwe Order",
+      "newRequest": "Nieuw Verzoek",
+      "generateReport": "Rapport Genereren"
+    },
+    "cards": {
+      "totalOrders": "Totaal Orders",
+      "invoices": "Facturen",
+      "slaCompliance": "SLA Naleving",
+      "satisfaction": "Tevredenheid",
+      "completed": "voltooid",
+      "pending": "in behandeling",
+      "paid": "betaald",
+      "overdue": "achterstallig"
+    },
+    "charts": {
+      "ordersCompleted": "Orders Voltooid",
+      "slaPerformance": "SLA Prestaties",
+      "chartPlaceholder": "Grafiek visualisatie zou hier komen",
+      "integrationNote": "Integratie met grafiek bibliotheek nodig",
+      "slaChartPlaceholder": "SLA prestaties grafiek zou hier komen"
+    },
+    "activity": {
+      "recentActivity": "Recente Activiteit"
+    },
+    "stats": {
+      "avgResponseTime": "Gem. Reactietijd",
+      "avgResolutionTime": "Gem. Oplostijd",
+      "quickActions": "Snelle Acties"
+    },
+    "seo": {
+      "title": "Dashboard - ApexPro Portaal",
+      "description": "Beheer uw facilitaire diensten, orders en facturen met ApexPro"
+    }
+  },
   "common": {
     "loading": "Laden...",
     "error": "Er is een fout opgetreden",

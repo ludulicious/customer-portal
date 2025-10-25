@@ -92,15 +92,15 @@ const slaChartData = computed(() => ({
 }))
 
 // Status colors for activity items
-const getStatusColor = (status: string) => {
-  const colors = {
+const getStatusColor = (status: string): 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral' => {
+  const colors: Record<string, 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'> = {
     completed: 'success',
     paid: 'primary',
     'in-progress': 'info',
     scheduled: 'warning',
     overdue: 'error'
   }
-  return colors[status as keyof typeof colors] || 'neutral'
+  return colors[status] || 'neutral'
 }
 
 const getStatusIcon = (type: string, status: string) => {
@@ -118,10 +118,8 @@ const getStatusIcon = (type: string, status: string) => {
 
 // Page metadata
 useSeoMeta({
-  title: locale.value === 'en' ? 'Dashboard - ApexPro Portal' : 'Dashboard - ApexPro Portaal',
-  description: locale.value === 'en'
-    ? 'Manage your facility services, orders, and invoices with ApexPro'
-    : 'Beheer uw facilitaire diensten, orders en facturen met ApexPro'
+  title: $t('dashboard.seo.title'),
+  description: $t('dashboard.seo.description')
 })
 </script>
 
@@ -133,13 +131,10 @@ useSeoMeta({
         <div class="flex items-center justify-between">
           <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-              {{ locale === 'en' ? 'Dashboard' : 'Dashboard' }}
+              {{ $t('dashboard.title') }}
             </h1>
             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {{ locale === 'en'
-                ? 'Welcome back! Here\'s what\'s happening with your facility services.'
-                : 'Welkom terug! Hier is wat er gebeurt met uw facilitaire diensten.'
-              }}
+              {{ $t('dashboard.welcome') }}
             </p>
           </div>
           <div class="flex items-center space-x-4">
@@ -149,7 +144,7 @@ useSeoMeta({
               variant="outline"
               icon="i-lucide-clipboard-list"
             >
-              {{ locale === 'en' ? 'View All Orders' : 'Bekijk Alle Orders' }}
+              {{ $t('dashboard.buttons.viewAllOrders') }}
             </UButton>
             <UButton
               :to="localePath('/invoices')"
@@ -157,7 +152,7 @@ useSeoMeta({
               variant="outline"
               icon="i-lucide-file-text"
             >
-              {{ locale === 'en' ? 'View Invoices' : 'Bekijk Facturen' }}
+              {{ $t('dashboard.buttons.viewInvoices') }}
             </UButton>
           </div>
         </div>
@@ -172,7 +167,7 @@ useSeoMeta({
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {{ locale === 'en' ? 'Total Orders' : 'Totaal Orders' }}
+                {{ $t('dashboard.cards.totalOrders') }}
               </p>
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ dashboardData.overview.totalOrders }}
@@ -185,11 +180,11 @@ useSeoMeta({
           <div class="mt-4">
             <div class="flex items-center text-sm">
               <span class="text-green-600 dark:text-green-400 font-medium">
-                {{ dashboardData.overview.completedOrders }} {{ locale === 'en' ? 'completed' : 'voltooid' }}
+                {{ dashboardData.overview.completedOrders }} {{ $t('dashboard.cards.completed') }}
               </span>
               <span class="text-gray-500 dark:text-gray-400 mx-2">•</span>
               <span class="text-yellow-600 dark:text-yellow-400">
-                {{ dashboardData.overview.pendingOrders }} {{ locale === 'en' ? 'pending' : 'in behandeling' }}
+                {{ dashboardData.overview.pendingOrders }} {{ $t('dashboard.cards.pending') }}
               </span>
             </div>
           </div>
@@ -200,7 +195,7 @@ useSeoMeta({
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {{ locale === 'en' ? 'Invoices' : 'Facturen' }}
+                {{ $t('dashboard.cards.invoices') }}
               </p>
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ dashboardData.overview.totalInvoices }}
@@ -213,11 +208,11 @@ useSeoMeta({
           <div class="mt-4">
             <div class="flex items-center text-sm">
               <span class="text-green-600 dark:text-green-400 font-medium">
-                {{ dashboardData.overview.paidInvoices }} {{ locale === 'en' ? 'paid' : 'betaald' }}
+                {{ dashboardData.overview.paidInvoices }} {{ $t('dashboard.cards.paid') }}
               </span>
               <span class="text-gray-500 dark:text-gray-400 mx-2">•</span>
               <span class="text-red-600 dark:text-red-400">
-                {{ dashboardData.overview.overdueInvoices }} {{ locale === 'en' ? 'overdue' : 'achterstallig' }}
+                {{ dashboardData.overview.overdueInvoices }} {{ $t('dashboard.cards.overdue') }}
               </span>
             </div>
           </div>
@@ -228,7 +223,7 @@ useSeoMeta({
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {{ locale === 'en' ? 'SLA Compliance' : 'SLA Naleving' }}
+                {{ $t('dashboard.cards.slaCompliance') }}
               </p>
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ dashboardData.slaMetrics.complianceRate }}%
@@ -239,7 +234,7 @@ useSeoMeta({
             </div>
           </div>
           <div class="mt-4">
-            <UProgress :value="dashboardData.slaMetrics.complianceRate" color="success" />
+            <UProgress :model-value="dashboardData.slaMetrics.complianceRate" color="success" />
           </div>
         </UCard>
 
@@ -248,7 +243,7 @@ useSeoMeta({
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-                {{ locale === 'en' ? 'Satisfaction' : 'Tevredenheid' }}
+                {{ $t('dashboard.cards.satisfaction') }}
               </p>
               <p class="text-2xl font-bold text-gray-900 dark:text-white">
                 {{ dashboardData.slaMetrics.customerSatisfaction }}/5
@@ -278,10 +273,10 @@ useSeoMeta({
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ locale === 'en' ? 'Orders Completed' : 'Orders Voltooid' }}
+                {{ $t('dashboard.charts.ordersCompleted') }}
               </h3>
               <UButton size="sm" variant="ghost" icon="i-lucide-download">
-                {{ locale === 'en' ? 'Export' : 'Exporteren' }}
+                {{ $t('dashboard.buttons.export') }}
               </UButton>
             </div>
           </template>
@@ -289,10 +284,10 @@ useSeoMeta({
             <div class="text-center">
               <UIcon name="i-lucide-bar-chart-3" class="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p class="text-gray-500 dark:text-gray-400">
-                {{ locale === 'en' ? 'Chart visualization would go here' : 'Grafiek visualisatie zou hier komen' }}
+                {{ $t('dashboard.charts.chartPlaceholder') }}
               </p>
               <p class="text-sm text-gray-400 mt-2">
-                {{ locale === 'en' ? 'Integration with chart library needed' : 'Integratie met grafiek bibliotheek nodig' }}
+                {{ $t('dashboard.charts.integrationNote') }}
               </p>
             </div>
           </div>
@@ -303,10 +298,10 @@ useSeoMeta({
           <template #header>
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ locale === 'en' ? 'SLA Performance' : 'SLA Prestaties' }}
+                {{ $t('dashboard.charts.slaPerformance') }}
               </h3>
               <UButton size="sm" variant="ghost" icon="i-lucide-download">
-                {{ locale === 'en' ? 'Export' : 'Exporteren' }}
+                {{ $t('dashboard.buttons.export') }}
               </UButton>
             </div>
           </template>
@@ -314,10 +309,10 @@ useSeoMeta({
             <div class="text-center">
               <UIcon name="i-lucide-trending-up" class="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p class="text-gray-500 dark:text-gray-400">
-                {{ locale === 'en' ? 'SLA performance chart would go here' : 'SLA prestaties grafiek zou hier komen' }}
+                {{ $t('dashboard.charts.slaChartPlaceholder') }}
               </p>
               <p class="text-sm text-gray-400 mt-2">
-                {{ locale === 'en' ? 'Integration with chart library needed' : 'Integratie met grafiek bibliotheek nodig' }}
+                {{ $t('dashboard.charts.integrationNote') }}
               </p>
             </div>
           </div>
@@ -332,10 +327,10 @@ useSeoMeta({
             <template #header>
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ locale === 'en' ? 'Recent Activity' : 'Recente Activiteit' }}
+                  {{ $t('dashboard.activity.recentActivity') }}
                 </h3>
                 <UButton size="sm" variant="ghost" :to="localePath('/activity')">
-                  {{ locale === 'en' ? 'View All' : 'Bekijk Alles' }}
+                  {{ $t('dashboard.buttons.viewAll') }}
                 </UButton>
               </div>
             </template>
@@ -380,7 +375,7 @@ useSeoMeta({
                 {{ dashboardData.slaMetrics.responseTime }}h
               </h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                {{ locale === 'en' ? 'Avg Response Time' : 'Gem. Reactietijd' }}
+                {{ $t('dashboard.stats.avgResponseTime') }}
               </p>
             </div>
           </UCard>
@@ -393,7 +388,7 @@ useSeoMeta({
                 {{ dashboardData.slaMetrics.resolutionTime }}h
               </h4>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                {{ locale === 'en' ? 'Avg Resolution Time' : 'Gem. Oplostijd' }}
+                {{ $t('dashboard.stats.avgResolutionTime') }}
               </p>
             </div>
           </UCard>
@@ -402,7 +397,7 @@ useSeoMeta({
           <UCard>
             <template #header>
               <h4 class="text-lg font-semibold text-gray-900 dark:text-white">
-                {{ locale === 'en' ? 'Quick Actions' : 'Snelle Acties' }}
+                {{ $t('dashboard.stats.quickActions') }}
               </h4>
             </template>
             <div class="space-y-3">
@@ -413,7 +408,7 @@ useSeoMeta({
                 block
                 icon="i-lucide-plus"
               >
-                {{ locale === 'en' ? 'New Order' : 'Nieuwe Order' }}
+                {{ $t('dashboard.buttons.newOrder') }}
               </UButton>
               <UButton
                 :to="localePath('/requests/new')"
@@ -422,7 +417,7 @@ useSeoMeta({
                 block
                 icon="i-lucide-life-buoy"
               >
-                {{ locale === 'en' ? 'New Request' : 'Nieuw Verzoek' }}
+                {{ $t('dashboard.buttons.newRequest') }}
               </UButton>
               <UButton
                 :to="localePath('/reports')"
@@ -431,7 +426,7 @@ useSeoMeta({
                 block
                 icon="i-lucide-file-text"
               >
-                {{ locale === 'en' ? 'Generate Report' : 'Rapport Genereren' }}
+                {{ $t('dashboard.buttons.generateReport') }}
               </UButton>
             </div>
           </UCard>
