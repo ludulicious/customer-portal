@@ -12,7 +12,7 @@ const path = computed(() => route.path)
 
 // User store
 const userStore = useUserStore()
-const { currentUser, userInitials } = storeToRefs(userStore)
+const { currentUser, userInitials, isAuthenticated } = storeToRefs(userStore)
 const { data: session } = await authClient.useSession(useFetch);
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => [
@@ -51,14 +51,48 @@ const handleLogout = async () => {
   await navigateTo(localePath('/'))
 }
 
-// Define static navigation items without active state to avoid hydration mismatch
-const baseItems = computed(() => [{
-  label: t('nav.blog'),
-  to: localePath('/blog')
-}, {
-  label: t('nav.contact'),
-  to: localePath('/contact')
-}])
+// Function to check if a route is active
+const isRouteActive = (itemPath: string) => {
+  const currentPath = route.path
+
+  // Remove locale prefix for comparison (e.g., /en/blog -> /blog)
+  const pathWithoutLocale = currentPath.replace(/^\/[a-z]{2}(\/|$)/, '/')
+
+  // Exact match for root paths
+  if (itemPath === '/' && (currentPath === '/' || currentPath === '/en' || currentPath === '/nl')) return true
+
+  // For other paths, check if current path starts with the item path
+  // This handles sub-pages like /blog/[slug] matching /blog
+  if (itemPath !== '/' && pathWithoutLocale.startsWith(itemPath)) return true
+
+  return false
+}
+
+// Define static navigation items with active state
+const baseItems = computed(() => {
+  const publicItems = [{
+    label: t('nav.blog'),
+    to: localePath('/blog'),
+    active: isRouteActive('/blog')
+  }, {
+    label: t('nav.contact'),
+    to: localePath('/contact'),
+    active: isRouteActive('/contact')
+  }]
+
+  if (!isAuthenticated.value) {
+    console.log('Public items:', publicItems)
+    return publicItems
+  }
+
+  const privateItems = [{
+    label: t('nav.dashboard'),
+    to: localePath('/dashboard'),
+    active: isRouteActive('/dashboard')
+  }]
+
+  return [...privateItems, ...publicItems]
+})
 
 // Use static items to avoid hydration mismatch
 const items = computed(() => baseItems.value)
@@ -92,7 +126,12 @@ watch(currentLocale, (newLocale) => {
 
     <nav class="hidden lg:flex items-center gap-6">
       <NuxtLink v-for="item in items" :key="item.to" :to="item.to"
-        class="text-sm font-medium text-muted hover:text-highlighted transition-colors">
+        :class="[
+          'text-sm font-medium transition-colors',
+          item.active
+            ? 'text-primary font-semibold'
+            : 'text-muted hover:text-highlighted'
+        ]">
         {{ item.label }}
       </NuxtLink>
 
@@ -104,20 +143,20 @@ watch(currentLocale, (newLocale) => {
 
       <!-- User Avatar Dropdown (only show when user is logged in) -->
       <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
-        <UAvatar
-          :src="currentUser.image"
-          :alt="currentUser.name || currentUser.email || 'User'"
-          :text="userInitials"
-          size="sm"
-          class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
-        />
+        <UAvatar :src="currentUser.image" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
+          size="sm" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
       </UDropdownMenu>
     </template>
 
     <template #body>
       <nav class="flex flex-col gap-4 -mx-2.5">
         <NuxtLink v-for="item in items" :key="item.to" :to="item.to"
-          class="text-sm font-medium text-muted hover:text-highlighted transition-colors px-2.5 py-1.5 rounded-md">
+          :class="[
+            'text-sm font-medium transition-colors px-2.5 py-1.5 rounded-md',
+            item.active
+              ? 'text-primary font-semibold bg-primary/10'
+              : 'text-muted hover:text-highlighted hover:bg-gray-100 dark:hover:bg-gray-800'
+          ]">
           {{ item.label }}
         </NuxtLink>
       </nav>
@@ -127,13 +166,8 @@ watch(currentLocale, (newLocale) => {
       <!-- User Avatar Dropdown for Mobile (only show when user is logged in) -->
       <div v-if="currentUser" class="mb-6">
         <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-48' }">
-          <UAvatar
-            :src="currentUser.image"
-            :alt="currentUser.name || currentUser.email || 'User'"
-            :text="userInitials"
-            size="md"
-            class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
-          />
+          <UAvatar :src="currentUser.image" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
+            size="md" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
         </UDropdownMenu>
       </div>
 
