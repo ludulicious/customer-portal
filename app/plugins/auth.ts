@@ -8,10 +8,14 @@ export default defineNuxtPlugin({
 
     try {
       const sessionData = await authClient.getSession();
+      console.log("Initial session data:", sessionData);
 
       if (sessionData?.data?.user) {
+        console.log("Setting user from initial session:", sessionData.data.user);
         userStore.setUser(sessionData.data.user);
         await userStore.fetchUserPermissions();
+      } else {
+        console.log("No user found in initial session");
       }
     } catch (error) {
       console.log("getSession error:", error);
@@ -31,6 +35,19 @@ export default defineNuxtPlugin({
         }
       },
       { immediate: true },
+    );
+
+    // Also watch for session changes to handle OTP verification
+    watch(
+      () => session.value,
+      async (newSession) => {
+        if (newSession?.user) {
+          console.log("Session updated, user:", newSession.user);
+          userStore.setUser(newSession.user);
+          await userStore.fetchUserPermissions();
+        }
+      },
+      { deep: true }
     );
   },
 });

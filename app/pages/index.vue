@@ -52,9 +52,7 @@ useSeoMeta({
   ogDescription: description
 })
 definePageMeta({
-  meta: {
-    public: true
-  }
+  public: true
 })
 </script>
 

@@ -56,51 +56,6 @@ export const auth = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     },
   },
-  emailVerification: {
-    sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url, token }, request) => {
-      console.log(`Requesting verification email for ${user.email}`)
-      try {
-        // Call updated sendEmail with specific params
-        await sendEmail({
-          to: user.email,
-          subject: 'Verify your Apex Pro email address',
-          params: {
-            greeting: user.name ? `Dear ${user.name},` : 'Hello,',
-            body_text:
-              'Thanks for signing up for Apex Pro! Please click the button below to verify your email address:',
-            action_url: url,
-            action_text: 'Verify Email',
-            footer_text:
-              "If you didn't sign up for Apex Pro, please ignore this email.",
-          },
-        })
-        console.log(
-          `Successfully requested verification email sending for ${user.email}`,
-        )
-      } catch (error) {
-        console.error(
-          `Error sending verification email to ${user.email}:`,
-          error,
-        )
-      }
-    },
-    autoSignInAfterVerification: true,
-    onVerificationError: ({
-      request,
-      response,
-    }: {
-      request: Request | undefined
-      response: Response | undefined
-    }) => {
-      console.log('Verification failed, redirecting to /verification-error')
-      return {
-        redirect: {
-          url: '/verification-error',
-        },
-      }
-    },
-  },
   databaseHooks: {
     user: {
       create: {

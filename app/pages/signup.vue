@@ -5,9 +5,7 @@ import { authClient } from '@@/lib/auth-client'
 
 definePageMeta({
   layout: 'auth',
-  meta: {
-    public: true
-  }
+  public: true
 })
 
 const { t } = useI18n()
@@ -79,7 +77,8 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
       error.value = errorMessage
       toast.add({ title: t('signup.errors.errorTitle'), description: errorMessage, color: 'error' })
     } else {
-      navigateTo('/check-email')
+      // Redirect to OTP verification page with email parameter
+      navigateTo(`/verify-email?email=${encodeURIComponent(payload.data.email)}`)
     }
   } catch (err: any) {
     console.error('Email signup failed:', err)

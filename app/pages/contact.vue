@@ -23,9 +23,7 @@ useSeoMeta({
   ogDescription: t('contact.description')
 })
 definePageMeta({
-  meta: {
-    public: true
-  }
+  public: true,
 })
 </script>
 

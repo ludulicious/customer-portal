@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { signIn } from '@@/lib/auth-client'
+import { signIn, authClient } from '@@/lib/auth-client'
 
 definePageMeta({
   layout: 'auth',
@@ -83,26 +83,31 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
         onResponse: (ctx) => {
           // Typically handled by onError or onSuccess
         },
-        onSuccess: (ctx) => {
+        onSuccess: async (ctx) => {
           console.log(
             'Credentials login success, redirecting to dashboard.',
             ctx,
           )
-          // Redirect to dashboard after successful login
-          // Use replace: true to prevent going back to login page
+          // Wait for session to be established and propagated
+          await new Promise(resolve => setTimeout(resolve, 300))
+          // Force refresh the session to ensure it's available
+          await authClient.getSession()
+          // Use window.location for a full page refresh to ensure session state is properly loaded
           const redirectTo = route.query.redirect?.toString() || '/dashboard'
-          router.push({ path: redirectTo, replace: true })
+          const localePath = useLocalePath()
+          const fullPath = localePath(redirectTo)
+          window.location.href = fullPath
         },
         onError: (ctx) => {
           const error = ctx.error
           console.error('Credentials login error:', error)
 
           // Check if the error indicates email needs verification
-          // (Exact error message/code might depend on better-auth version)
           if (error?.message?.includes('Email not verified')) {
-            // Adjust check as needed
+            // Redirect to OTP verification page with login context
+            const redirectTo = route.query.redirect?.toString() || '/dashboard'
             router.push(
-              `/resend-verification?email=${encodeURIComponent(payload.data.email)}`,
+              `/verify-email?email=${encodeURIComponent(payload.data.email)}&redirect=${encodeURIComponent(redirectTo)}&from=login`,
             )
           } else {
             errorMessage.value = error?.message || t('login.errors.invalidCredentials')

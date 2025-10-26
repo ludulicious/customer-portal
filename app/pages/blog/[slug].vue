@@ -37,9 +37,7 @@ useSeoMeta({
 })
 
 definePageMeta({
-  meta: {
-    public: true
-  }
+  public: true
 })
 </script>
 
