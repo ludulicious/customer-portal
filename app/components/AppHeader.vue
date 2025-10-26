@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { en, nl } from '@nuxt/ui/locale'
-import { authClient } from '../../lib/auth-client'
+import { authClient } from '@@/lib/auth-client'
 
 const localePath = useLocalePath()
 const route = useRoute()

@@ -1,7 +1,7 @@
 import { defineEventHandler, createError } from 'h3'
-import { auth } from '../../../lib/auth'
-import { statement, user, admin } from '../../../lib/auth/permissions'
-import { prisma } from '../../../lib/db'
+import { auth } from '@@/lib/auth'
+import { statement, user, admin } from '@@/lib/auth/permissions'
+import { prisma } from '@@/lib/db'
 
 type SessionUser = {
   id: string

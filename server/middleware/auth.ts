@@ -1,5 +1,5 @@
 import { defineEventHandler, H3Event, createError } from 'h3'
-import { auth } from '../../lib/auth'
+import { auth } from '@@/lib/auth'
 
 async function isAuthenticated(event: H3Event): Promise<boolean> {
   const session = await auth.api.getSession({

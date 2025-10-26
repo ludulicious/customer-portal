@@ -1,4 +1,4 @@
-import { authClient } from '../auth-client'
+import { authClient } from '@@/lib/auth-client'
 
 /**
  * Checks if a role has a specific permission for a subject
@@ -19,4 +19,4 @@ export const hasPermission = async (subject: string, permission: string): Promis
     console.error('Error checking permission:', error)
     return false
   }
-} 
+}

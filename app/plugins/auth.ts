@@ -1,4 +1,4 @@
-import { authClient } from "../../lib/auth-client";
+import { authClient } from "@@/lib/auth-client";
 import { useUserStore } from "~/stores/user";
 
 export default defineNuxtPlugin({
