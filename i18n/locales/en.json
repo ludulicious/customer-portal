@@ -173,6 +173,85 @@
       "description": "Manage your facility services, orders, and invoices with ApexPro"
     }
   },
+  "verify": {
+    "title": "Verify Your Email",
+    "subtitle": "Enter the 6-digit code sent to {email}",
+    "enterCode": "Verification Code",
+    "codePlaceholder": "000000",
+    "verifyButton": "Verify Email",
+    "resendCode": "Resend Code",
+    "resendIn": "Resend in {seconds}s",
+    "success": "Email verified successfully!",
+    "error": "Verification failed",
+    "invalidCode": "Invalid verification code",
+    "invalidCodeLength": "Please enter a 6-digit code",
+    "codeSent": "Verification code sent!",
+    "resendError": "Failed to resend code",
+    "backToLogin": "Back to Login"
+  },
+  "signup": {
+    "title": "Create an account",
+    "description": "Already have an account?",
+    "loginLink": "Login",
+    "submitButton": "Create account",
+    "footer": "By signing up, you agree to our",
+    "termsLink": "Terms of Service",
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "Enter your name",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password"
+    },
+    "providers": {
+      "google": "Google",
+      "github": "GitHub",
+      "googleDescription": "Login with Google",
+      "githubDescription": "Login with GitHub"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "invalidEmail": "Invalid email",
+      "passwordMinLength": "Must be at least 8 characters"
+    },
+    "errors": {
+      "unknownError": "An unknown error occurred during signup.",
+      "errorTitle": "Error"
+    }
+  },
+  "login": {
+    "title": "Welcome back",
+    "description": "Don't have an account?",
+    "signupLink": "Sign up",
+    "submitButton": "Sign in",
+    "footer": "By signing in, you agree to our",
+    "termsLink": "Terms of Service",
+    "forgotPassword": "Forgot password?",
+    "fields": {
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "remember": "Remember me"
+    },
+    "providers": {
+      "google": "Google",
+      "github": "GitHub",
+      "googleDescription": "Login with Google",
+      "githubDescription": "Login with GitHub"
+    },
+    "validation": {
+      "invalidEmail": "Invalid email",
+      "passwordMinLength": "Must be at least 8 characters"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password.",
+      "unexpectedError": "An unexpected error occurred. Please try again.",
+      "githubError": "Could not initiate GitHub login.",
+      "emailNotVerified": "Email not verified"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",

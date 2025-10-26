@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { authClient } from '@@/lib/auth-client'
 
 definePageMeta({
   layout: 'auth',
@@ -9,79 +10,98 @@ definePageMeta({
   }
 })
 
+const { t } = useI18n()
+
 useSeoMeta({
-  title: 'Sign up',
-  description: 'Create an account to get started'
+  title: t('signup.title'),
+  description: t('signup.title')
 })
 
 const toast = useToast()
 
-const fields = [{
+const fields = computed(() => [{
   name: 'name',
   type: 'text' as const,
-  label: 'Name',
-  placeholder: 'Enter your name'
+  label: t('signup.fields.name'),
+  placeholder: t('signup.fields.namePlaceholder')
 }, {
   name: 'email',
   type: 'text' as const,
-  label: 'Email',
-  placeholder: 'Enter your email'
+  label: t('signup.fields.email'),
+  placeholder: t('signup.fields.emailPlaceholder')
 }, {
   name: 'password',
-  label: 'Password',
+  label: t('signup.fields.password'),
   type: 'password' as const,
-  placeholder: 'Enter your password'
-}]
+  placeholder: t('signup.fields.passwordPlaceholder')
+}])
 
-const providers = [{
-  label: 'Google',
+const providers = computed(() => [{
+  label: t('signup.providers.google'),
   icon: 'i-simple-icons-google',
   onClick: () => {
-    toast.add({ title: 'Google', description: 'Login with Google' })
+    toast.add({ title: t('signup.providers.google'), description: t('signup.providers.googleDescription') })
   }
 }, {
-  label: 'GitHub',
+  label: t('signup.providers.github'),
   icon: 'i-simple-icons-github',
   onClick: () => {
-    toast.add({ title: 'GitHub', description: 'Login with GitHub' })
+    toast.add({ title: t('signup.providers.github'), description: t('signup.providers.githubDescription') })
   }
-}]
+}])
 
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(8, 'Must be at least 8 characters')
-})
+const schema = computed(() => z.object({
+  name: z.string().min(1, t('signup.validation.nameRequired')),
+  email: z.email(t('signup.validation.invalidEmail')),
+  password: z.string().min(8, t('signup.validation.passwordMinLength'))
+}))
 
-type Schema = z.output<typeof schema>
+type Schema = {
+  name: string
+  email: string
+  password: string
+}
 
-function onSubmit(payload: FormSubmitEvent<Schema>) {
+const error = ref<string | null>(null)
+const isLoading = ref(false)
+const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
   console.log('Submitted', payload)
+  error.value = null
+  isLoading.value = true
+  try {
+    const response = await authClient.signUp.email({
+      name: payload.data.name,
+      email: payload.data.email,
+      password: payload.data.password
+    })
+    if (response.error) {
+      const errorMessage = response.error.message || t('signup.errors.unknownError')
+      error.value = errorMessage
+      toast.add({ title: t('signup.errors.errorTitle'), description: errorMessage, color: 'error' })
+    } else {
+      navigateTo('/check-email')
+    }
+  } catch (err: any) {
+    console.error('Email signup failed:', err)
+    const errorMessage = err.message || t('signup.errors.unknownError')
+    error.value = errorMessage
+    toast.add({ title: t('signup.errors.errorTitle'), description: errorMessage, color: 'error' })
+  } finally {
+    isLoading.value = false
+  }
 }
 
 </script>
 
 <template>
-  <UAuthForm
-    :fields="fields"
-    :schema="schema"
-    :providers="providers"
-    title="Create an account"
-    :submit="{ label: 'Create account' }"
-    @submit="onSubmit"
-  >
+  <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')"
+    :submit="{ label: t('signup.submitButton') }" @submit="onSubmit">
     <template #description>
-      Already have an account? <ULink
-        to="/login"
-        class="text-primary font-medium"
-      >Login</ULink>.
+      {{ t('signup.description') }} <ULink to="/login" class="text-primary font-medium">{{ t('signup.loginLink') }}</ULink>.
     </template>
 
     <template #footer>
-      By signing up, you agree to our <ULink
-        to="/"
-        class="text-primary font-medium"
-      >Terms of Service</ULink>.
+      {{ t('signup.footer') }} <ULink to="/" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink>.
     </template>
   </UAuthForm>
 </template>

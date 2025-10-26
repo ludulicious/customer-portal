@@ -10,54 +10,60 @@ definePageMeta({
   }
 })
 
+const { t } = useI18n()
+
 useSeoMeta({
-  title: 'Login',
-  description: 'Login to your account to continue'
+  title: t('login.title'),
+  description: t('login.title')
 })
 
 const toast = useToast()
 const router = useRouter()
 const route = useRoute()
-const fields = [{
+const fields = computed(() => [{
   name: 'email',
   type: 'text' as const,
-  label: 'Email',
-  placeholder: 'Enter your email',
+  label: t('login.fields.email'),
+  placeholder: t('login.fields.emailPlaceholder'),
   required: true
 }, {
   name: 'password',
-  label: 'Password',
+  label: t('login.fields.password'),
   type: 'password' as const,
-  placeholder: 'Enter your password'
+  placeholder: t('login.fields.passwordPlaceholder')
 }, {
   name: 'remember',
-  label: 'Remember me',
+  label: t('login.fields.remember'),
   type: 'checkbox' as const
-}]
+}])
 
-const providers = [{
-  label: 'Google',
+const providers = computed(() => [{
+  label: t('login.providers.google'),
   icon: 'i-simple-icons-google',
   onClick: () => {
-    toast.add({ title: 'Google', description: 'Login with Google' })
+    toast.add({ title: t('login.providers.google'), description: t('login.providers.googleDescription') })
   }
 }, {
-  label: 'GitHub',
+  label: t('login.providers.github'),
   icon: 'i-simple-icons-github',
   onClick: async () => {
      await handleGitHubLogin()
   }
-}]
+}])
 
-const schema = z.object({
-  email: z.email('Invalid email'),
-  password: z.string().min(8, 'Must be at least 8 characters')
-})
+const schema = computed(() => z.object({
+  email: z.email(t('login.validation.invalidEmail')),
+  password: z.string().min(8, t('login.validation.passwordMinLength'))
+}))
 
 const loading = ref(false)
 const errorMessage = ref<string | null>(null)
 
-type Schema = z.output<typeof schema>
+type Schema = {
+  email: string
+  password: string
+  remember?: boolean
+}
 
 const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
   console.log('Submitted', payload)
@@ -99,7 +105,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
               `/resend-verification?email=${encodeURIComponent(payload.data.email)}`,
             )
           } else {
-            errorMessage.value = error?.message || 'Invalid email or password.'
+            errorMessage.value = error?.message || t('login.errors.invalidCredentials')
           }
           loading.value = false
         },
@@ -107,7 +113,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
     )
   } catch (error) {
     console.error('Unexpected login error:', error)
-    errorMessage.value = 'An unexpected error occurred. Please try again.'
+    errorMessage.value = t('login.errors.unexpectedError')
   }
   finally {
     loading.value = false
@@ -122,7 +128,7 @@ const handleGitHubLogin = async () => {
     await signIn.social({ provider: 'github', callbackURL: redirectTo })
   } catch (error) {
     console.error('GitHub sign in initiation failed:', error)
-    errorMessage.value = 'Could not initiate GitHub login.'
+    errorMessage.value = t('login.errors.githubError')
     loading.value = false
   }
 }
@@ -133,15 +139,15 @@ const handleGitHubLogin = async () => {
     :fields="fields"
     :schema="schema"
     :providers="providers"
-    title="Welcome back"
+    :title="t('login.title')"
     icon="i-lucide-lock"
     @submit="onSubmit"
   >
     <template #description>
-      Don't have an account? <ULink
+      {{ t('login.description') }} <ULink
         to="/signup"
         class="text-primary font-medium"
-      >Sign up</ULink>.
+      >{{ t('login.signupLink') }}</ULink>.
     </template>
 
     <template #password-hint>
@@ -149,14 +155,14 @@ const handleGitHubLogin = async () => {
         to="/"
         class="text-primary font-medium"
         tabindex="-1"
-      >Forgot password?</ULink>
+      >{{ t('login.forgotPassword') }}</ULink>
     </template>
 
     <template #footer>
-      By signing in, you agree to our <ULink
+      {{ t('login.footer') }} <ULink
         to="/"
         class="text-primary font-medium"
-      >Terms of Service</ULink>.
+      >{{ t('login.termsLink') }}</ULink>.
     </template>
   </UAuthForm>
 </template>

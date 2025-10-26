@@ -2,11 +2,16 @@ import { betterAuth, type Session } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { type User } from '@prisma/client'
 import { sendEmail } from './email'
-import { admin, customSession } from 'better-auth/plugins'
+import { admin, customSession, emailOTP } from 'better-auth/plugins'
 import { prisma } from './db' // Import shared Prisma client
 import { ac, user, admin as adminRole } from './auth/permissions'
 
 type VerificationEmailUser = Pick<User, 'id' | 'email'> // Using Pick for simplicity
+
+// Parse admin emails from environment variable
+const adminEmails = process.env.ADMIN_EMAILS?.split(',')
+  .map(email => email.trim().toLowerCase())
+  .filter(Boolean) ?? []
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -61,8 +66,7 @@ export const auth = betterAuth({
           to: user.email,
           subject: 'Verify your Apex Pro email address',
           params: {
-            // greeting: `Hello ${user.name || ''},`, // Optional: Use user name if available
-            greeting: 'Hello,',
+            greeting: user.name ? `Dear ${user.name},` : 'Hello,',
             body_text:
               'Thanks for signing up for Apex Pro! Please click the button below to verify your email address:',
             action_url: url,
@@ -97,7 +101,60 @@ export const auth = betterAuth({
       }
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user: any) => {
+          if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { role: 'admin' }
+            })
+          }
+        }
+      }
+    },
+    session: {
+      create: {
+        after: async (session: any) => {
+          const user = await prisma.user.findUnique({
+            where: { id: session.userId },
+            select: { email: true, role: true }
+          })
+
+          if (user?.email && adminEmails.includes(user.email.toLowerCase()) && user.role !== 'admin') {
+            await prisma.user.update({
+              where: { id: session.userId },
+              data: { role: 'admin' }
+            })
+          }
+        }
+      }
+    }
+  },
   plugins: [
+    emailOTP({
+      overrideDefaultEmailVerification: true,
+      async sendVerificationOTP({ email, otp, type }) {
+        const subject = type === 'email-verification'
+          ? 'Verify your Apex Pro email address'
+          : type === 'sign-in'
+          ? 'Your Apex Pro sign-in code'
+          : 'Reset your Apex Pro password'
+
+        await sendEmail({
+          to: email,
+          subject,
+          params: {
+            greeting: 'Hello,',
+            body_text: `Your verification code is: ${otp}`,
+            action_url: '#', // Not used for OTP
+            action_text: 'Verification Code',
+            footer_text: 'This code will expire soon. If you did not request this, please ignore this email.'
+          }
+        })
+      }
+    }),
     admin({
       ac,
       roles: {

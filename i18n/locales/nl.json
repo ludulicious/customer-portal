@@ -172,6 +172,85 @@
       "description": "Beheer uw facilitaire diensten, orders en facturen met ApexPro"
     }
   },
+  "verify": {
+    "title": "Verifieer Uw E-mail",
+    "subtitle": "Voer de 6-cijferige code in die is verzonden naar {email}",
+    "enterCode": "Verificatiecode",
+    "codePlaceholder": "000000",
+    "verifyButton": "E-mail Verifiëren",
+    "resendCode": "Code Opnieuw Verzenden",
+    "resendIn": "Opnieuw verzenden over {seconds}s",
+    "success": "E-mail succesvol geverifieerd!",
+    "error": "Verificatie mislukt",
+    "invalidCode": "Ongeldige verificatiecode",
+    "invalidCodeLength": "Voer een 6-cijferige code in",
+    "codeSent": "Verificatiecode verzonden!",
+    "resendError": "Code opnieuw verzenden mislukt",
+    "backToLogin": "Terug naar Inloggen"
+  },
+  "signup": {
+    "title": "Maak een account aan",
+    "description": "Heb je al een account?",
+    "loginLink": "Inloggen",
+    "submitButton": "Account aanmaken",
+    "footer": "Door je aan te melden, ga je akkoord met onze",
+    "termsLink": "Servicevoorwaarden",
+    "fields": {
+      "name": "Naam",
+      "namePlaceholder": "Voer je naam in",
+      "email": "E-mail",
+      "emailPlaceholder": "Voer je e-mail in",
+      "password": "Wachtwoord",
+      "passwordPlaceholder": "Voer je wachtwoord in"
+    },
+    "providers": {
+      "google": "Google",
+      "github": "GitHub",
+      "googleDescription": "Inloggen met Google",
+      "githubDescription": "Inloggen met GitHub"
+    },
+    "validation": {
+      "nameRequired": "Naam is verplicht",
+      "invalidEmail": "Ongeldig e-mailadres",
+      "passwordMinLength": "Moet minimaal 8 tekens zijn"
+    },
+    "errors": {
+      "unknownError": "Er is een onbekende fout opgetreden tijdens het aanmelden.",
+      "errorTitle": "Fout"
+    }
+  },
+  "login": {
+    "title": "Welkom terug",
+    "description": "Heb je nog geen account?",
+    "signupLink": "Aanmelden",
+    "submitButton": "Inloggen",
+    "footer": "Door in te loggen, ga je akkoord met onze",
+    "termsLink": "Servicevoorwaarden",
+    "forgotPassword": "Wachtwoord vergeten?",
+    "fields": {
+      "email": "E-mail",
+      "emailPlaceholder": "Voer je e-mail in",
+      "password": "Wachtwoord",
+      "passwordPlaceholder": "Voer je wachtwoord in",
+      "remember": "Onthoud mij"
+    },
+    "providers": {
+      "google": "Google",
+      "github": "GitHub",
+      "googleDescription": "Inloggen met Google",
+      "githubDescription": "Inloggen met GitHub"
+    },
+    "validation": {
+      "invalidEmail": "Ongeldig e-mailadres",
+      "passwordMinLength": "Moet minimaal 8 tekens zijn"
+    },
+    "errors": {
+      "invalidCredentials": "Ongeldig e-mailadres of wachtwoord.",
+      "unexpectedError": "Er is een onverwachte fout opgetreden. Probeer het opnieuw.",
+      "githubError": "GitHub inloggen kon niet worden gestart.",
+      "emailNotVerified": "E-mail niet geverifieerd"
+    }
+  },
   "common": {
     "loading": "Laden...",
     "error": "Er is een fout opgetreden",
