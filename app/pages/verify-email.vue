@@ -19,6 +19,21 @@ let cooldownTimer: NodeJS.Timeout | null = null
 onMounted(async () => {
   const input = document.querySelector('input[type="text"]') as HTMLInputElement
   if (input) input.focus()
+
+  // Only auto-send OTP for login verification, not signup verification
+  // Signup verification already sends an OTP during the signup process
+  const isLoginVerification = route.query.redirect || route.query.from === 'login'
+  if (email.value && isLoginVerification) {
+    console.log('Login verification detected, sending OTP...')
+    // Reset cooldown to ensure resendCode can run
+    resendCooldown.value = 0
+    await resendCode()
+  } else if (email.value) {
+    console.log('Signup verification detected, starting cooldown timer...')
+    // For signup verification, start the cooldown timer since an OTP was already sent
+    // This prevents immediate resend after page load
+    startCooldownTimer()
+  }
 })
 
 // Start cooldown timer
@@ -65,36 +80,73 @@ const verifyCode = async () => {
     // For users who are verifying during login, we need to sign them in
     // Check if this is a login verification (has redirect param) or signup verification
     const isLoginVerification = route.query.redirect || route.query.from === 'login'
+    console.log('Verification context:', { isLoginVerification, email: email.value, redirect: route.query.redirect })
 
     let result
     if (isLoginVerification) {
-      // Use signIn.emailOtp for login verification
+      // For login verification, use signIn.emailOtp (sign-in type OTP)
+      console.log('Using signIn.emailOtp for login verification')
       result = await authClient.signIn.emailOtp({
         email: email.value,
         otp: otpCode.value
       })
+      console.log('signIn.emailOtp result:', result)
     } else {
-      // Use verifyEmail for signup verification
+      // For signup verification, use verifyEmail (email-verification type OTP)
+      console.log('Using verifyEmail for signup verification')
       result = await authClient.emailOtp.verifyEmail({
         email: email.value,
         otp: otpCode.value
       })
+      console.log('verifyEmail result:', result)
     }
 
-    // Check for success based on the method used
-    const isSuccess = isLoginVerification
-      ? result.data?.user // signIn.emailOtp returns user data
-      : (result.data as any)?.status === true // verifyEmail returns status
+    // Check for success - signIn.emailOtp returns user data, verifyEmail fallback returns status
+    const isSuccess = result.data?.user || (result.data as any)?.status === true
+
+    console.log('Verification success check:', { isSuccess, hasUser: !!result.data?.user, hasStatus: !!(result.data as any)?.status })
 
     if (isSuccess) {
       success.value = t('verify.success')
+      console.log('Verification successful, checking session...')
+
+      // For signup verification, the user might not be signed in yet
+      if (!isLoginVerification) {
+        console.log('Signup verification successful, user may need to sign in')
+        // Show a message and redirect to login
+        success.value = t('verify.success') + ' Please sign in to continue.'
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        const redirectTo = route.query.redirect as string || '/dashboard'
+        const localePath = useLocalePath()
+        const loginPath = localePath('/login')
+        const fullPath = `${loginPath}?email=${encodeURIComponent(email.value)}&redirect=${encodeURIComponent(redirectTo)}`
+        console.log('Redirecting to login:', fullPath)
+        window.location.href = fullPath
+        return
+      }
+
+      // For login verification, user should be signed in
+      // Wait a moment for session to be established
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Check if session is established
+      try {
+        const sessionCheck = await authClient.getSession()
+        console.log('Session after verification:', sessionCheck)
+      } catch (sessionError) {
+        console.log('Session check error:', sessionError)
+      }
+
+      console.log('Redirecting...')
       // The user should now be automatically signed in after email verification
       // Use window.location for a full page refresh to ensure session state is updated
       const redirectTo = route.query.redirect as string || '/dashboard'
       const localePath = useLocalePath()
       const fullPath = localePath(redirectTo)
+      console.log('Redirecting to:', fullPath)
       window.location.href = fullPath
     } else {
+      console.log('Verification failed:', result.error)
       error.value = result.error?.message as string || t('verify.invalidCode')
     }
   } catch (err: any) {
@@ -107,8 +159,13 @@ const verifyCode = async () => {
 
 // Resend OTP code
 const resendCode = async () => {
-  if (resendCooldown.value > 0) return
+  console.log('resendCode called, cooldown:', resendCooldown.value)
+  if (resendCooldown.value > 0) {
+    console.log('Cooldown active, skipping resend')
+    return
+  }
 
+  console.log('Starting resend process...')
   isLoading.value = true
   error.value = ''
   success.value = ''
