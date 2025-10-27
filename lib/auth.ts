@@ -3,7 +3,7 @@ import { prismaAdapter } from 'better-auth/adapters/prisma'
 import { type User } from '~~/prisma/generated/client'
 
 import { sendEmail } from './email'
-import { admin, customSession, emailOTP } from 'better-auth/plugins'
+import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { prisma } from './db' // Import shared Prisma client
 import { ac, user, admin as adminRole } from './auth/permissions'
 
@@ -61,11 +61,30 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user: any) => {
+          // Existing admin role assignment
           if (user.email && adminEmails.includes(user.email.toLowerCase())) {
             await prisma.user.update({
               where: { id: user.id },
               data: { role: 'admin' }
             })
+          }
+
+          // Auto-create organization using better-auth API
+          const orgName = user.name || user.email.split('@')[0]
+          const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${user.id.slice(0, 8)}`
+
+          try {
+            await auth.api.createOrganization({
+              body: {
+                name: `${orgName}'s Organization`,
+                slug: orgSlug,
+                userId: user.id,
+                keepCurrentActiveOrganization: false
+              }
+            })
+            console.log(`Auto-created organization for user ${user.email}`)
+          } catch (error) {
+            console.error(`Failed to auto-create organization for user ${user.email}:`, error)
           }
         }
       }
@@ -89,6 +108,15 @@ export const auth = betterAuth({
     }
   },
   plugins: [
+    organization({
+      allowUserToCreateOrganization: true, // Allow all users to create organizations initially
+      organizationHooks: {
+        afterCreateOrganization: async ({ organization, member, user }) => {
+          // Auto-create organization for new users
+          console.log(`Created organization ${organization.name} for user ${user.email}`)
+        }
+      }
+    }),
     emailOTP({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
