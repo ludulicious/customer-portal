@@ -8,9 +8,7 @@ Implement organization structure in the main application layer using better-auth
 
 ### 1.1 Update Dependencies
 
-Check if better-auth organization plugin is available in current version:
-- Review better-auth documentation for organization plugin
-- Update better-auth package if needed
+The better-auth organization plugin is available and provides comprehensive organization management features. No additional dependencies needed.
 
 ### 1.2 Configure Organization Plugin in Auth
 
@@ -20,83 +18,71 @@ import { organization } from 'better-auth/plugins'
 
 plugins: [
   organization({
-    roles: ['owner', 'member'],
-    allowUserToCreateOrganization: true,
-    sendInvitationEmail: async ({ email, organization, invitedBy }) => {
-      // Email sending logic (future feature)
+    allowUserToCreateOrganization: true, // Allow all users to create organizations initially
+    organizationHooks: {
+      afterCreateOrganization: async ({ organization, member, user }) => {
+        // Auto-create organization for new users
+        console.log(`Created organization ${organization.name} for user ${user.email}`)
+      }
     }
   }),
   // ... other plugins
 ]
 ```
 
-## Phase 2: Extend Prisma Schema
+## Phase 2: Database Migration
 
-### 2.1 Add Organization Models
+### 2.1 Run Better-Auth Migration
 
-Update `prisma/schema.prisma`:
+The better-auth organization plugin provides its own database schema. Run the migration to add all necessary tables:
 
-```prisma
-model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  metadata  Json?    // For future custom fields
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  members OrganizationMember[]
-  
-  @@map("organizations")
-}
-
-model OrganizationMember {
-  id             String   @id @default(cuid())
-  organizationId String
-  userId         String
-  role           String   // 'owner', 'member'
-  invitedBy      String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([organizationId, userId])
-  @@index([userId])
-  @@index([organizationId])
-  @@map("organization_members")
-}
+```bash
+npx @better-auth/cli migrate
 ```
 
-### 2.2 Update User Model
+This will automatically create:
+- `organizations` table
+- `organization_members` table  
+- `organization_invitations` table
+- `organization_roles` table
+- `teams` table
+- `team_members` table
+- Updates to `users` table with `activeOrganizationId`
 
-Add organization reference to User model:
-```prisma
-model User {
-  // ... existing fields
-  
-  activeOrganizationId String?
-  organizationMembers  OrganizationMember[]
-  
-  // ... existing relations
-}
-```
+### 2.2 Verify Schema
+
+The migration will add these tables with proper relationships and indexes. No manual schema modifications needed unless you want to add custom fields.
 
 ### 2.3 Generate Prisma Client
 
-Run migrations:
+After migration, regenerate the Prisma client:
 ```bash
-npx prisma migrate dev --name add_organizations
 npx prisma generate
 ```
 
 ## Phase 3: Implement Auto-Creation Logic
 
-### 3.1 Update Database Hooks
+### 3.1 Use Better-Auth Organization Hooks
 
-Modify `lib/auth.ts` database hooks:
+The better-auth organization plugin provides hooks for auto-creation. Update `lib/auth.ts`:
+
 ```typescript
+import { organization } from 'better-auth/plugins'
+
+plugins: [
+  organization({
+    allowUserToCreateOrganization: true,
+    organizationHooks: {
+      afterCreateOrganization: async ({ organization, member, user }) => {
+        // Auto-create organization for new users on signup
+        console.log(`Created organization ${organization.name} for user ${user.email}`)
+      }
+    }
+  }),
+  // ... other plugins
+],
+
+// Use better-auth's built-in user creation hooks
 databaseHooks: {
   user: {
     create: {
@@ -109,27 +95,17 @@ databaseHooks: {
           })
         }
         
-        // Create organization for new user
+        // Auto-create organization using better-auth API
         const orgName = user.name || user.email.split('@')[0]
         const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${user.id.slice(0, 8)}`
         
-        const organization = await prisma.organization.create({
-          data: {
+        await auth.api.createOrganization({
+          body: {
             name: `${orgName}'s Organization`,
             slug: orgSlug,
-            members: {
-              create: {
-                userId: user.id,
-                role: 'owner'
-              }
-            }
+            userId: user.id,
+            keepCurrentActiveOrganization: false
           }
-        })
-        
-        // Set as active organization
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { activeOrganizationId: organization.id }
         })
       }
     }
@@ -137,34 +113,23 @@ databaseHooks: {
 }
 ```
 
-## Phase 4: Update User Store and Session
+## Phase 4: Update Client-Side Integration
 
-### 4.1 Extend User Store
+### 4.1 Add Organization Client Plugin
 
-Update `app/stores/user.ts`:
+Update `lib/auth-client.ts`:
 ```typescript
-interface UserStore {
-  // ... existing fields
-  currentOrganization: Organization | null
-  organizations: Organization[]
-}
+import { createAuthClient } from 'better-auth/client'
+import { organizationClient } from 'better-auth/client/plugins'
 
-// Add computed/methods
-const currentOrganization = ref<Organization | null>(null)
-const organizations = ref<Organization[]>([])
-
-async function fetchUserOrganizations() {
-  if (!currentUser.value) return
-  
-  const data = await $fetch('/api/organizations/me')
-  organizations.value = data.organizations
-  currentOrganization.value = data.activeOrganization
-}
-
-function setActiveOrganization(orgId: string) {
-  // Switch active organization (for future multi-org support)
-  currentOrganization.value = organizations.value.find(o => o.id === orgId) || null
-}
+export const authClient = createAuthClient({
+  baseURL: baseURL,
+  plugins: [
+    adminClient({ ... }),
+    emailOTPClient(),
+    organizationClient() // Add organization client
+  ],
+})
 ```
 
 ### 4.2 Create Organization Composable
@@ -172,24 +137,48 @@ function setActiveOrganization(orgId: string) {
 Create `app/composables/useCurrentOrganization.ts`:
 ```typescript
 export const useCurrentOrganization = () => {
-  const userStore = useUserStore()
+  const { data: session } = useSession()
   
-  const currentOrganization = computed(() => userStore.currentOrganization)
-  const organizationId = computed(() => userStore.currentOrganization?.id)
+  const currentOrganization = computed(() => session.value?.user?.organization || null)
+  const organizationId = computed(() => currentOrganization.value?.id)
+  
+  // Use better-auth client methods
+  const createOrganization = async (data: { name: string; slug: string }) => {
+    return await authClient.organization.create(data)
+  }
+  
+  const getActiveMember = async () => {
+    return await authClient.organization.getActiveMember()
+  }
+  
+  const listMembers = async (organizationId: string) => {
+    return await authClient.organization.listMembers({ 
+      query: { organizationId } 
+    })
+  }
+  
+  const inviteMember = async (email: string, organizationId: string) => {
+    return await authClient.organization.inviteMember({
+      email,
+      organizationId
+    })
+  }
   
   return {
     currentOrganization,
     organizationId,
-    isOrganizationOwner: computed(() => {
-      // Check if user is owner of current org
-    })
+    createOrganization,
+    getActiveMember,
+    listMembers,
+    inviteMember
   }
 }
 ```
 
 ### 4.3 Update Custom Session
 
-Extend `lib/auth.ts` customSession plugin:
+The better-auth organization plugin automatically includes organization data in the session. Update `lib/auth.ts`:
+
 ```typescript
 customSession(async (sessionData) => {
   const { user, session } = sessionData
@@ -198,181 +187,177 @@ customSession(async (sessionData) => {
     where: { userId: user.id },
   })
   
-  // Fetch active organization
-  const organizationMember = await prisma.organizationMember.findFirst({
-    where: { 
-      userId: user.id,
-      organizationId: user.activeOrganizationId || undefined
-    },
-    include: {
-      organization: true
-    }
-  })
+  // Better-auth organization plugin handles organization data automatically
+  // The user object will include activeOrganizationId and organization data
   
   return {
     ...session,
     user: {
       ...user,
       providerId: account?.providerId || null,
-      organization: organizationMember?.organization || null
+      // Organization data is automatically included by the plugin
     },
   }
 })
 ```
 
-## Phase 5: Create Organization API Endpoints
+## Phase 5: Leverage Built-in API Endpoints
 
-### 5.1 User Organizations Endpoint
+### 5.1 Better-Auth Provides All Endpoints
 
-Create `server/api/organizations/me.get.ts`:
+The better-auth organization plugin automatically provides all necessary API endpoints:
+
+- `POST /organization/create` - Create organization
+- `GET /organization/list` - List user organizations  
+- `POST /organization/switch` - Switch active organization
+- `POST /organization/invite` - Invite members
+- `GET /organization/members` - List organization members
+- `POST /organization/remove-member` - Remove members
+- `POST /organization/update-member-role` - Update member roles
+- `POST /organization/leave` - Leave organization
+- `GET /organization/active-member` - Get active member info
+- `GET /organization/active-member-role` - Get active member role
+
+### 5.2 No Custom API Endpoints Needed
+
+All organization functionality is handled by better-auth's built-in endpoints. The client plugin provides methods to interact with these endpoints seamlessly.
+
+### 5.3 Optional: Custom Endpoints for Business Logic
+
+If you need custom business logic, create specific endpoints that use better-auth's server API:
+
 ```typescript
+// server/api/organizations/custom-action.post.ts
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
   
-  const memberships = await prisma.organizationMember.findMany({
-    where: { userId: session.user.id },
-    include: { organization: true }
+  // Use better-auth server API for organization operations
+  const result = await auth.api.listMembers({
+    query: { organizationId: session.user.activeOrganizationId }
   })
   
-  const organizations = memberships.map(m => m.organization)
-  const activeOrganization = organizations.find(
-    o => o.id === session.user.activeOrganizationId
-  ) || organizations[0]
-  
-  return {
-    organizations,
-    activeOrganization
-  }
+  // Add custom business logic here
+  return result
 })
 ```
 
-### 5.2 Switch Organization Endpoint (Future)
+## Phase 6: Leverage Built-in Permission System
 
-Create `server/api/organizations/switch.post.ts`:
+### 6.1 Better-Auth Handles Permissions
+
+The better-auth organization plugin includes built-in role-based permissions:
+
+- **Owner**: Full control over organization
+- **Admin**: Manage members and organization settings  
+- **Member**: Basic organization access
+
+### 6.2 Custom Roles (Optional)
+
+If you need custom roles beyond the built-in ones, configure them in the organization plugin:
+
 ```typescript
-// For future multi-organization support
-export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
-  const { organizationId } = await readBody(event)
-  
-  // Verify user is member of organization
-  const membership = await prisma.organizationMember.findUnique({
-    where: {
-      organizationId_userId: {
-        organizationId,
-        userId: session.user.id
-      }
-    }
+// lib/auth.ts
+plugins: [
+  organization({
+    // Custom roles can be created using the client API
+    // authClient.organization.createRole()
   })
-  
-  if (!membership) {
-    throw createError({ statusCode: 403, message: 'Not a member' })
-  }
-  
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { activeOrganizationId: organizationId }
-  })
-  
-  return { success: true }
-})
+]
 ```
 
-## Phase 6: Update Permission System
+### 6.3 Integration with Existing Permission System
 
-### 6.1 Add Organization Permissions
-
-Update `lib/auth/permissions.ts`:
-```typescript
-export const statement = {
-  ...defaultStatements,
-  organization: [
-    'create',
-    'read',
-    'update',
-    'delete',
-    'invite-member',
-    'remove-member',
-    'list-members'
-  ],
-  // ... existing statements
-} as const
-```
-
-### 6.2 Update Role Permissions
+The organization plugin works alongside your existing permission system. Organization permissions are handled separately and can be checked using:
 
 ```typescript
-export const user = ac.newRole({
-  organization: ['read'], // Can only read their own org
-  // ... existing permissions
-})
+// Check if user can perform organization actions
+const { data: member } = await authClient.organization.getActiveMember()
+const { data: role } = await authClient.organization.getActiveMemberRole()
 
-export const admin = ac.newRole({
-  ...adminAc.statements,
-  organization: ['create', 'read', 'update', 'delete', 'invite-member', 'remove-member', 'list-members'],
-  // ... existing permissions
-})
+// Use role data for permission checks
+if (role.includes('owner') || role.includes('admin')) {
+  // Allow organization management
+}
 ```
 
 ## Phase 7: Create Helper Utilities
 
-### 7.1 Organization Utilities
+### 7.1 Use Better-Auth Client Methods
 
-Create `lib/organization-utils.ts`:
+Instead of custom utilities, use the built-in better-auth client methods:
+
 ```typescript
-export async function getUserOrganization(userId: string) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      organizationMembers: {
-        where: {
-          organizationId: { not: null }
-        },
-        include: { organization: true }
-      }
-    }
-  })
+// app/composables/useOrganizationHelpers.ts
+export const useOrganizationHelpers = () => {
+  // Get current user's organization
+  const getCurrentOrganization = async () => {
+    const { data: member } = await authClient.organization.getActiveMember()
+    return member?.organization
+  }
   
-  return user?.organizationMembers[0]?.organization || null
+  // Check if user is organization owner
+  const isOrganizationOwner = async () => {
+    const { data: role } = await authClient.organization.getActiveMemberRole()
+    return role?.includes('owner')
+  }
+  
+  // Check if user is organization admin
+  const isOrganizationAdmin = async () => {
+    const { data: role } = await authClient.organization.getActiveMemberRole()
+    return role?.includes('admin') || role?.includes('owner')
+  }
+  
+  // List all user organizations
+  const getUserOrganizations = async () => {
+    const { data } = await authClient.organization.list()
+    return data
+  }
+  
+  return {
+    getCurrentOrganization,
+    isOrganizationOwner,
+    isOrganizationAdmin,
+    getUserOrganizations
+  }
+}
+```
+
+### 7.2 Server-Side Utilities (If Needed)
+
+For server-side operations, use better-auth's server API:
+
+```typescript
+// lib/organization-utils.ts
+import { auth } from './auth'
+
+export async function getUserOrganization(userId: string) {
+  // Use better-auth server API
+  const result = await auth.api.listMembers({
+    query: { userId }
+  })
+  return result[0]?.organization || null
 }
 
 export async function isOrganizationMember(userId: string, organizationId: string) {
-  const membership = await prisma.organizationMember.findUnique({
-    where: {
-      organizationId_userId: {
-        organizationId,
-        userId
-      }
-    }
+  const members = await auth.api.listMembers({
+    query: { organizationId }
   })
-  
-  return !!membership
-}
-
-export async function isOrganizationOwner(userId: string, organizationId: string) {
-  const membership = await prisma.organizationMember.findUnique({
-    where: {
-      organizationId_userId: {
-        organizationId,
-        userId
-      }
-    }
-  })
-  
-  return membership?.role === 'owner'
+  return members.some(member => member.userId === userId)
 }
 ```
 
 ## Phase 8: Data Migration for Existing Users
 
-### 8.1 Create Migration Script
+### 8.1 Create Migration Script Using Better-Auth API
 
 Create `scripts/migrate-users-to-organizations.ts`:
 ```typescript
-// Script to create organizations for existing users
+import { auth } from '../lib/auth'
+
+// Script to create organizations for existing users using better-auth API
 async function migrateExistingUsers() {
   const usersWithoutOrg = await prisma.user.findMany({
     where: {
@@ -384,27 +369,25 @@ async function migrateExistingUsers() {
     const orgName = user.name || user.email.split('@')[0]
     const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${user.id.slice(0, 8)}`
     
-    const organization = await prisma.organization.create({
-      data: {
-        name: `${orgName}'s Organization`,
-        slug: orgSlug,
-        members: {
-          create: {
-            userId: user.id,
-            role: 'owner'
-          }
+    try {
+      // Use better-auth API to create organization
+      await auth.api.createOrganization({
+        body: {
+          name: `${orgName}'s Organization`,
+          slug: orgSlug,
+          userId: user.id,
+          keepCurrentActiveOrganization: false
         }
-      }
-    })
-    
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { activeOrganizationId: organization.id }
-    })
-    
-    console.log(`Created organization for user ${user.email}`)
+      })
+      
+      console.log(`Created organization for user ${user.email}`)
+    } catch (error) {
+      console.error(`Failed to create organization for user ${user.email}:`, error)
+    }
   }
 }
+
+migrateExistingUsers()
 ```
 
 ### 8.2 Add Migration to package.json
@@ -415,96 +398,559 @@ async function migrateExistingUsers() {
 }
 ```
 
-## Phase 9: Update Auth Plugin (Client)
+## Phase 9: Vue UI Components
 
-### 9.1 Update Auth Client
+### 9.1 Create Custom Vue Components
 
-Update `lib/auth-client.ts` if organization plugin requires client-side setup:
-```typescript
-import { organizationClient } from 'better-auth/client/plugins'
+Since better-auth-ui is React-based, we'll create custom Vue components using the better-auth client methods:
 
-export const authClient = createAuthClient({
-  baseURL: baseURL,
-  plugins: [
-    adminClient({ ... }),
-    emailOTPClient(),
-    organizationClient() // Add if available
-  ],
+### 9.2 Organization Switcher Component
+
+Create `app/components/OrganizationSwitcher.vue`:
+
+```vue
+<template>
+  <div class="organization-switcher">
+    <div v-if="loading" class="loading">Loading organizations...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else class="switcher">
+      <label for="org-select">Organization:</label>
+      <select 
+        id="org-select" 
+        v-model="selectedOrg" 
+        @change="switchOrganization"
+        class="org-select"
+      >
+        <option value="">Select Organization</option>
+        <option v-for="org in organizations" :key="org.id" :value="org.id">
+          {{ org.name }}
+        </option>
+      </select>
+      <button @click="createNewOrg" class="create-btn">
+        Create New Organization
+      </button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { authClient } from '~/lib/auth-client'
+
+const organizations = ref([])
+const selectedOrg = ref('')
+const loading = ref(true)
+const error = ref('')
+
+const loadOrganizations = async () => {
+  try {
+    loading.value = true
+    const { data, error: orgError } = await authClient.organization.list()
+    if (orgError) throw orgError
+    organizations.value = data || []
+  } catch (err) {
+    error.value = err.message || 'Failed to load organizations'
+  } finally {
+    loading.value = false
+  }
+}
+
+const switchOrganization = async (event) => {
+  const orgId = event.target.value
+  if (!orgId) return
+  
+  try {
+    await authClient.organization.switch({ organizationId: orgId })
+    // Refresh the page or emit event to update parent components
+    await navigateTo('/dashboard')
+  } catch (err) {
+    error.value = err.message || 'Failed to switch organization'
+  }
+}
+
+const createNewOrg = () => {
+  // Navigate to organization creation page or show modal
+  navigateTo('/organizations/create')
+}
+
+onMounted(() => {
+  loadOrganizations()
 })
+</script>
+
+<style scoped>
+.organization-switcher {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+}
+
+.org-select {
+  margin: 0 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+}
+
+.create-btn {
+  padding: 0.25rem 0.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.create-btn:hover {
+  background: #2563eb;
+}
+</style>
+```
+
+### 9.3 Organization Settings Component
+
+Create `app/components/OrganizationSettings.vue`:
+
+```vue
+<template>
+  <div class="organization-settings">
+    <h2>Organization Settings</h2>
+    
+    <div v-if="loading" class="loading">Loading...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else class="settings-form">
+      <form @submit.prevent="updateOrganization">
+        <div class="form-group">
+          <label for="org-name">Organization Name:</label>
+          <input 
+            id="org-name"
+            v-model="formData.name" 
+            type="text" 
+            required
+            class="form-input"
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="org-slug">Organization Slug:</label>
+          <input 
+            id="org-slug"
+            v-model="formData.slug" 
+            type="text" 
+            required
+            class="form-input"
+          />
+        </div>
+        
+        <div class="form-group">
+          <label for="org-logo">Logo URL:</label>
+          <input 
+            id="org-logo"
+            v-model="formData.logo" 
+            type="url" 
+            class="form-input"
+          />
+        </div>
+        
+        <div class="form-actions">
+          <button type="submit" :disabled="updating" class="btn-primary">
+            {{ updating ? 'Updating...' : 'Update Organization' }}
+          </button>
+          <button type="button" @click="deleteOrganization" class="btn-danger">
+            Delete Organization
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { authClient } from '~/lib/auth-client'
+
+const loading = ref(true)
+const updating = ref(false)
+const error = ref('')
+const formData = ref({
+  name: '',
+  slug: '',
+  logo: ''
+})
+
+const loadOrganization = async () => {
+  try {
+    loading.value = true
+    const { data: member } = await authClient.organization.getActiveMember()
+    if (member?.organization) {
+      formData.value = {
+        name: member.organization.name,
+        slug: member.organization.slug,
+        logo: member.organization.logo || ''
+      }
+    }
+  } catch (err) {
+    error.value = err.message || 'Failed to load organization'
+  } finally {
+    loading.value = false
+  }
+}
+
+const updateOrganization = async () => {
+  try {
+    updating.value = true
+    await authClient.organization.update({
+      organizationId: formData.value.id,
+      data: formData.value
+    })
+    // Show success message
+  } catch (err) {
+    error.value = err.message || 'Failed to update organization'
+  } finally {
+    updating.value = false
+  }
+}
+
+const deleteOrganization = async () => {
+  if (!confirm('Are you sure you want to delete this organization?')) return
+  
+  try {
+    await authClient.organization.delete({
+      organizationId: formData.value.id
+    })
+    // Redirect to organization list or create new
+    await navigateTo('/organizations')
+  } catch (err) {
+    error.value = err.message || 'Failed to delete organization'
+  }
+}
+
+onMounted(() => {
+  loadOrganization()
+})
+</script>
+
+<style scoped>
+.organization-settings {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-primary {
+  padding: 0.5rem 1rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.btn-danger {
+  padding: 0.5rem 1rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+</style>
+```
+
+### 9.4 Member Management Component
+
+Create `app/components/OrganizationMembers.vue`:
+
+```vue
+<template>
+  <div class="organization-members">
+    <div class="members-header">
+      <h3>Organization Members</h3>
+      <button @click="showInviteModal = true" class="btn-primary">
+        Invite Member
+      </button>
+    </div>
+    
+    <div v-if="loading" class="loading">Loading members...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else class="members-list">
+      <div v-for="member in members" :key="member.id" class="member-card">
+        <div class="member-info">
+          <div class="member-name">{{ member.user.name || member.user.email }}</div>
+          <div class="member-email">{{ member.user.email }}</div>
+          <div class="member-role">{{ member.role.join(', ') }}</div>
+        </div>
+        <div class="member-actions">
+          <button @click="updateMemberRole(member)" class="btn-secondary">
+            Update Role
+          </button>
+          <button @click="removeMember(member)" class="btn-danger">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Invite Modal -->
+    <div v-if="showInviteModal" class="modal-overlay" @click="showInviteModal = false">
+      <div class="modal" @click.stop>
+        <h3>Invite Member</h3>
+        <form @submit.prevent="inviteMember">
+          <div class="form-group">
+            <label for="invite-email">Email:</label>
+            <input 
+              id="invite-email"
+              v-model="inviteEmail" 
+              type="email" 
+              required
+              class="form-input"
+            />
+          </div>
+          <div class="form-actions">
+            <button type="submit" :disabled="inviting" class="btn-primary">
+              {{ inviting ? 'Sending...' : 'Send Invitation' }}
+            </button>
+            <button type="button" @click="showInviteModal = false" class="btn-secondary">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { authClient } from '~/lib/auth-client'
+
+const members = ref([])
+const loading = ref(true)
+const error = ref('')
+const showInviteModal = ref(false)
+const inviteEmail = ref('')
+const inviting = ref(false)
+
+const loadMembers = async () => {
+  try {
+    loading.value = true
+    const { data, error: membersError } = await authClient.organization.listMembers({
+      query: { organizationId: currentOrganizationId.value }
+    })
+    if (membersError) throw membersError
+    members.value = data || []
+  } catch (err) {
+    error.value = err.message || 'Failed to load members'
+  } finally {
+    loading.value = false
+  }
+}
+
+const inviteMember = async () => {
+  try {
+    inviting.value = true
+    await authClient.organization.inviteMember({
+      email: inviteEmail.value,
+      organizationId: currentOrganizationId.value
+    })
+    showInviteModal.value = false
+    inviteEmail.value = ''
+    // Show success message
+  } catch (err) {
+    error.value = err.message || 'Failed to send invitation'
+  } finally {
+    inviting.value = false
+  }
+}
+
+const updateMemberRole = async (member) => {
+  // Implement role update logic
+}
+
+const removeMember = async (member) => {
+  if (!confirm(`Remove ${member.user.email} from organization?`)) return
+  
+  try {
+    await authClient.organization.removeMember({
+      memberIdOrEmail: member.user.email,
+      organizationId: currentOrganizationId.value
+    })
+    await loadMembers()
+  } catch (err) {
+    error.value = err.message || 'Failed to remove member'
+  }
+}
+
+onMounted(() => {
+  loadMembers()
+})
+</script>
+
+<style scoped>
+.organization-members {
+  padding: 1rem;
+}
+
+.members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.member-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.member-info {
+  flex: 1;
+}
+
+.member-name {
+  font-weight: 500;
+}
+
+.member-email {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.member-role {
+  color: #3b82f6;
+  font-size: 0.875rem;
+}
+
+.member-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  min-width: 400px;
+}
+</style>
 ```
 
 ## Technical Considerations
 
-### Hidden Organization Pattern
-- Organization concept is abstracted in composables
-- UI never mentions "organization" initially
-- Helper functions make it seamless for developers
-- Easy to expose organization UI when needed
+### Leveraging Better-Auth Features
+- All organization functionality provided by better-auth plugin
+- Built-in database schema with proper indexes
+- Automatic API endpoints for all operations
+- Built-in role-based permissions system
+- Session management includes organization data
 
 ### Performance
-- Index on userId and organizationId in OrganizationMember
-- Cache organization membership checks
-- Lazy load organizations list
+- Better-auth handles all database optimizations
+- Built-in caching and query optimization
+- Efficient member listing and filtering
+- Automatic pagination support
 
 ### Security
-- All future features should check organization membership
-- Row-level security via organizationId
-- Owner role for organization management
+- Better-auth handles all security concerns
+- Built-in permission checks
+- Secure invitation system
+- Row-level security via organization membership
 
 ### Backward Compatibility
 - Migration script handles existing users
-- Nullable activeOrganizationId during transition
+- Better-auth manages schema updates
 - Graceful fallback if organization not found
 
 ## Files to Create/Modify
 
 **Modified:**
-- `lib/auth.ts` - Add organization plugin and hooks
-- `prisma/schema.prisma` - Add organization models
-- `lib/auth/permissions.ts` - Add organization permissions
-- `app/stores/user.ts` - Add organization state
+- `lib/auth.ts` - Add organization plugin configuration
 - `lib/auth-client.ts` - Add organization client plugin
 
 **Created:**
-- `app/composables/useCurrentOrganization.ts` - Organization helper
-- `lib/organization-utils.ts` - Server-side utilities
-- `server/api/organizations/me.get.ts` - Get user organizations
-- `server/api/organizations/switch.post.ts` - Switch active org
+- `app/composables/useCurrentOrganization.ts` - Organization helper composable
+- `app/composables/useOrganizationHelpers.ts` - Additional organization utilities
+- `app/components/OrganizationSwitcher.vue` - Organization switcher component
+- `app/components/OrganizationSettings.vue` - Organization settings component
+- `app/components/OrganizationMembers.vue` - Member management component
 - `scripts/migrate-users-to-organizations.ts` - Migration script
+
+**No longer needed:**
+- Custom Prisma schema modifications (handled by better-auth)
+- Custom API endpoints (provided by better-auth)
+- Custom permission system for organizations (built into better-auth)
+- React-based better-auth-ui components (not compatible with Vue)
 
 ## Testing
 
-1. Test auto-creation on new user signup
-2. Verify organization is assigned correctly
-3. Test organization fetch in session
-4. Verify composable returns correct org
-5. Test migration script with existing users
-6. Verify permissions are enforced
+1. Test auto-creation on new user signup using better-auth hooks
+2. Verify organization is assigned correctly via better-auth API
+3. Test organization data in session (automatically handled by better-auth)
+4. Verify composable returns correct org using better-auth client methods
+5. Test migration script with existing users using better-auth API
+6. Verify permissions are enforced using better-auth built-in system
+7. Test all organization operations (create, invite, switch, etc.)
 
 ## Future Enhancements (Out of Scope)
 
-- Organization settings page
-- Invite team members UI
-- Organization switching UI
-- Organization billing/subscription
+- Custom organization UI components (better-auth-ui provides these)
+- Organization billing/subscription integration
 - Custom organization domains
+- Advanced role customization
 
-## To-dos
+## Updated To-dos
 
-- [ ] Research better-auth organization plugin documentation and API
-- [ ] Update better-auth package if needed for organization support
+- [x] Research better-auth organization plugin documentation and API
 - [ ] Configure organization plugin in lib/auth.ts
-- [ ] Add Organization and OrganizationMember models to Prisma schema
-- [ ] Update User model with activeOrganizationId reference
-- [ ] Run Prisma migration and generate client
-- [ ] Implement auto-creation of organization in user create hook
-- [ ] Extend user store with organization state and methods
-- [ ] Create useCurrentOrganization composable
-- [ ] Update customSession to include organization data
-- [ ] Create /api/organizations/me.get.ts endpoint
-- [ ] Create /api/organizations/switch.post.ts endpoint
-- [ ] Add organization permissions to permission system
-- [ ] Create organization utility functions in lib/organization-utils.ts
-- [ ] Create migration script for existing users
-- [ ] Update auth client with organization plugin if needed
+- [ ] Run better-auth migration: `npx @better-auth/cli migrate`
+- [ ] Add organization client plugin to lib/auth-client.ts
+- [ ] Create useCurrentOrganization composable using better-auth client
+- [ ] Create useOrganizationHelpers composable
+- [ ] Update user creation hook to auto-create organizations
+- [ ] Create migration script for existing users using better-auth API
+- [ ] Create Vue components: OrganizationSwitcher.vue
+- [ ] Create Vue components: OrganizationSettings.vue
+- [ ] Create Vue components: OrganizationMembers.vue
 - [ ] Test organization creation and assignment flows
+- [ ] Test Vue components with better-auth client methods
