@@ -1,6 +1,7 @@
 import { betterAuth, type Session } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
-import { type User } from '@prisma/client'
+import { type User } from '~~/prisma/generated/client'
+
 import { sendEmail } from './email'
 import { admin, customSession, emailOTP } from 'better-auth/plugins'
 import { prisma } from './db' // Import shared Prisma client
