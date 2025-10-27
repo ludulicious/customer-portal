@@ -45,11 +45,6 @@ const userMenuItems = computed(() => [
   ]
 ])
 
-// Logout function
-const handleLogout = async () => {
-  await userStore.clearUserData()
-  await navigateTo(localePath('/'))
-}
 
 // Function to check if a route is active
 const isRouteActive = (itemPath: string) => {

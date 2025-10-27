@@ -144,6 +144,12 @@ const handleGitHubLogin = async () => {
 <template>
   <UAlert v-if="successMessage" color="success" variant="soft" :description="successMessage" />
   <UAlert v-if="errorMessage" color="error" variant="soft" :description="errorMessage" />
+
+  <!-- Company Logo -->
+  <div class="flex justify-center mb-8">
+    <AppLogo class="w-auto h-8 shrink-0" />
+  </div>
+
   <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('login.title')" icon="i-lucide-lock"
     @submit="onSubmit">
     <template #description>
