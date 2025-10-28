@@ -1,0 +1,41 @@
+{
+  "serviceRequest": {
+    "title": "Service Requests",
+    "create": "Create Request",
+    "edit": "Edit Request",
+    "delete": "Delete Request",
+    "status": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "priority": "Priority",
+      "category": "Category",
+      "status": "Status",
+      "createdBy": "Created By",
+      "assignedTo": "Assigned To",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "resolvedAt": "Resolved At"
+    },
+    "messages": {
+      "createSuccess": "Service request created successfully",
+      "updateSuccess": "Service request updated successfully",
+      "deleteSuccess": "Service request deleted successfully",
+      "createError": "Failed to create service request",
+      "updateError": "Failed to update service request",
+      "deleteError": "Failed to delete service request"
+    }
+  }
+}
+

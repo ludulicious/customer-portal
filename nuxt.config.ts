@@ -1,5 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  extends: [
+    './layers/service-requests'
+  ],
   ssr: false,
   modules: [
     '@nuxt/eslint',

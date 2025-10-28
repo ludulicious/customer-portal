@@ -116,6 +116,9 @@ const getStatusIcon = (type: string, status: string) => {
   return 'i-lucide-circle'
 }
 
+// Try to use service request widget composable (will be undefined if layer not present)
+const serviceRequestWidget = useServiceRequestWidget?.() || null
+
 // Page metadata
 useSeoMeta({
   title: $t('dashboard.seo.title'),
@@ -318,6 +321,20 @@ useSeoMeta({
           </div>
         </UCard>
       </div>
+
+      <!-- Service Requests Widget (only if layer is present) -->
+      <UCard v-if="serviceRequestWidget" class="mb-8">
+        <template #header>
+          <div class="flex justify-between items-center">
+            <h2 class="text-xl font-bold">Recent Service Requests</h2>
+            <NuxtLink to="/requests">
+              <UButton variant="ghost" size="xs">View All</UButton>
+            </NuxtLink>
+          </div>
+        </template>
+        
+        <RecentServiceRequestsWidget />
+      </UCard>
 
       <!-- Recent Activity and Quick Stats -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
