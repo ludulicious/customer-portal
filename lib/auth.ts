@@ -25,19 +25,17 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url, token }, request) => {
       console.log(`Requesting password reset email for ${user.email}`)
       try {
-        // Call updated sendEmail with specific params
+        // Call new Vue Email sendEmail with template
         await sendEmail({
           to: user.email,
-          subject: 'Reset your Upstream Jobs password',
-          params: {
-            // greeting: `Hello ${user.name || ''},`, // Optional: Use user name if available
-            greeting: 'Hello,',
-            body_text:
-              'You requested a password reset for your Apex Pro account. Please click the button below to set a new password:',
-            action_url: url,
-            action_text: 'Reset Password',
-            footer_text:
-              "If you didn't request a password reset, please ignore this email.",
+          subject: 'Reset your Apex Pro password',
+          template: 'PasswordReset',
+          props: {
+            greeting: `Hello${user.name ? ` ${user.name}` : ''},`,
+            bodyText: 'You requested a password reset for your Apex Pro account. Please click the button below to set a new password:',
+            actionUrl: url,
+            actionText: 'Reset Password',
+            footerText: "If you didn't request a password reset, please ignore this email.",
           },
         })
         console.log(
@@ -126,15 +124,17 @@ export const auth = betterAuth({
           ? 'Your Apex Pro sign-in code'
           : 'Reset your Apex Pro password'
 
+        const template = type === 'sign-in' ? 'SignInOTP' : 'EmailVerificationOTP'
+
         await sendEmail({
           to: email,
           subject,
-          params: {
+          template,
+          props: {
             greeting: 'Hello,',
-            body_text: `Your verification code is: ${otp}`,
-            action_url: '#', // Not used for OTP
-            action_text: 'Verification Code',
-            footer_text: 'This code will expire soon. If you did not request this, please ignore this email.'
+            bodyText: `Your verification code is: ${otp}`,
+            otp,
+            footerText: 'This code will expire soon. If you did not request this, please ignore this email.'
           }
         })
       }
