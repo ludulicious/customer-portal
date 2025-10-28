@@ -23,7 +23,7 @@ model User {
   createdServiceRequests ServiceRequest[] @relation("ServiceRequestCreator")
   assignedServiceRequests ServiceRequest[] @relation("ServiceRequestAssignee")
 
-  @@map("users")
+  @@map("user")
 }
 
 model Session {
@@ -43,7 +43,7 @@ model Session {
 
   activeOrganizationId String?
 
-  @@map("sessions")
+  @@map("session")
 }
 
 model Account {
@@ -66,7 +66,7 @@ model Account {
   // Ensure provider + accountId combination is unique
   // Map to "accounts" table name
   @@unique([providerId, accountId])
-  @@map("accounts")
+  @@map("account")
 }
 
 model Verification {
@@ -80,7 +80,7 @@ model Verification {
   // Optional: ensure identifier/value combo is unique
   // Map to "verifications" table name
   @@unique([identifier, value])
-  @@map("verifications")
+  @@map("verification")
 }
 
 model Organization {

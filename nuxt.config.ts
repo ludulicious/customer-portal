@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
 export default defineNuxtConfig({
   extends: [
     './layers/service-requests'
@@ -13,6 +14,9 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@pinia/nuxt'
   ],
+  alias: {
+    '#db': fileURLToPath(new URL('./prisma/generated/client', import.meta.url)),
+  },
   image: {
     quality: 80,
     format: ['webp', 'avif', 'jpeg'],
