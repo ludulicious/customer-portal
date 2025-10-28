@@ -22,6 +22,16 @@ This plan has been updated to work with the existing better-auth organization im
 - **Updates all API endpoints** to use better-auth organization client methods
 - **Simplifies composables** by using better-auth organization client instead of custom organization logic
 
+## Multi-File Prisma Schema Approach
+
+This implementation uses [Prisma's multi-file schema feature](https://www.prisma.io/docs/orm/prisma-schema/overview/location#multi-file-prisma-schema) to organize the database schema by domain:
+
+- **Main schema** (`prisma/schema.prisma`) contains the datasource, generator, and better-auth models
+- **Service requests schema** (`layers/service-requests/prisma/service-requests.prisma`) contains only service request related models
+- **Automatic inclusion** of all `.prisma` files in the `prisma/` directory
+- **Clean separation** of concerns between different feature domains
+- **Easy layer removal** by simply deleting the layer directory
+
 ## Phase 1: Layer Structure Setup
 
 ### 1.1 Create Layer Directory
@@ -39,7 +49,7 @@ layers/service-requests/
 │   ├── api/
 │   └── utils/
 ├── prisma/
-│   └── schema-extension.prisma
+│   └── service-requests.prisma
 └── i18n/
     └── locales/
         ├── en.json
@@ -60,7 +70,7 @@ export default defineNuxtConfig({
 
 ### 2.1 Define Service Request Schema
 
-Create `layers/service-requests/prisma/schema-extension.prisma`:
+Create `layers/service-requests/prisma/service-requests.prisma`:
 ```prisma
 enum ServiceRequestStatus {
   OPEN
@@ -134,7 +144,39 @@ model Organization {
 }
 ```
 
-### 2.3 Run Migration
+### 2.3 Configure Multi-File Prisma Schema
+
+Update `prisma/schema.prisma` to use multi-file schema:
+```prisma
+// This is your main Prisma schema file
+// The datasource and generator blocks must be in this file
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Import service requests schema from layer
+// This will be automatically included when using multi-file schema
+```
+
+### 2.4 Configure Prisma for Multi-File Schema
+
+Update `package.json` to specify the schema location:
+```json
+{
+  "prisma": {
+    "schema": "./prisma"
+  }
+}
+```
+
+### 2.5 Run Migration
 
 ```bash
 npx prisma migrate dev --name add_service_requests
@@ -2066,7 +2108,7 @@ onMounted(async () => {
 
 **Layer Structure:**
 - `layers/service-requests/nuxt.config.ts`
-- `layers/service-requests/prisma/schema-extension.prisma`
+- `layers/service-requests/prisma/service-requests.prisma`
 - `layers/service-requests/app/types/service-request.d.ts`
 
 **Server:**
@@ -2134,7 +2176,7 @@ onMounted(async () => {
 ## To-dos
 
 - [ ] Create service requests layer directory structure
-- [ ] Define ServiceRequest Prisma schema extension in layer (using existing better-auth Organization model)
+- [ ] Define ServiceRequest Prisma schema in layer using multi-file schema (using existing better-auth Organization model)
 - [ ] Build customer-facing Vue components (form, list, detail, badge)
 - [ ] Create customer pages for listing, creating, and viewing requests
 - [ ] Implement useServiceRequests composable for customer operations (using better-auth organization client)
