@@ -8,8 +8,7 @@ export default defineNuxtConfig({
     '@nuxt/content',
     '@vueuse/nuxt',
     '@nuxtjs/i18n',
-    '@pinia/nuxt',
-    '@vue-email/nuxt'
+    '@pinia/nuxt'
   ],
   image: {
     quality: 80,
@@ -113,9 +112,5 @@ export default defineNuxtConfig({
       fallbackLocale: 'en'
     },
     langDir: 'locales'
-  },
-
-  vueEmail: {
-    baseUrl: process.env.NUXT_PUBLIC_BASE_URL || 'http://localhost:3051'
   }
 })
