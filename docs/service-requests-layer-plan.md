@@ -28,6 +28,7 @@ This implementation uses [Prisma's multi-file schema feature](https://www.prisma
 
 - **Main schema** (`prisma/schema.prisma`) contains the datasource, generator, and better-auth models
 - **Service requests schema** (`layers/service-requests/prisma/service-requests.prisma`) contains only service request related models
+- **Configuration** via `prisma.config.ts` file (recommended approach)
 - **Automatic inclusion** of all `.prisma` files in the `prisma/` directory
 - **Clean separation** of concerns between different feature domains
 - **Easy layer removal** by simply deleting the layer directory
@@ -167,13 +168,14 @@ datasource db {
 
 ### 2.4 Configure Prisma for Multi-File Schema
 
-Update `package.json` to specify the schema location:
-```json
-{
-  "prisma": {
-    "schema": "./prisma"
-  }
-}
+Create `prisma.config.ts` to specify the schema location:
+```typescript
+import path from 'node:path'
+import type { PrismaConfig } from 'prisma'
+
+export default {
+  schema: path.join('prisma'),
+} satisfies PrismaConfig
 ```
 
 ### 2.5 Run Migration
@@ -474,7 +476,7 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/index.post.ts`:
 ```typescript
-import { authClient } from '~/lib/auth-client'
+import { authClient } from '~~/lib/auth-client'
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
@@ -894,7 +896,7 @@ export const useServiceRequests = () => {
 
 Create `layers/service-requests/app/composables/useAdminServiceRequests.ts`:
 ```typescript
-import { authClient } from '~/lib/auth-client'
+import { authClient } from '~~/lib/auth-client'
 
 export const useAdminServiceRequests = () => {
   const requests = ref<ServiceRequestWithRelations[]>([])
@@ -1979,31 +1981,75 @@ export default defineNuxtConfig({
 })
 ```
 
-### 15.2 Add Navigation Links
+### 15.2 Expose Menu Options from Service Requests Layer
+
+Create `layers/service-requests/app/composables/useServiceRequestMenu.ts`:
+```typescript
+import { authClient } from '~~/lib/auth-client'
+
+export const useServiceRequestMenu = () => {
+  const { data: role } = authClient.organization.getActiveMemberRole()
+  const isOrganizationAdmin = computed(() => 
+    role?.includes('owner') || role?.includes('admin')
+  )
+
+  const menuItems = computed(() => {
+    const items = [
+      {
+        label: 'My Requests',
+        to: '/requests',
+        icon: 'i-lucide-ticket'
+      }
+    ]
+
+    if (isOrganizationAdmin.value) {
+      items.push({
+        label: 'Manage Requests',
+        to: '/admin/requests',
+        icon: 'i-lucide-settings'
+      })
+    }
+
+    return items
+  })
+
+  return {
+    menuItems: readonly(menuItems),
+    isOrganizationAdmin: readonly(isOrganizationAdmin)
+  }
+}
+```
+
+### 15.3 Update Main App Header to Use Service Request Menu
 
 Update `app/components/AppHeader.vue`:
 ```vue
-<!-- Add to navigation items -->
-<template v-if="isAuthenticated">
-  <NuxtLink to="/requests">
-    My Requests
-  </NuxtLink>
-  
-  <NuxtLink v-if="isOrganizationAdmin" to="/admin/requests">
-    Manage Requests
-  </NuxtLink>
+<template>
+  <nav>
+    <!-- Existing navigation items -->
+    
+    <!-- Service Request Menu Items (only if layer is present) -->
+    <template v-if="isAuthenticated && serviceRequestMenu">
+      <NuxtLink 
+        v-for="item in serviceRequestMenu.menuItems" 
+        :key="item.to"
+        :to="item.to"
+        class="nav-link"
+      >
+        <UIcon :name="item.icon" />
+        {{ item.label }}
+      </NuxtLink>
+    </template>
+  </nav>
 </template>
 
 <script setup>
-// Check admin status using better-auth organization roles
-const { data: role } = await authClient.organization.getActiveMemberRole()
-const isOrganizationAdmin = computed(() => 
-  role?.includes('owner') || role?.includes('admin')
-)
+// Try to use service request menu composable (will be undefined if layer not present)
+const serviceRequestMenu = useServiceRequestMenu?.() || null
 </script>
 ```
 
-### 15.3 Add Dashboard Widget
+### 15.4 Add Dashboard Widget
 
 Update `app/pages/dashboard.vue`:
 ```vue
@@ -2011,8 +2057,8 @@ Update `app/pages/dashboard.vue`:
   <div class="space-y-6">
     <!-- Existing dashboard content -->
     
-    <!-- Service Requests Widget -->
-    <UCard>
+    <!-- Service Requests Widget (only if layer is present) -->
+    <UCard v-if="serviceRequestWidget">
       <template #header>
         <div class="flex justify-between items-center">
           <h2 class="text-xl font-bold">Recent Service Requests</h2>
@@ -2026,7 +2072,42 @@ Update `app/pages/dashboard.vue`:
     </UCard>
   </div>
 </template>
+
+<script setup>
+// Try to use service request widget (will be undefined if layer not present)
+const serviceRequestWidget = useServiceRequestWidget?.() || null
+</script>
 ```
+
+### 15.5 Create Service Request Widget Composable
+
+Create `layers/service-requests/app/composables/useServiceRequestWidget.ts`:
+```typescript
+import { authClient } from '~~/lib/auth-client'
+
+export const useServiceRequestWidget = () => {
+  const { requests, loading, fetchRequests } = useServiceRequests()
+
+  const initializeWidget = async () => {
+    try {
+      const { data: member } = await authClient.organization.getActiveMember()
+      if (member?.organizationId) {
+        await fetchRequests({ limit: 5 })
+      }
+    } catch (error) {
+      console.error('Failed to check organization membership:', error)
+    }
+  }
+
+  return {
+    requests: readonly(requests),
+    loading: readonly(loading),
+    initializeWidget
+  }
+}
+```
+
+### 15.6 Create Recent Service Requests Widget
 
 Create `app/components/RecentServiceRequestsWidget.vue`:
 ```vue
@@ -2061,21 +2142,20 @@ Create `app/components/RecentServiceRequestsWidget.vue`:
 </template>
 
 <script setup lang="ts">
-import { authClient } from '~~/lib/auth-client'
+// Try to use service request widget composable (will be undefined if layer not present)
+const widget = useServiceRequestWidget?.()
 
-const { requests, loading, fetchRequests } = useServiceRequests()
-
-onMounted(async () => {
-  // Only fetch if user has an organization
-  try {
-    const { data: member } = await authClient.organization.getActiveMember()
-    if (member?.organizationId) {
-      fetchRequests({ limit: 5 })
-    }
-  } catch (error) {
-    console.error('Failed to check organization membership:', error)
-  }
-})
+if (widget) {
+  const { requests, loading, initializeWidget } = widget
+  
+  onMounted(() => {
+    initializeWidget()
+  })
+} else {
+  // Fallback if service request layer is not present
+  const requests = ref([])
+  const loading = ref(false)
+}
 </script>
 ```
 
@@ -2125,6 +2205,8 @@ onMounted(async () => {
 **Composables:**
 - `layers/service-requests/app/composables/useServiceRequests.ts`
 - `layers/service-requests/app/composables/useAdminServiceRequests.ts`
+- `layers/service-requests/app/composables/useServiceRequestMenu.ts`
+- `layers/service-requests/app/composables/useServiceRequestWidget.ts`
 
 **Components:**
 - `layers/service-requests/app/components/ServiceRequest/StatusBadge.vue`
@@ -2151,6 +2233,7 @@ onMounted(async () => {
 - Update `app/pages/dashboard.vue`
 - Create `app/components/RecentServiceRequestsWidget.vue`
 - Update `prisma/schema.prisma` (add relations)
+- Create `prisma.config.ts` (for multi-file schema configuration)
 
 ## Testing
 
@@ -2186,7 +2269,10 @@ onMounted(async () => {
 - [ ] Implement customer API endpoints with better-auth organization validation
 - [ ] Implement admin API endpoints with better-auth organization role-based access
 - [ ] Update main nuxt.config.ts to extend service requests layer
-- [ ] Add navigation items to AppHeader for requests (using better-auth organization roles)
-- [ ] Add service request widget to dashboard page (using better-auth organization client)
+- [ ] Create useServiceRequestMenu composable to expose menu options
+- [ ] Create useServiceRequestWidget composable for dashboard widget
+- [ ] Update AppHeader to conditionally use service request menu
+- [ ] Update dashboard to conditionally show service request widget
 - [ ] Add internationalization keys for service requests in layer locale files
 - [ ] Create and run database migrations for service requests (extending existing better-auth schema)
+- [ ] Create prisma.config.ts for multi-file schema configuration
