@@ -9,7 +9,7 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "typecheck": "nuxt typecheck",
-    "email:preview": "nuxt dev --port 3052"
+    "migrate:organizations": "tsx scripts/migrate-users-to-organizations.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.68",
@@ -21,8 +21,6 @@
     "@pinia/nuxt": "^0.11.2",
     "@prisma/client": "^6.18.0",
     "@standard-schema/spec": "^1.0.0",
-    "@vue-email/components": "^0.0.21",
-    "@vue-email/nuxt": "^0.8.19",
     "@vueuse/nuxt": "^14.0.0",
     "better-auth": "^1.3.29",
     "better-sqlite3": "^12.4.1",
@@ -32,8 +30,11 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@better-auth/cli": "^1.3.32",
     "@nuxt/eslint": "^1.9.0",
     "eslint": "^9.37.0",
+    "prisma": "^6.18.0",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.1.0"
   },

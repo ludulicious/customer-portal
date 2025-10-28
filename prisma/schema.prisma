@@ -5,12 +5,8 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider               = "prisma-client"
-  output                 = "./generated/client"
-  runtime                = "nodejs"
-  moduleFormat           = "esm"
-  generatedFileExtension = "ts"
-  importFileExtension    = "ts"
+  provider = "prisma-client-js"
+  output   = "./generated/client"
 }
 
 datasource db {
@@ -29,14 +25,17 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions               Session[]
-  accounts               Account[]
+  sessions Session[]
+  accounts Account[]
 
   // Map to "users" table name
   role       String?
   banned     Boolean?
   banReason  String?
   banExpires DateTime?
+
+  members     Member[]
+  invitations Invitation[]
 
   @@map("users")
 }
@@ -55,6 +54,8 @@ model Session {
 
   // Map to "sessions" table name
   impersonatedBy String?
+
+  activeOrganizationId String?
 
   @@map("sessions")
 }
@@ -96,3 +97,42 @@ model Verification {
   @@map("verifications")
 }
 
+model Organization {
+  id          String       @id
+  name        String
+  slug        String
+  logo        String?
+  createdAt   DateTime
+  metadata    String?
+  members     Member[]
+  invitations Invitation[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           String
+  createdAt      DateTime
+
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime
+  inviterId      String
+  user           User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@map("invitation")
+}

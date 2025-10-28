@@ -1,8 +1,9 @@
 import { betterAuth, type Session } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
-import { type User } from '@prisma/client'
+import { type User } from '~~/prisma/generated/client'
+
 import { sendEmail } from './email'
-import { admin, customSession, emailOTP } from 'better-auth/plugins'
+import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { prisma } from './db' // Import shared Prisma client
 import { ac, user, admin as adminRole } from './auth/permissions'
 
@@ -24,17 +25,19 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url, token }, request) => {
       console.log(`Requesting password reset email for ${user.email}`)
       try {
-        // Call new Vue Email sendEmail with template
+        // Call updated sendEmail with specific params
         await sendEmail({
           to: user.email,
-          subject: 'Reset your Apex Pro password',
-          template: 'PasswordReset',
-          props: {
-            greeting: `Hello${user.name ? ` ${user.name}` : ''},`,
-            bodyText: 'You requested a password reset for your Apex Pro account. Please click the button below to set a new password:',
-            actionUrl: url,
-            actionText: 'Reset Password',
-            footerText: "If you didn't request a password reset, please ignore this email.",
+          subject: 'Reset your Upstream Jobs password',
+          params: {
+            // greeting: `Hello ${user.name || ''},`, // Optional: Use user name if available
+            greeting: 'Hello,',
+            body_text:
+              'You requested a password reset for your Apex Pro account. Please click the button below to set a new password:',
+            action_url: url,
+            action_text: 'Reset Password',
+            footer_text:
+              "If you didn't request a password reset, please ignore this email.",
           },
         })
         console.log(
@@ -58,11 +61,30 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user: any) => {
+          // Existing admin role assignment
           if (user.email && adminEmails.includes(user.email.toLowerCase())) {
             await prisma.user.update({
               where: { id: user.id },
               data: { role: 'admin' }
             })
+          }
+
+          // Auto-create organization using better-auth API
+          const orgName = user.name || user.email.split('@')[0]
+          const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${user.id.slice(0, 8)}`
+
+          try {
+            await auth.api.createOrganization({
+              body: {
+                name: `${orgName}'s Organization`,
+                slug: orgSlug,
+                userId: user.id,
+                keepCurrentActiveOrganization: false
+              }
+            })
+            console.log(`Auto-created organization for user ${user.email}`)
+          } catch (error) {
+            console.error(`Failed to auto-create organization for user ${user.email}:`, error)
           }
         }
       }
@@ -86,6 +108,15 @@ export const auth = betterAuth({
     }
   },
   plugins: [
+    organization({
+      allowUserToCreateOrganization: true, // Allow all users to create organizations initially
+      organizationHooks: {
+        afterCreateOrganization: async ({ organization, member, user }) => {
+          // Auto-create organization for new users
+          console.log(`Created organization ${organization.name} for user ${user.email}`)
+        }
+      }
+    }),
     emailOTP({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
@@ -95,17 +126,15 @@ export const auth = betterAuth({
           ? 'Your Apex Pro sign-in code'
           : 'Reset your Apex Pro password'
 
-        const template = type === 'sign-in' ? 'SignInOTP' : 'EmailVerificationOTP'
-
         await sendEmail({
           to: email,
           subject,
-          template,
-          props: {
+          params: {
             greeting: 'Hello,',
-            bodyText: `Your verification code is: ${otp}`,
-            otp,
-            footerText: 'This code will expire soon. If you did not request this, please ignore this email.'
+            body_text: `Your verification code is: ${otp}`,
+            action_url: '#', // Not used for OTP
+            action_text: 'Verification Code',
+            footer_text: 'This code will expire soon. If you did not request this, please ignore this email.'
           }
         })
       }

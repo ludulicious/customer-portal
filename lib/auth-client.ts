@@ -1,5 +1,5 @@
 import { createAuthClient } from 'better-auth/vue' // Use the Vue-specific import
-import { adminClient, emailOTPClient } from 'better-auth/client/plugins'
+import { adminClient, emailOTPClient, organizationClient } from 'better-auth/client/plugins'
 import { ac, user, admin as adminRole } from './auth/permissions'
 
 const baseURL = process.env.BETTER_AUTH_URL
@@ -14,7 +14,8 @@ export const authClient = createAuthClient({
         admin: adminRole
       }
     }),
-    emailOTPClient()
+    emailOTPClient(),
+    organizationClient() // Add organization client
   ],
 })
 

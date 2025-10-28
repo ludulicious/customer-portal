@@ -202,59 +202,41 @@ watch(otpCode, (newValue) => {
 })
 
 definePageMeta({
-  layout: 'auth',
+  layout: 'centerform',
   public: true,
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-          {{ $t('verify.subtitle', { email }) }}
-        </p>
-      </div>
+  <CustomPageCard :title="$t('verify.title')"
+  :description="$t('verify.subtitle', { email })" :success="success" :error="error">
 
-      <UCard class="mt-8">
-        <div class="space-y-6">
-          <!-- Success Message -->
-          <UAlert v-if="success" color="success" variant="soft" :description="success" />
-
-          <!-- Error Message -->
-          <UAlert v-if="error" color="error" variant="soft"  :description="error" />
-
-          <!-- OTP Input -->
-          <div>
-            <label for="otp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {{ $t('verify.enterCode') }}
-            </label>
-            <input id="otp" v-model="otpCode" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-center text-2xl font-mono tracking-widest"
-              :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput" />
-          </div>
-
-          <!-- Verify Button -->
-          <UButton :loading="isLoading" :disabled="otpCode.length !== 6 || isLoading" color="primary" size="lg" block
-            @click="verifyCode">
-            {{ $t('verify.verifyButton') }}
-          </UButton>
-
-          <!-- Resend Code -->
-          <div class="text-center">
-            <UButton :disabled="resendCooldown > 0 || isLoading" variant="ghost" size="sm" @click="resendCode">
-              {{ resendCooldown > 0 ? $t('verify.resendIn', { seconds: resendCooldown }) : $t('verify.resendCode') }}
-            </UButton>
-          </div>
-
-          <!-- Back to Login -->
-          <div class="text-center">
-            <NuxtLink :to="localePath('/login')" class="text-sm text-primary hover:text-primary/80">
-              {{ $t('verify.backToLogin') }}
-            </NuxtLink>
-          </div>
-        </div>
-      </UCard>
+    <div>
+      <label for="otp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {{ $t('verify.enterCode') }}
+      </label>
+      <input id="otp" v-model="otpCode" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-center text-2xl font-mono tracking-widest"
+        :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput" />
     </div>
-  </div>
+
+    <UButton :loading="isLoading" :disabled="otpCode.length !== 6 || isLoading" color="primary" size="lg" block
+      @click="verifyCode">
+      {{ $t('verify.verifyButton') }}
+    </UButton>
+
+    <!-- Resend Code -->
+    <div class="text-center">
+      <UButton :disabled="resendCooldown > 0 || isLoading" variant="ghost" size="sm" @click="resendCode">
+        {{ resendCooldown > 0 ? $t('verify.resendIn', { seconds: resendCooldown }) : $t('verify.resendCode') }}
+      </UButton>
+    </div>
+
+    <!-- Back to Login -->
+    <div class="text-center">
+      <NuxtLink :to="localePath('/login')" class="text-sm text-primary hover:text-primary/80">
+        {{ $t('verify.backToLogin') }}
+      </NuxtLink>
+    </div>
+  </CustomPageCard>
 </template>

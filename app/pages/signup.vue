@@ -93,14 +93,22 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
 </script>
 
 <template>
-  <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')"
-    :submit="{ label: t('signup.submitButton') }" @submit="onSubmit">
-    <template #description>
-      {{ t('signup.description') }} <ULink to="/login" class="text-primary font-medium">{{ t('signup.loginLink') }}</ULink>.
-    </template>
+  <div>
+    <!-- Company Logo -->
+    <div class="flex justify-center mb-8">
+      <AppLogo class="w-auto h-8 shrink-0" />
+    </div>
 
-    <template #footer>
-      {{ t('signup.footer') }} <ULink to="/" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink>.
-    </template>
-  </UAuthForm>
+    <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')"
+      :submit="{ label: t('signup.submitButton') }" @submit="onSubmit">
+      <template #description>
+        {{ t('signup.description') }} <ULink to="/login" class="text-primary font-medium">{{ t('signup.loginLink') }}
+        </ULink>.
+      </template>
+
+      <template #footer>
+        {{ t('signup.footer') }} <ULink to="/" class="text-primary font-medium">{{ t('signup.termsLink') }}</ULink>.
+      </template>
+    </UAuthForm>
+  </div>
 </template>
