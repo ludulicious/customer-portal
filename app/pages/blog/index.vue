@@ -30,6 +30,9 @@ definePageMeta({
 <template>
   <div>
     <UContainer>
+      <template #top>
+        <HeroBackground />
+      </template>
       <UPageHeader
         v-bind="page"
         class="py-[50px]"
