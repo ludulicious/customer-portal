@@ -29,10 +29,6 @@ definePageMeta({
 
 <template>
   <div>
-    <!-- Hero Section -->
-
-
-    <!-- Contact Information Cards -->
     <UPageSection :title="t('contact.title')" :description="t('contact.description')">
       <template #top>
         <HeroBackground />

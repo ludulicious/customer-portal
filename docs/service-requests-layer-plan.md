@@ -6,10 +6,21 @@ Create a standalone Nuxt layer for service requests that can be easily added or 
 
 ## Prerequisites
 
-- Organizations implementation must be completed in the main layer
+- Better-auth with organization plugin configured and implemented
 - Better-auth with admin plugin configured
 - Prisma client available
 - Nuxt UI components available
+
+## Key Changes for Better-Auth Integration
+
+This plan has been updated to work with the existing better-auth organization implementation:
+
+- **Uses existing better-auth Organization model** instead of creating custom organization tables
+- **Leverages better-auth organization client** (`authClient.organization.*`) for all organization operations
+- **Integrates with better-auth organization roles** for admin permission checks
+- **Removes redundant organization management** code since better-auth handles this
+- **Updates all API endpoints** to use better-auth organization client methods
+- **Simplifies composables** by using better-auth organization client instead of custom organization logic
 
 ## Phase 1: Layer Structure Setup
 
@@ -114,8 +125,10 @@ model User {
   assignedServiceRequests ServiceRequest[] @relation("ServiceRequestAssignee")
 }
 
+// Note: Organization model already exists from better-auth
+// Add serviceRequests relation to existing Organization model
 model Organization {
-  // ... existing fields
+  // ... existing better-auth fields
   
   serviceRequests ServiceRequest[]
 }
@@ -297,19 +310,31 @@ export const filterServiceRequestSchema = z.object({
 
 Create `layers/service-requests/server/utils/service-request-helpers.ts`:
 ```typescript
+import { authClient } from '~~/lib/auth-client'
+
 export async function verifyOrganizationAccess(
   userId: string,
   organizationId: string
 ): Promise<boolean> {
-  const membership = await prisma.organizationMember.findUnique({
-    where: {
-      organizationId_userId: {
-        organizationId,
-        userId
-      }
-    }
-  })
-  return !!membership
+  try {
+    // Use better-auth client to check membership
+    const { data: member } = await authClient.organization.getActiveMember()
+    return member?.organizationId === organizationId
+  } catch {
+    return false
+  }
+}
+
+export async function verifyAdminAccess(
+  userId: string,
+  organizationId: string
+): Promise<boolean> {
+  try {
+    const { data: role } = await authClient.organization.getActiveMemberRole()
+    return role?.includes('owner') || role?.includes('admin')
+  } catch {
+    return false
+  }
 }
 
 export async function verifyRequestOwnership(
@@ -349,6 +374,8 @@ export function buildRequestQuery(filters: any) {
 
 Create `layers/service-requests/server/api/service-requests/index.get.ts`:
 ```typescript
+import { authClient } from '~~/lib/auth-client'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   if (!session?.user) {
@@ -358,8 +385,9 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const filters = filterServiceRequestSchema.parse(query)
   
-  // Get user's organization
-  const { organizationId } = useCurrentOrganization() // or fetch from session
+  // Get user's organization using better-auth
+  const { data: member } = await authClient.organization.getActiveMember()
+  const organizationId = member?.organizationId
   
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No organization found' })
@@ -404,6 +432,8 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/index.post.ts`:
 ```typescript
+import { authClient } from '~/lib/auth-client'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   if (!session?.user) {
@@ -413,8 +443,9 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const data = createServiceRequestSchema.parse(body)
   
-  // Get user's organization
-  const organizationId = session.user.activeOrganizationId
+  // Get user's organization using better-auth
+  const { data: member } = await authClient.organization.getActiveMember()
+  const organizationId = member?.organizationId
   
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No organization found' })
@@ -443,6 +474,8 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].get.ts`:
 ```typescript
+import { authClient } from '~~/lib/auth-client'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   if (!session?.user) {
@@ -478,7 +511,10 @@ export default defineEventHandler(async (event) => {
   }
   
   // Hide internal notes from non-admin users
-  if (session.user.role !== 'admin') {
+  const { data: role } = await authClient.organization.getActiveMemberRole()
+  const isAdmin = role?.includes('owner') || role?.includes('admin')
+  
+  if (!isAdmin) {
     delete request.internalNotes
   }
   
@@ -564,9 +600,19 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/admin/index.get.ts`:
 ```typescript
+import { authClient } from '~~/lib/auth-client'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
-  if (!session?.user || session.user.role !== 'admin') {
+  if (!session?.user) {
+    throw createError({ statusCode: 401, message: 'Unauthorized' })
+  }
+  
+  // Check if user is admin using better-auth organization roles
+  const { data: role } = await authClient.organization.getActiveMemberRole()
+  const isAdmin = role?.includes('owner') || role?.includes('admin')
+  
+  if (!isAdmin) {
     throw createError({ statusCode: 403, message: 'Admin access required' })
   }
   
@@ -620,9 +666,19 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/admin/[id].patch.ts`:
 ```typescript
+import { authClient } from '~~/lib/auth-client'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
-  if (!session?.user || session.user.role !== 'admin') {
+  if (!session?.user) {
+    throw createError({ statusCode: 401, message: 'Unauthorized' })
+  }
+  
+  // Check if user is admin using better-auth organization roles
+  const { data: role } = await authClient.organization.getActiveMemberRole()
+  const isAdmin = role?.includes('owner') || role?.includes('admin')
+  
+  if (!isAdmin) {
     throw createError({ statusCode: 403, message: 'Admin access required' })
   }
   
@@ -667,6 +723,8 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/app/composables/useServiceRequests.ts`:
 ```typescript
+import { authClient } from '~~/lib/auth-client'
+
 export const useServiceRequests = () => {
   const requests = ref<ServiceRequestWithRelations[]>([])
   const loading = ref(false)
@@ -678,8 +736,16 @@ export const useServiceRequests = () => {
     error.value = null
     
     try {
+      // Get current organization using better-auth
+      const { data: member } = await authClient.organization.getActiveMember()
+      const organizationId = member?.organizationId
+      
+      if (!organizationId) {
+        throw new Error('No organization found')
+      }
+      
       const response = await $fetch('/api/service-requests', {
-        query: filters
+        query: { ...filters, organizationId }
       })
       requests.value = response.requests
       pagination.value = response.pagination
@@ -786,6 +852,8 @@ export const useServiceRequests = () => {
 
 Create `layers/service-requests/app/composables/useAdminServiceRequests.ts`:
 ```typescript
+import { authClient } from '~/lib/auth-client'
+
 export const useAdminServiceRequests = () => {
   const requests = ref<ServiceRequestWithRelations[]>([])
   const loading = ref(false)
@@ -798,6 +866,14 @@ export const useAdminServiceRequests = () => {
     error.value = null
     
     try {
+      // Verify admin access using better-auth
+      const { data: role } = await authClient.organization.getActiveMemberRole()
+      const isAdmin = role?.includes('owner') || role?.includes('admin')
+      
+      if (!isAdmin) {
+        throw new Error('Admin access required')
+      }
+      
       const response = await $fetch('/api/service-requests/admin', {
         query: filters
       })
@@ -1871,10 +1947,18 @@ Update `app/components/AppHeader.vue`:
     My Requests
   </NuxtLink>
   
-  <NuxtLink v-if="isAdmin" to="/admin/requests">
+  <NuxtLink v-if="isOrganizationAdmin" to="/admin/requests">
     Manage Requests
   </NuxtLink>
 </template>
+
+<script setup>
+// Check admin status using better-auth organization roles
+const { data: role } = await authClient.organization.getActiveMemberRole()
+const isOrganizationAdmin = computed(() => 
+  role?.includes('owner') || role?.includes('admin')
+)
+</script>
 ```
 
 ### 15.3 Add Dashboard Widget
@@ -1935,10 +2019,20 @@ Create `app/components/RecentServiceRequestsWidget.vue`:
 </template>
 
 <script setup lang="ts">
+import { authClient } from '~~/lib/auth-client'
+
 const { requests, loading, fetchRequests } = useServiceRequests()
 
-onMounted(() => {
-  fetchRequests({ limit: 5 })
+onMounted(async () => {
+  // Only fetch if user has an organization
+  try {
+    const { data: member } = await authClient.organization.getActiveMember()
+    if (member?.organizationId) {
+      fetchRequests({ limit: 5 })
+    }
+  } catch (error) {
+    console.error('Failed to check organization membership:', error)
+  }
 })
 </script>
 ```
@@ -1947,14 +2041,14 @@ onMounted(() => {
 
 ### Layer Independence
 - Service requests layer is self-contained
-- Only depends on organization structure from main layer
+- Only depends on better-auth organization system from main layer
 - Can be easily removed by deleting layer directory and removing from nuxt.config
 
 ### Security
-- Organization-based access control on all endpoints
+- Organization-based access control using better-auth organization membership
 - Ownership verification for updates/deletes
-- Admin role checks for admin endpoints
-- Internal notes hidden from non-admin users
+- Better-auth organization role checks for admin endpoints
+- Internal notes hidden from non-admin users using better-auth roles
 
 ### Performance
 - Indexed queries on organizationId, status, createdAt
@@ -2040,18 +2134,17 @@ onMounted(() => {
 ## To-dos
 
 - [ ] Create service requests layer directory structure
-- [ ] Define ServiceRequest Prisma schema extension in layer
-- [ ] Add service request permissions to permission system
+- [ ] Define ServiceRequest Prisma schema extension in layer (using existing better-auth Organization model)
 - [ ] Build customer-facing Vue components (form, list, detail, badge)
 - [ ] Create customer pages for listing, creating, and viewing requests
-- [ ] Implement useServiceRequests composable for customer operations
+- [ ] Implement useServiceRequests composable for customer operations (using better-auth organization client)
 - [ ] Build admin-specific components (dashboard, table, detail)
 - [ ] Create admin pages for managing all requests
-- [ ] Implement useAdminServiceRequests composable for admin operations
-- [ ] Implement customer API endpoints with organization validation
-- [ ] Implement admin API endpoints with role-based access
+- [ ] Implement useAdminServiceRequests composable for admin operations (using better-auth organization roles)
+- [ ] Implement customer API endpoints with better-auth organization validation
+- [ ] Implement admin API endpoints with better-auth organization role-based access
 - [ ] Update main nuxt.config.ts to extend service requests layer
-- [ ] Add navigation items to AppHeader for requests
-- [ ] Add service request widget to dashboard page
+- [ ] Add navigation items to AppHeader for requests (using better-auth organization roles)
+- [ ] Add service request widget to dashboard page (using better-auth organization client)
 - [ ] Add internationalization keys for service requests in layer locale files
-- [ ] Create and run database migrations for organizations and service requests
+- [ ] Create and run database migrations for service requests (extending existing better-auth schema)
