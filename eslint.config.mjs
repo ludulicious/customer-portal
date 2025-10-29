@@ -18,7 +18,6 @@ export default withNuxt(
       'vue/html-comment-content-spacing': 'off',
       'vue/html-comment-indent': 'off',
       'vue/html-end-tags': 'off',
-      'vue/html-indent': 'off',
       'vue/first-attribute-linebreak': 'off',
     }
   }
