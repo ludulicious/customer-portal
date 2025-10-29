@@ -26,31 +26,8 @@ RUN npx prisma generate
 RUN pnpm rebuild
 
 RUN pnpm build
-
-# ---- Runner ----
-FROM base AS runner
-WORKDIR /app
-
-# Install runtime dependencies for better-sqlite3
-RUN apk add --no-cache sqlite
-
-# Use KEY=VALUE format for ENV
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
-
-# Copy built output, prisma schema, and package.json/lock
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/pnpm-lock.json* ./
-
-COPY --from=builder /app/prisma/generated ./prisma/generated
-
-# Copy the email template needed at runtime
-COPY --from=builder /app/lib/email-template.html ./lib/email-template.html
-
-# Install only prisma and its client in the runner stage
-RUN npm install --only=production prisma @prisma/client
 
 # Copy and set up entrypoint script
 COPY entrypoint.sh .
