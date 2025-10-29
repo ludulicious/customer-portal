@@ -8,6 +8,7 @@ export default withNuxt(
       'comma-dangle': 'off',
       'semi': ['error', 'never'],
       'vue/html-indent': 'off',
+      '@stylistic/comma-dangle': 'off',
       '@stylistic/no-trailing-spaces': 'off',
       'vue/max-attributes-per-line': 'off',
       'vue/block-tag-newline': 'off',
