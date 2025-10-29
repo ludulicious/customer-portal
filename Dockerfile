@@ -64,6 +64,9 @@ COPY --from=builder /app/.output ./.output
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-lock.json* ./
 
+# Copy the generated Prisma client from the deps stage
+COPY --from=deps /app/prisma/generated ./prisma/generated
+
 
 
 # Copy and set up entrypoint script
