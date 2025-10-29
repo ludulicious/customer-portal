@@ -1,61 +1,29 @@
-import { betterAuth, type Session } from 'better-auth'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { betterAuth } from 'better-auth'
 import { prismaAdapter } from 'better-auth/adapters/prisma'
-import { type User } from '#db'
-
 import { sendEmail } from './email'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { prisma } from './db' // Import shared Prisma client
 import { ac, user, admin as adminRole } from './auth/permissions'
 
-type VerificationEmailUser = Pick<User, 'id' | 'email'> // Using Pick for simplicity
-
-// Parse admin emails from environment variable
 const adminEmails = process.env.ADMIN_EMAILS?.split(',')
   .map(email => email.trim().toLowerCase())
   .filter(Boolean) ?? []
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'postgresql',
+    provider: 'postgresql'
   }),
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    autoSignInAfterVerification: true,
-    sendResetPassword: async ({ user, url, token }, request) => {
-      console.log(`Requesting password reset email for ${user.email}`)
-      try {
-        // Call updated sendEmail with specific params
-        await sendEmail({
-          to: user.email,
-          subject: 'Reset your Upstream Jobs password',
-          params: {
-            // greeting: `Hello ${user.name || ''},`, // Optional: Use user name if available
-            greeting: 'Hello,',
-            body_text:
-              'You requested a password reset for your Apex Pro account. Please click the button below to set a new password:',
-            action_url: url,
-            action_text: 'Reset Password',
-            footer_text:
-              "If you didn't request a password reset, please ignore this email.",
-          },
-        })
-        console.log(
-          `Successfully requested password reset email sending for ${user.email}`,
-        )
-      } catch (error) {
-        console.error(
-          `Error sending password reset email to ${user.email}:`,
-          error,
-        )
-      }
-    },
+    autoSignInAfterVerification: true
   },
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    },
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!
+    }
   },
   databaseHooks: {
     user: {
@@ -111,7 +79,7 @@ export const auth = betterAuth({
     organization({
       allowUserToCreateOrganization: true, // Allow all users to create organizations initially
       organizationHooks: {
-        afterCreateOrganization: async ({ organization, member, user }) => {
+        afterCreateOrganization: async ({ organization, user }) => {
           // Auto-create organization for new users
           console.log(`Created organization ${organization.name} for user ${user.email}`)
         }
@@ -123,8 +91,8 @@ export const auth = betterAuth({
         const subject = type === 'email-verification'
           ? 'Verify your Apex Pro email address'
           : type === 'sign-in'
-          ? 'Your Apex Pro sign-in code'
-          : 'Reset your Apex Pro password'
+            ? 'Your Apex Pro sign-in code'
+            : 'Reset your Apex Pro password'
 
         await sendEmail({
           to: email,
@@ -153,7 +121,7 @@ export const auth = betterAuth({
       console.log('custom session sessionData', sessionData)
       // Fetch the account for the user
       const account = await prisma.account.findFirst({
-        where: { userId: user.id },
+        where: { userId: user.id }
       })
 
       // Return modified session data
@@ -161,9 +129,9 @@ export const auth = betterAuth({
         ...session, // Spread the original session part
         user: {
           ...user, // Spread the original user part
-          providerId: account?.providerId || null, // Add providerId to user object
-        },
+          providerId: account?.providerId || null // Add providerId to user object
+        }
       }
-    }),
-  ],
+    })
+  ]
 })
