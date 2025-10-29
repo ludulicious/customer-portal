@@ -1,3 +1,4 @@
+#!/bin/sh
 set -e
 
 # Run Prisma DB migrate deploy. Requires DATABASE_URL to be set.
