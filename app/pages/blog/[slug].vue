@@ -49,7 +49,8 @@ definePageMeta({
           <UBadge v-if="post?.badge" v-bind="post?.badge" variant="subtle" />
           <span class="text-muted">&middot;</span>
           <time class="text-muted">{{ new Date(post?.date).toLocaleDateString('en', {
-            year: 'numeric', month: 'short',
+            year: 'numeric',
+            month: 'short',
             day: 'numeric' }) }}</time>
         </template>
 

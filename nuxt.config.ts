@@ -1,6 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from 'node:url'
+
 export default defineNuxtConfig({
   ssr: false,
+  // extends: [
+  //   './layers/service-requests'
+  // ],
   modules: [
     '@nuxt/eslint',
     '@nuxt/image',
@@ -10,6 +15,9 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@pinia/nuxt'
   ],
+  alias: {
+    '#db': fileURLToPath(new URL('./prisma/generated/client', import.meta.url)),
+  },
   image: {
     quality: 80,
     format: ['webp', 'avif', 'jpeg'],
@@ -50,7 +58,10 @@ export default defineNuxtConfig({
     }
   },
   devtools: {
-    enabled: true
+    enabled: true,
+    timeline: {
+      enabled: false
+    }
   },
   devServer: {
     port: 3051,

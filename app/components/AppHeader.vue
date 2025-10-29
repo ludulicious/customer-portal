@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '@@/lib/auth-client'
 
@@ -9,11 +8,10 @@ const { t, locale, setLocale } = useI18n()
 const router = useRouter()
 const path = computed(() => route.path)
 
-
 // User store
 const userStore = useUserStore()
 const { currentUser, userInitials, isAuthenticated } = storeToRefs(userStore)
-const { data: session } = await authClient.useSession(useFetch);
+// const { data: session } = await authClient.useSession(useFetch)
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => [
   [
@@ -45,7 +43,6 @@ const userMenuItems = computed(() => [
   ]
 ])
 
-
 // Function to check if a route is active
 const isRouteActive = (itemPath: string) => {
   const currentPath = route.path
@@ -64,7 +61,7 @@ const isRouteActive = (itemPath: string) => {
 }
 
 // Define static navigation items with active state
-const baseItems = computed(() => {
+const items = computed(() => {
   const publicItems = [{
     label: t('nav.blog'),
     to: localePath('/blog'),
@@ -89,8 +86,32 @@ const baseItems = computed(() => {
   return [...privateItems, ...publicItems]
 })
 
+// Try to use service request menu composable (will be undefined if layer not present)
+// const serviceRequestMenu = useServiceRequestMenu?.() || null
+
 // Use static items to avoid hydration mismatch
-const items = computed(() => baseItems.value)
+// const items = computed(() => {
+//   const baseItemsList = baseItems.value
+// Add service request menu items if layer is present
+// if (serviceRequestMenu?.menuItems) {
+//   const serviceRequestItems = serviceRequestMenu.menuItems.value.map(item => ({
+//     label: item.label,
+//     to: item.to,
+//     active: isRouteActive(item.to),
+//     icon: item.icon
+//   }))
+
+//   // Insert service request items after dashboard
+//   const dashboardIndex = baseItemsList.findIndex(item => item.to.includes('/dashboard'))
+//   if (dashboardIndex !== -1) {
+//     baseItemsList.splice(dashboardIndex + 1, 0, ...serviceRequestItems)
+//   } else {
+//     baseItemsList.unshift(...serviceRequestItems)
+//   }
+// }
+
+// return baseItemsList
+// })
 
 // Create a reactive locale ref that's properly initialized
 const currentLocale = ref(locale.value)
@@ -120,20 +141,18 @@ watch(currentLocale, (newLocale) => {
     </template>
 
     <nav class="hidden lg:flex items-center gap-6">
-      <NuxtLink v-for="item in items" :key="item.to" :to="item.to"
-        :class="[
-          'text-sm font-medium transition-colors',
-          item.active
-            ? 'text-primary font-semibold'
-            : 'text-muted hover:text-highlighted'
-        ]">
+      <NuxtLink v-for="item in items" :key="item.to" :to="item.to" :class="[
+        'text-sm font-medium transition-colors',
+        item.active
+          ? 'text-primary font-semibold'
+          : 'text-muted hover:text-highlighted'
+      ]">
         {{ item.label }}
       </NuxtLink>
-
     </nav>
 
     <template #right>
-      <ULocaleSelect class="hidden lg:flex" v-model="currentLocale" :locales="[en, nl]" />
+      <ULocaleSelect v-model="currentLocale" class="hidden lg:flex" :locales="[en, nl]" />
       <UColorModeButton />
 
       <!-- User Avatar Dropdown (only show when user is logged in) -->
@@ -145,13 +164,12 @@ watch(currentLocale, (newLocale) => {
 
     <template #body>
       <nav class="flex flex-col gap-4 -mx-2.5">
-        <NuxtLink v-for="item in items" :key="item.to" :to="item.to"
-          :class="[
-            'text-sm font-medium transition-colors px-2.5 py-1.5 rounded-md',
-            item.active
-              ? 'text-primary font-semibold bg-primary/10'
-              : 'text-muted hover:text-highlighted hover:bg-gray-100 dark:hover:bg-gray-800'
-          ]">
+        <NuxtLink v-for="item in items" :key="item.to" :to="item.to" :class="[
+          'text-sm font-medium transition-colors px-2.5 py-1.5 rounded-md',
+          item.active
+            ? 'text-primary font-semibold bg-primary/10'
+            : 'text-muted hover:text-highlighted hover:bg-gray-100 dark:hover:bg-gray-800'
+        ]">
           {{ item.label }}
         </NuxtLink>
       </nav>
@@ -169,7 +187,6 @@ watch(currentLocale, (newLocale) => {
       <UFormField :label="t('nav.language')" name="language">
         <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-48" />
       </UFormField>
-
     </template>
   </UHeader>
 </template>

@@ -1,5 +1,4 @@
 // @ts-check
-// @ts-check
 import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt(
@@ -8,7 +7,18 @@ export default withNuxt(
     rules: {
       'comma-dangle': 'off',
       'semi': ['error', 'never'],
-      '@typescript-eslint/semi': ['error', 'never']
+      'vue/html-indent': 'off',
+      '@stylistic/no-trailing-spaces': 'off',
+      'vue/max-attributes-per-line': 'off',
+      'vue/block-tag-newline': 'off',
+      'vue/html-closing-bracket-newline': 'off',
+      'vue/html-closing-bracket-spacing': 'off',
+      'vue/html-comment-content-newline': 'off',
+      'vue/html-comment-content-spacing': 'off',
+      'vue/html-comment-indent': 'off',
+      'vue/html-end-tags': 'off',
+      'vue/html-indent': 'off',
+      'vue/first-attribute-linebreak': 'off',
     }
   }
 )
