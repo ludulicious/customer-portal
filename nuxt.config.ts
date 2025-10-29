@@ -1,10 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { fileURLToPath } from 'node:url'
+
 export default defineNuxtConfig({
-  extends: [
-    './layers/service-requests'
-  ],
   ssr: false,
+  // extends: [
+  //   './layers/service-requests'
+  // ],
   modules: [
     '@nuxt/eslint',
     '@nuxt/image',
@@ -57,7 +58,10 @@ export default defineNuxtConfig({
     }
   },
   devtools: {
-    enabled: true
+    enabled: true,
+    timeline: {
+      enabled: false
+    }
   },
   devServer: {
     port: 3051,

@@ -1,19 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n()
 
-const toast = useToast()
-
-const email = ref('')
-const loading = ref(false)
-
-function onSubmit() {
-  loading.value = true
-
-  toast.add({
-    title: 'Subscribed!',
-    description: 'You\'ve been subscribed to our newsletter.'
-  })
-}
 </script>
 
 <template>
@@ -27,6 +14,5 @@ function onSubmit() {
         © Ludulicious {{ new Date().getFullYear() }}. {{ t('footer.copyright') }}
       </p>
     </template>
-
   </UFooter>
 </template>
