@@ -26,3 +26,6 @@ yarn-error.log*
 # Docker files
 Dockerfile
 .dockerignore
+
+# Prisma generated client
+prisma/generated
