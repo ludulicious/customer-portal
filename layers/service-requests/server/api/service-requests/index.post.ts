@@ -1,6 +1,8 @@
 import { authClient } from '~~/lib/auth-client'
 import { createServiceRequestSchema } from '../../utils/service-request-validation'
-import { prisma } from '~~/lib/db'
+import { db } from '~~/lib/db'
+import { serviceRequest } from '~~/db/schema/service-requests'
+import { defineEventHandler, createError, readBody } from 'h3'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -19,20 +21,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'No organization found' })
   }
 
-  const request = await prisma.serviceRequest.create({
-    data: {
+  const [request] = await db
+    .insert(serviceRequest)
+    .values({
       ...data,
       organizationId,
       createdById: session.data.user.id,
       status: 'OPEN',
-      priority: data.priority || 'MEDIUM'
-    },
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      }
-    }
-  })
+      priority: (data as any).priority || 'MEDIUM',
+    })
+    .returning()
 
   return request
 })

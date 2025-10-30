@@ -19,7 +19,6 @@ export const authClient = createAuthClient({
   ],
 })
 
-
 export const {
   signIn,
   signOut,
@@ -29,4 +28,3 @@ export const {
   emailOtp,
   sendVerificationEmail,
 } = authClient
-

@@ -1,7 +1,9 @@
 import { authClient } from '~~/lib/auth-client'
 import { updateServiceRequestSchema } from '../../utils/service-request-validation'
 import { verifyRequestOwnership } from '../../utils/service-request-helpers'
-import { prisma } from '~~/lib/db'
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -27,18 +29,11 @@ export default defineEventHandler(async (event) => {
   if (data.priority) allowedUpdates.priority = data.priority
   if (data.category) allowedUpdates.category = data.category
 
-  const request = await prisma.serviceRequest.update({
-    where: { id },
-    data: allowedUpdates,
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      },
-      assignedTo: {
-        select: { id: true, name: true, email: true }
-      }
-    }
-  })
+  const [request] = await db
+    .update(serviceRequest)
+    .set(allowedUpdates)
+    .where(eq(serviceRequest.id, id!))
+    .returning()
 
   return request
 })

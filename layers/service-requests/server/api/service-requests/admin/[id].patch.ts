@@ -1,6 +1,8 @@
 import { authClient } from '~~/lib/auth-client'
 import { adminUpdateServiceRequestSchema } from '../../../utils/service-request-validation'
-import { prisma } from '~~/lib/db'
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -31,21 +33,11 @@ export default defineEventHandler(async (event) => {
     updateData.closedAt = new Date()
   }
 
-  const request = await prisma.serviceRequest.update({
-    where: { id },
-    data: updateData,
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      },
-      assignedTo: {
-        select: { id: true, name: true, email: true }
-      },
-      organization: {
-        select: { id: true, name: true }
-      }
-    }
-  })
+  const [request] = await db
+    .update(serviceRequest)
+    .set(updateData)
+    .where(eq(serviceRequest.id, id!))
+    .returning()
 
   return request
 })

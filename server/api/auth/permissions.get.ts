@@ -1,23 +1,8 @@
 import { defineEventHandler, createError } from 'h3'
+import { statement, user as userRole, admin as adminRole } from '@@/lib/auth/permissions'
 import { auth } from '@@/lib/auth'
-import { statement, user, admin } from '@@/lib/auth/permissions'
-import { prisma } from '@@/lib/db'
 
-type SessionUser = {
-  id: string
-  name: string | null
-  email: string
-  emailVerified: boolean | null
-  image: string | null
-  createdAt: Date
-  updatedAt: Date
-  role: string | null
-  banned: boolean | null
-  banReason: string | null
-  banExpires: Date | null
-}
-
-type SubjectType = keyof typeof statement
+// type SubjectType = keyof typeof statement
 
 export default defineEventHandler(async (event) => {
   // Get authenticated user
@@ -25,15 +10,11 @@ export default defineEventHandler(async (event) => {
   if (!session?.user) {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
-
+  type SessionUserWithRole = { role?: string }
+  const currentUser = session.user as SessionUserWithRole
   // Get user's role from the database
-  const dbUser = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { role: true }
-  })
-
-  const userRole = dbUser?.role || 'user'
-  const roleDefinition = userRole === 'admin' ? admin : user
+  const currentRole = currentUser.role || 'user'
+  const roleDefinition = currentRole === 'admin' ? adminRole : userRole
 
   // Get all permissions for the user
   const permissions: Record<string, boolean> = {}
@@ -43,7 +24,7 @@ export default defineEventHandler(async (event) => {
     if (Array.isArray(actions)) {
       for (const action of actions) {
         // Check if the role has this permission by looking at its statements
-        const rolePermissions = roleDefinition.statements[subject as 'questionnaire' | 'questionnaire-response'] || []
+        const rolePermissions = (roleDefinition as unknown as Record<string, readonly string[]>)[subject as string] || []
         permissions[`${subject}.${action}`] = rolePermissions.includes(action)
       }
     }
@@ -51,6 +32,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     permissions,
-    role: userRole
+    role: currentRole
   }
 })

@@ -11,16 +11,16 @@ RUN npm i -g pnpm@$PNPM_VERSION
 RUN apk add --no-cache python3 make g++
 
 # Install dependencies based on the preferred package manager
-COPY package.json pnpm-lock.json* prisma.config.ts ./
-COPY prisma ./prisma/
+COPY package.json pnpm-lock.json* ./
 
 # Install **all** dependencies (dev + prod)
 RUN pnpm install
 RUN pnpm add -D tailwindcss
 COPY . .
 
-# Generate Prisma client **once** during build
-RUN npx prisma generate
+# Generate and apply Drizzle migrations (no-op if up-to-date)
+RUN pnpm dlx drizzle-kit generate || true
+RUN pnpm dlx drizzle-kit migrate || true
 
 # Rebuild native modules for the target platform
 RUN pnpm rebuild

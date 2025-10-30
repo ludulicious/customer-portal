@@ -1,6 +1,8 @@
 import { authClient } from '~~/lib/auth-client'
 import { verifyOrganizationAccess } from '../../utils/service-request-helpers'
-import { prisma } from '~~/lib/db'
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -10,17 +12,11 @@ export default defineEventHandler(async (event) => {
 
   const id = getRouterParam(event, 'id')
 
-  const request = await prisma.serviceRequest.findUnique({
-    where: { id },
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      },
-      assignedTo: {
-        select: { id: true, name: true, email: true }
-      }
-    }
-  })
+  const [request] = await db
+    .select()
+    .from(serviceRequest)
+    .where(eq(serviceRequest.id, id!))
+    .limit(1)
 
   if (!request) {
     throw createError({ statusCode: 404, message: 'Request not found' })
@@ -37,8 +33,8 @@ export default defineEventHandler(async (event) => {
   }
 
   // Hide internal notes from non-admin users
-    const { data: role } = await authClient.organization.getActiveMemberRole()
-    const isAdmin = role?.role === 'owner' || role?.role === 'admin'
+  const { data: role } = await authClient.organization.getActiveMemberRole()
+  const isAdmin = role?.role === 'owner' || role?.role === 'admin'
 
   if (!isAdmin) {
     delete request.internalNotes

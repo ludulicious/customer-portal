@@ -1,6 +1,8 @@
 import { authClient } from '~~/lib/auth-client'
 import { verifyRequestOwnership } from '../../utils/service-request-helpers'
-import { prisma } from '~~/lib/db'
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -17,9 +19,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 
-  await prisma.serviceRequest.delete({
-    where: { id }
-  })
+  await db.delete(serviceRequest).where(eq(serviceRequest.id, id!))
 
   return { success: true }
 })

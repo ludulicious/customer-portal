@@ -1,7 +1,10 @@
 import { authClient } from '~~/lib/auth-client'
 import { filterServiceRequestSchema } from '../../utils/service-request-validation'
 import { buildRequestQuery } from '../../utils/service-request-helpers'
-import { prisma } from '~~/lib/db'
+import { db } from '~~/lib/db'
+import { and, desc, eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
+import { defineEventHandler, createError, getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -20,27 +23,21 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'No organization found' })
   }
 
-  const where = {
-    organizationId,
-    ...buildRequestQuery(filters)
-  }
+  const where = and(eq(serviceRequest.organizationId, organizationId), buildRequestQuery(filters))
 
   const [requests, total] = await Promise.all([
-    prisma.serviceRequest.findMany({
-      where,
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true }
-        },
-        assignedTo: {
-          select: { id: true, name: true, email: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: ((filters.page || 1) - 1) * (filters.limit || 20),
-      take: filters.limit || 20
-    }),
-    prisma.serviceRequest.count({ where })
+    db
+      .select()
+      .from(serviceRequest)
+      .where(where)
+      .orderBy(desc(serviceRequest.createdAt))
+      .offset(((filters.page || 1) - 1) * (filters.limit || 20))
+      .limit(filters.limit || 20),
+    db
+      .select({ count: serviceRequest.id })
+      .from(serviceRequest)
+      .where(where)
+      .then(rows => rows.length),
   ])
 
   return {

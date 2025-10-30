@@ -16,7 +16,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
   alias: {
-    '#db': fileURLToPath(new URL('./prisma/generated/client', import.meta.url)),
+    '#lib': fileURLToPath(new URL('./lib', import.meta.url)),
   },
   image: {
     quality: 80,

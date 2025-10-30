@@ -5,7 +5,7 @@ import { sendEmail } from './email'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { db } from './db'
 import { eq } from 'drizzle-orm'
-import { user as userTable, account as accountTable } from '../db/schema/auth-schema'
+import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
 import { ac, user, admin as adminRole } from './auth/permissions'
 
 const adminEmails = process.env.ADMIN_EMAILS?.split(',')
@@ -15,6 +15,16 @@ const adminEmails = process.env.ADMIN_EMAILS?.split(',')
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'pg',
+    schema: {
+      user: userTable,
+      account: accountTable,
+      session: sessionTable,
+      verification: verificationTable,
+      organization: organizationTable,
+      organizationMember: organizationMemberTable,
+      organizationInvitation: organizationInvitationTable,
+    },
+    usePlural: false,
     // Tables are singular (e.g., "user"), so no need for usePlural
   }),
   emailAndPassword: {

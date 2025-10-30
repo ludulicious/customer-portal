@@ -1,7 +1,10 @@
 import { authClient } from '~~/lib/auth-client'
 import { filterServiceRequestSchema } from '../../../utils/service-request-validation'
 import { buildRequestQuery } from '../../../utils/service-request-helpers'
-import { prisma } from '~~/lib/db'
+import { db } from '~~/lib/db'
+import { desc } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
+import { defineEventHandler, createError, getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -22,29 +25,23 @@ export default defineEventHandler(async (event) => {
 
   const where = buildRequestQuery(filters)
 
-  const [requests, total, stats] = await Promise.all([
-    prisma.serviceRequest.findMany({
-      where,
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true }
-        },
-        assignedTo: {
-          select: { id: true, name: true, email: true }
-        },
-        organization: {
-          select: { id: true, name: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: ((filters.page || 1) - 1) * (filters.limit || 20),
-      take: filters.limit || 20
-    }),
-    prisma.serviceRequest.count({ where }),
-    prisma.serviceRequest.groupBy({
-      by: ['status'],
-      _count: true
-    })
+  const [requests, total, statsRows] = await Promise.all([
+    db
+      .select()
+      .from(serviceRequest)
+      .where(where as any)
+      .orderBy(desc(serviceRequest.createdAt))
+      .offset(((filters.page || 1) - 1) * (filters.limit || 20))
+      .limit(filters.limit || 20),
+    db
+      .select({ count: serviceRequest.id })
+      .from(serviceRequest)
+      .where(where as any)
+      .then(rows => rows.length),
+    db
+      .select({ status: serviceRequest.status })
+      .from(serviceRequest)
+      .where(where as any)
   ])
 
   return {
@@ -55,8 +52,8 @@ export default defineEventHandler(async (event) => {
       limit: filters.limit || 20,
       pages: Math.ceil(total / (filters.limit || 20))
     },
-    stats: stats.reduce((acc, item) => {
-      acc[item.status] = item._count
+    stats: statsRows.reduce((acc, item) => {
+      acc[item.status as string] = (acc[item.status as string] ?? 0) + 1
       return acc
     }, {} as Record<string, number>)
   }

@@ -16,9 +16,9 @@ done
 
 echo "Database is ready!"
 
-# Run Prisma migrations
-echo "Running Prisma migrations..."
-if ! npx prisma migrate deploy; then
+# Run Drizzle migrations
+echo "Running Drizzle migrations..."
+if ! pnpm dlx drizzle-kit migrate; then
   echo "Migration failed!"
   exit 1
 fi
