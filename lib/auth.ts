@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { betterAuth } from 'better-auth'
-import { prismaAdapter } from 'better-auth/adapters/prisma'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
-import { prisma } from './db' // Import shared Prisma client
+import { db } from './db'
+import { eq } from 'drizzle-orm'
+import { user as userTable, account as accountTable } from '../db/schema/auth-schema'
 import { ac, user, admin as adminRole } from './auth/permissions'
 
 const adminEmails = process.env.ADMIN_EMAILS?.split(',')
@@ -11,8 +13,9 @@ const adminEmails = process.env.ADMIN_EMAILS?.split(',')
   .filter(Boolean) ?? []
 
 export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: 'postgresql'
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    // Tables are singular (e.g., "user"), so no need for usePlural
   }),
   emailAndPassword: {
     enabled: true,
@@ -31,10 +34,7 @@ export const auth = betterAuth({
         after: async (user: any) => {
           // Existing admin role assignment
           if (user.email && adminEmails.includes(user.email.toLowerCase())) {
-            await prisma.user.update({
-              where: { id: user.id },
-              data: { role: 'admin' }
-            })
+            await db.update(userTable).set({ role: 'admin' }).where(eq(userTable.id, user.id))
           }
 
           // Auto-create organization using better-auth API
@@ -60,16 +60,15 @@ export const auth = betterAuth({
     session: {
       create: {
         after: async (session: any) => {
-          const user = await prisma.user.findUnique({
-            where: { id: session.userId },
-            select: { email: true, role: true }
-          })
+          const [u] = await db
+            .select({ email: userTable.email, role: userTable.role })
+            .from(userTable)
+            .where(eq(userTable.id, session.userId))
+            .limit(1)
+          const user = u
 
           if (user?.email && adminEmails.includes(user.email.toLowerCase()) && user.role !== 'admin') {
-            await prisma.user.update({
-              where: { id: session.userId },
-              data: { role: 'admin' }
-            })
+            await db.update(userTable).set({ role: 'admin' }).where(eq(userTable.id, session.userId))
           }
         }
       }
@@ -120,9 +119,11 @@ export const auth = betterAuth({
       const { user, session } = sessionData
       console.log('custom session sessionData', sessionData)
       // Fetch the account for the user
-      const account = await prisma.account.findFirst({
-        where: { userId: user.id }
-      })
+      const [account] = await db
+        .select({ providerId: accountTable.providerId })
+        .from(accountTable)
+        .where(eq(accountTable.userId, user.id))
+        .limit(1)
 
       // Return modified session data
       return {

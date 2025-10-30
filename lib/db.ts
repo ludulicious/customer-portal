@@ -1,19 +1,18 @@
-import { PrismaClient } from '~~/prisma/generated/client'
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
 
-// Declare prisma globally to avoid multiple instances in development
+// Declare globals to avoid multiple instances in development
 declare global {
-  var prisma: PrismaClient | undefined
+  var db: ReturnType<typeof drizzle> | undefined
 }
 
-// Instantiate PrismaClient, reusing the global instance in development
-export const prisma = globalThis.prisma || new PrismaClient({
-  log: [
-    {
-      emit: 'stdout',
-      level: 'error',
-    },
-  ],
+export const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
 })
 
-// If in development, assign the instance to the global variable
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma
+export const db = globalThis.db || drizzle(pool)
+
+// If in development, assign the instances to the global variables
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.db = db
+}
