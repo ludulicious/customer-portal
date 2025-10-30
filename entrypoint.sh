@@ -22,3 +22,6 @@ if ! npx prisma migrate deploy; then
   echo "Migration failed!"
   exit 1
 fi
+# Execute the command passed as arguments to this script (which is the CMD from Dockerfile)
+echo "Starting Nuxt server..."
+exec "$@"

@@ -78,7 +78,7 @@ export default defineNuxtConfig({
       '/en/blog/**': { swr: 600 }
     },
     prerender: {
-      routes: ['/', '/en', '/contact', '/en/contact'],
+      routes: ['/', '/nl', '/contact', '/nl/contact'],
       crawlLinks: false,
       failOnError: false
     }
