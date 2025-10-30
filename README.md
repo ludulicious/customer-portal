@@ -60,3 +60,25 @@ Check out the [deployment documentation](https://nuxt.com/docs/getting-started/d
 ## Renovate integration
 
 Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
+
+
+## Deployment in docker
+
+To build the docker container:
+
+```bash
+docker build -t customer-portal .
+```
+
+command:
+
+To run the container on port 3000:
+
+```bash
+docker run --rm  -p 3000:3000 -e DATABASE_URL="postgresql://postgres:PWD@host.docker.internal:5432/apexprotest?schema=public" customer-portal
+
+# interactive:
+
+docker run -it --rm  -p 3000:3000 -e DATABASE_URL="postgresql://postgres:PWD@host.docker.internal:5432/apexprotest?schema=public" --entrypoint /bin/sh customer-portal
+```
+

@@ -1,14 +1,24 @@
 #!/bin/sh
 set -e
-# Set environment variables for Prisma
-export PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node
-export PRISMA_QUERY_ENGINE_BINARY=/app/node_modules/.prisma/client/query-engine-linux-musl-openssl-3.0.x
 
-# Run Prisma DB migrate deploy. Requires DATABASE_URL to be set.
-# echo "Running Prisma DB migrate deploy..."
-npx prisma migrate deploy
+# Wait for database to be ready
+echo "Waiting for database to be ready..."
+timeout=60
+while ! nc -z ${DB_HOST:-localhost} ${DB_PORT:-5432} 2>/dev/null; do
+  if [ $timeout -le 0 ]; then
+    echo "Database connection timeout"
+    exit 1
+  fi
+  echo "Waiting for database... ($timeout seconds remaining)"
+  sleep 2
+  timeout=$((timeout - 2))
+done
 
-# Execute the command passed as arguments to this script (which is the CMD from Dockerfile)
-echo "Starting Nuxt server..."
-exec "$@"
+echo "Database is ready!"
 
+# Run Prisma migrations
+echo "Running Prisma migrations..."
+if ! npx prisma migrate deploy; then
+  echo "Migration failed!"
+  exit 1
+fi
