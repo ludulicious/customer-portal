@@ -19,6 +19,7 @@ export default withNuxt(
       'vue/html-comment-indent': 'off',
       'vue/html-end-tags': 'off',
       'vue/first-attribute-linebreak': 'off',
+      'nuxt/nuxt-config-keys-order': 'off',
     }
   }
 )
