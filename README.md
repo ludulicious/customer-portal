@@ -75,10 +75,10 @@ command:
 To run the container on port 3000:
 
 ```bash
-docker run --rm  -p 3000:3000 -e DATABASE_URL="postgresql://postgres:PWD@host.docker.internal:5432/apexprotest?schema=public" customer-portal
+docker run --rm  -p 3000:3000 -e DB_HOST=host.docker.internal -e DATABASE_URL="postgresql://postgres:M0reComplex!@host.docker.internal:5432/apexpro-drizzle?schema=public" customer-portal
 
 # interactive:
 
-docker run -it --rm  -p 3000:3000 -e DATABASE_URL="postgresql://postgres:PWD@host.docker.internal:5432/apexprotest?schema=public" --entrypoint /bin/sh customer-portal
+docker run -it --rm  -p 3000:3000 -e DATABASE_URL="postgresql://postgres:M0reComplex!@host.docker.internal:5432/apexprotest?schema=public" --entrypoint /bin/sh customer-portal
 ```
 

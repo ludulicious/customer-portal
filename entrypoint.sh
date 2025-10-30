@@ -18,7 +18,7 @@ echo "Database is ready!"
 
 # Run Drizzle migrations
 echo "Running Drizzle migrations..."
-if ! pnpm dlx drizzle-kit migrate; then
+if ! npx drizzle-kit migrate --config drizzle.config.ts; then
   echo "Migration failed!"
   exit 1
 fi
