@@ -11,27 +11,61 @@ const path = computed(() => route.path)
 // User store
 const userStore = useUserStore()
 const { currentUser, userInitials, isAuthenticated } = storeToRefs(userStore)
-// const { data: session } = await authClient.useSession(useFetch)
+const { isOrganizationAdmin } = useOrganizationHelpers()
+
+// Reactive states for menu items
+const isOrgAdmin = ref(false)
+
+// Check organization admin status
+onMounted(async () => {
+  if (isAuthenticated.value) {
+    try {
+      isOrgAdmin.value = await isOrganizationAdmin()
+    } catch (error) {
+      console.error('Failed to check organization admin status:', error)
+    }
+  }
+})
+
 // Dropdown menu items for user avatar
-const userMenuItems = computed(() => [
-  [
-    {
-      label: currentUser.value?.name || currentUser.value?.email || 'User',
-      avatar: {
-        src: currentUser.value?.image,
-        alt: currentUser.value?.name || currentUser.value?.email || 'User'
-      },
-      type: 'label' as const
-    }
-  ],
-  [
-    {
-      label: 'Profile',
-      icon: 'i-lucide-user',
-      to: localePath('/profile')
-    }
-  ],
-  [
+const userMenuItems = computed(() => {
+  const menuItems: any[] = [
+    [
+      {
+        label: currentUser.value?.name || currentUser.value?.email || 'User',
+        avatar: {
+          src: currentUser.value?.image,
+          alt: currentUser.value?.name || currentUser.value?.email || 'User'
+        },
+        type: 'label' as const
+      }
+    ],
+    [
+      {
+        label: 'Profile',
+        icon: 'i-lucide-user',
+        to: localePath('/profile')
+      }
+    ]
+  ]
+
+  // Add organization menu items for admins/owners
+  if (isOrgAdmin.value) {
+    menuItems[1].push({
+      label: 'Create Organization',
+      icon: 'i-lucide-plus-circle',
+      to: localePath('/organizations/create')
+    }, {
+      label: 'Invite User',
+      icon: 'i-lucide-user-plus',
+      onSelect: () => {
+        // Navigate to organization page with invite modal
+        navigateTo(localePath('/organization?invite=true'))
+      }
+    })
+  }
+
+  menuItems.push([
     {
       label: 'Logout',
       icon: 'i-lucide-log-out',
@@ -40,8 +74,10 @@ const userMenuItems = computed(() => [
         await navigateTo(localePath('/'))
       }
     }
-  ]
-])
+  ])
+
+  return menuItems
+})
 
 // Function to check if a route is active
 const isRouteActive = (itemPath: string) => {
@@ -82,6 +118,24 @@ const items = computed(() => {
     to: localePath('/dashboard'),
     active: isRouteActive('/dashboard')
   }]
+
+  // Add organization management items for admins/owners
+  if (isOrgAdmin.value) {
+    privateItems.push({
+      label: t('nav.organization'),
+      to: localePath('/organization'),
+      active: isRouteActive('/organization')
+    })
+  }
+
+  // Add admin menu items for system admins
+  if (userStore.isAdmin) {
+    privateItems.push({
+      label: t('nav.admin'),
+      to: localePath('/admin'),
+      active: isRouteActive('/admin')
+    })
+  }
 
   return [...privateItems, ...publicItems]
 })

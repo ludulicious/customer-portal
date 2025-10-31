@@ -14,63 +14,169 @@
         <div class="member-info">
           <div class="member-name">{{ member.user.name || member.user.email }}</div>
           <div class="member-email">{{ member.user.email }}</div>
-          <div class="member-role">{{ member.role.join(', ') }}</div>
+          <div class="member-role">
+            <UBadge
+              :color="member.role === 'owner' ? 'purple' : member.role === 'admin' ? 'blue' : 'gray'"
+              variant="soft"
+            >
+              {{ Array.isArray(member.role) ? member.role.join(', ') : member.role }}
+            </UBadge>
+          </div>
         </div>
         <div class="member-actions">
-          <button @click="updateMemberRole(member)" class="btn-secondary">
-            Update Role
-          </button>
-          <button @click="removeMember(member)" class="btn-danger">
+          <UDropdownMenu :items="[
+            {
+              label: 'Member',
+              onClick: () => updateMemberRole(member, 'member')
+            },
+            {
+              label: 'Admin',
+              onClick: () => updateMemberRole(member, 'admin')
+            },
+            {
+              label: 'Owner',
+              onClick: () => updateMemberRole(member, 'owner')
+            }
+          ]">
+            <UButton variant="outline" size="sm">
+              Change Role
+            </UButton>
+          </UDropdownMenu>
+          <UButton
+            @click="removeMember(member)"
+            color="red"
+            variant="outline"
+            size="sm"
+          >
             Remove
-          </button>
+          </UButton>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invitations List -->
+    <div v-if="invitations.length > 0" class="mt-6">
+      <h4 class="text-lg font-semibold mb-4">Pending Invitations</h4>
+      <div class="space-y-2">
+        <div
+          v-for="invitation in invitations"
+          :key="invitation.id"
+          class="member-card"
+        >
+          <div class="member-info">
+            <div class="member-email">{{ invitation.email }}</div>
+            <div class="member-role">{{ invitation.role || 'member' }}</div>
+            <div class="text-xs text-gray-500">
+              Expires: {{ new Date(invitation.expiresAt).toLocaleDateString() }}
+            </div>
+          </div>
+          <div class="member-actions">
+            <UBadge color="yellow" variant="soft">Pending</UBadge>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Invite Modal -->
-    <div v-if="showInviteModal" class="modal-overlay" @click="showInviteModal = false">
-      <div class="modal" @click.stop>
-        <h3>Invite Member</h3>
-        <form @submit.prevent="inviteMember">
-          <div class="form-group">
-            <label for="invite-email">Email:</label>
-            <input
+    <UModal v-model="showInviteModalLocal" @close="closeModal">
+      <UCard>
+        <template #header>
+          <h3 class="text-lg font-semibold">Invite Member</h3>
+        </template>
+
+        <form @submit.prevent="inviteMember" class="space-y-4">
+          <UFormGroup label="Email" required>
+            <UInput
               id="invite-email"
               v-model="inviteEmail"
               type="email"
+              placeholder="user@example.com"
               required
-              class="form-input"
             />
-          </div>
-          <div class="form-actions">
-            <button type="submit" :disabled="inviting" class="btn-primary">
-              {{ inviting ? 'Sending...' : 'Send Invitation' }}
-            </button>
-            <button type="button" @click="showInviteModal = false" class="btn-secondary">
+          </UFormGroup>
+
+          <UFormGroup label="Role">
+            <USelect
+              v-model="inviteRole"
+              :options="[
+                { label: 'Member', value: 'member' },
+                { label: 'Admin', value: 'admin' },
+                { label: 'Owner', value: 'owner' }
+              ]"
+              option-attribute="label"
+              value-attribute="value"
+            />
+          </UFormGroup>
+
+          <UAlert
+            v-if="error"
+            color="red"
+            variant="soft"
+            :title="error"
+          />
+
+          <div class="flex gap-4 justify-end">
+            <UButton
+              type="button"
+              variant="outline"
+              @click="closeModal"
+            >
               Cancel
-            </button>
+            </UButton>
+            <UButton
+              type="submit"
+              :disabled="inviting"
+              :loading="inviting"
+            >
+              {{ inviting ? 'Sending...' : 'Send Invitation' }}
+            </UButton>
           </div>
         </form>
-      </div>
-    </div>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { authClient } from '~/lib/auth-client'
 import { useCurrentOrganization } from '~/composables/useCurrentOrganization'
 
+interface Props {
+  showInviteModal?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  showInviteModal: false
+})
+
+const emit = defineEmits<{
+  closeInviteModal: []
+}>()
+
 const { organizationId } = useCurrentOrganization()
 
-const members = ref([])
+const members = ref<any[]>([])
+const invitations = ref<any[]>([])
 const loading = ref(true)
 const error = ref('')
-const showInviteModal = ref(false)
+const showInviteModalLocal = ref(props.showInviteModal)
 const inviteEmail = ref('')
+const inviteRole = ref<'admin' | 'member' | 'owner'>('member')
 const inviting = ref(false)
 
+watch(() => props.showInviteModal, (value) => {
+  showInviteModalLocal.value = value
+})
+
+const closeModal = () => {
+  showInviteModalLocal.value = false
+  emit('closeInviteModal')
+}
+
 const loadMembers = async () => {
+  if (!organizationId.value) return
+  
   try {
     loading.value = true
     const { data, error: membersError } = await authClient.organization.listMembers({
@@ -78,50 +184,80 @@ const loadMembers = async () => {
     })
     if (membersError) throw membersError
     members.value = data || []
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message || 'Failed to load members'
   } finally {
     loading.value = false
   }
 }
 
+const loadInvitations = async () => {
+  if (!organizationId.value) return
+  
+  try {
+    // Better-auth doesn't have a direct list invitations endpoint, 
+    // so we'll need to create a custom API endpoint or fetch from the database
+    // For now, we'll fetch from a custom endpoint
+    const data = await $fetch(`/api/organizations/${organizationId.value}/invitations`)
+    invitations.value = data || []
+  } catch (err: any) {
+    console.error('Failed to load invitations:', err)
+    invitations.value = []
+  }
+}
+
 const inviteMember = async () => {
+  if (!organizationId.value) return
+  
   try {
     inviting.value = true
     await authClient.organization.inviteMember({
       email: inviteEmail.value,
-      organizationId: organizationId.value
+      organizationId: organizationId.value,
+      role: inviteRole.value
     })
-    showInviteModal.value = false
+    closeModal()
     inviteEmail.value = ''
-    // Show success message
-  } catch (err) {
+    inviteRole.value = 'member'
+    await loadInvitations()
+    // Show success message - you might want to add a toast notification here
+  } catch (err: any) {
     error.value = err.message || 'Failed to send invitation'
   } finally {
     inviting.value = false
   }
 }
 
-const updateMemberRole = async (member) => {
-  // Implement role update logic
+const updateMemberRole = async (member: any, newRole: 'admin' | 'member' | 'owner') => {
+  try {
+    await authClient.organization.updateMemberRole({
+      memberId: member.id,
+      organizationId: organizationId.value!,
+      role: newRole
+    })
+    await loadMembers()
+  } catch (err: any) {
+    error.value = err.message || 'Failed to update member role'
+  }
 }
 
-const removeMember = async (member) => {
+const removeMember = async (member: any) => {
   if (!confirm(`Remove ${member.user.email} from organization?`)) return
 
   try {
     await authClient.organization.removeMember({
       memberIdOrEmail: member.user.email,
-      organizationId: organizationId.value
+      organizationId: organizationId.value!
     })
     await loadMembers()
-  } catch (err) {
+  } catch (err: any) {
     error.value = err.message || 'Failed to remove member'
   }
 }
 
 onMounted(() => {
   loadMembers()
+  loadInvitations()
 })
 </script>
 
@@ -168,52 +304,7 @@ onMounted(() => {
 .member-actions {
   display: flex;
   gap: 0.5rem;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.modal {
-  background: white;
-  padding: 2rem;
-  border-radius: 0.5rem;
-  min-width: 400px;
-}
-
-.btn-primary {
-  padding: 0.5rem 1rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  background: #6b7280;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
-.btn-danger {
-  padding: 0.5rem 1rem;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
 }
 </style>
 

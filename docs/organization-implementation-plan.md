@@ -889,11 +889,11 @@ onMounted(() => {
 - [x] Create Vue components: OrganizationSwitcher.vue
 - [x] Create Vue components: OrganizationSettings.vue
 - [x] Create Vue components: OrganizationMembers.vue
-- [ ] Create menu option to create an organization
-- [ ] Create menu option to invite a user
-- [ ] Create a page for organization admins/owners where they can view the members and invitations
-- [ ] Create a page for admin users to view all organizations
-- [ ] Create a page for admin users to view all users
-- [ ] Create a form to update a users roles
+- [x] Create menu option to create an organization
+- [x] Create menu option to invite a user
+- [x] Create a page for organization admins/owners where they can view the members and invitations
+- [x] Create a page for admin users to view all organizations
+- [x] Create a page for admin users to view all users
+- [x] Create a form to update a users roles
 - [ ] Test organization creation and assignment flows
 - [ ] Test Vue components with better-auth client methods

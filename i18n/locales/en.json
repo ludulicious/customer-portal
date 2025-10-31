@@ -253,10 +253,12 @@
     }
   },
   "nav": {
+    "admin": "Admin",
     "blog": "Blog",
     "contact": "Contact",
     "dashboard": "Dashboard",
     "language": "Language",
+    "organization": "Organization",
     "portfolio": "Portfolio"
   },
   "signup": {
