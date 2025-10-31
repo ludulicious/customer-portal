@@ -26,7 +26,4 @@ logs
 # VSC
 .history
 
-# Prisma
-prisma/generated
-
 Secret Notes.md

@@ -34,30 +34,31 @@ plugins: [
 
 ### 2.1 Run Better-Auth Migration
 
-The better-auth organization plugin provides its own database schema. Run the migration to add all necessary tables:
+The better-auth organization plugin provides its own database schema through Drizzle. The schema is defined in `db/schema/auth-schema.ts`. Run Drizzle migrations to add all necessary tables:
 
 ```bash
-npx @better-auth/cli migrate
+npx drizzle-kit generate
+npx drizzle-kit migrate
 ```
 
 This will automatically create:
-- `organizations` table
-- `organization_members` table  
-- `organization_invitations` table
-- `organization_roles` table
-- `teams` table
-- `team_members` table
-- Updates to `users` table with `activeOrganizationId`
+- `organization` table
+- `member` table (organization members)
+- `invitation` table (organization invitations)
+- Updates to `session` table with `activeOrganizationId`
+
+Note: The better-auth Drizzle adapter automatically provides the schema definitions, which are already included in `db/schema/auth-schema.ts`.
 
 ### 2.2 Verify Schema
 
-The migration will add these tables with proper relationships and indexes. No manual schema modifications needed unless you want to add custom fields.
+The migration will add these tables with proper relationships and indexes. No manual schema modifications needed unless you want to add custom fields. The schema is defined in `db/schema/auth-schema.ts` using Drizzle ORM.
 
-### 2.3 Generate Prisma Client
+### 2.3 Generate Drizzle Migrations
 
-After migration, regenerate the Prisma client:
+After defining schema changes, generate Drizzle migrations:
 ```bash
-npx prisma generate
+npx drizzle-kit generate
+npx drizzle-kit migrate
 ```
 
 ## Phase 3: Implement Auto-Creation Logic
@@ -83,16 +84,20 @@ plugins: [
 ],
 
 // Use better-auth's built-in user creation hooks
+// Note: Import db and userTable from your Drizzle setup
+import { db } from './db'
+import { userTable } from '~/db/schema/auth-schema'
+import { eq } from 'drizzle-orm'
+
 databaseHooks: {
   user: {
     create: {
       after: async (user: any) => {
         // Existing admin role assignment
         if (user.email && adminEmails.includes(user.email.toLowerCase())) {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: { role: 'admin' }
-          })
+          await db.update(userTable)
+            .set({ role: 'admin' })
+            .where(eq(userTable.id, user.id))
         }
         
         // Auto-create organization using better-auth API
@@ -180,12 +185,18 @@ export const useCurrentOrganization = () => {
 The better-auth organization plugin automatically includes organization data in the session. Update `lib/auth.ts`:
 
 ```typescript
+import { db } from './db'
+import { accountTable } from '~/db/schema/auth-schema'
+import { eq } from 'drizzle-orm'
+
 customSession(async (sessionData) => {
   const { user, session } = sessionData
   
-  const account = await prisma.account.findFirst({
-    where: { userId: user.id },
-  })
+  const [account] = await db
+    .select()
+    .from(accountTable)
+    .where(eq(accountTable.userId, user.id))
+    .limit(1)
   
   // Better-auth organization plugin handles organization data automatically
   // The user object will include activeOrganizationId and organization data
@@ -356,14 +367,26 @@ export async function isOrganizationMember(userId: string, organizationId: strin
 Create `scripts/migrate-users-to-organizations.ts`:
 ```typescript
 import { auth } from '../lib/auth'
+import { db } from '../lib/db'
+import { userTable, memberTable } from '~/db/schema/auth-schema'
+import { eq, isNull, notInArray, sql } from 'drizzle-orm'
 
 // Script to create organizations for existing users using better-auth API
 async function migrateExistingUsers() {
-  const usersWithoutOrg = await prisma.user.findMany({
-    where: {
-      activeOrganizationId: null
-    }
-  })
+  // Get users who are not members of any organization
+  const usersWithOrgs = await db
+    .select({ userId: memberTable.userId })
+    .from(memberTable)
+    .groupBy(memberTable.userId)
+  
+  const userIdsWithOrgs = usersWithOrgs.map(m => m.userId)
+  
+  const usersWithoutOrg = userIdsWithOrgs.length > 0
+    ? await db
+        .select()
+        .from(userTable)
+        .where(notInArray(userTable.id, userIdsWithOrgs))
+    : await db.select().from(userTable)
   
   for (const user of usersWithoutOrg) {
     const orgName = user.name || user.email.split('@')[0]
@@ -917,7 +940,7 @@ onMounted(() => {
 - `scripts/migrate-users-to-organizations.ts` - Migration script
 
 **No longer needed:**
-- Custom Prisma schema modifications (handled by better-auth)
+- Custom Drizzle schema modifications (handled by better-auth)
 - Custom API endpoints (provided by better-auth)
 - Custom permission system for organizations (built into better-auth)
 - React-based better-auth-ui components (not compatible with Vue)

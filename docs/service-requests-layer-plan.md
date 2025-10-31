@@ -8,7 +8,7 @@ Create a standalone Nuxt layer for service requests that can be easily added or 
 
 - Better-auth with organization plugin configured and implemented
 - Better-auth with admin plugin configured
-- Prisma client available
+- Drizzle ORM configured (db instance available from `~/lib/db`)
 - Nuxt UI components available
 
 ## Key Changes for Better-Auth Integration
@@ -22,16 +22,16 @@ This plan has been updated to work with the existing better-auth organization im
 - **Updates all API endpoints** to use better-auth organization client methods
 - **Simplifies composables** by using better-auth organization client instead of custom organization logic
 
-## Multi-File Prisma Schema Approach
+## Multi-File Drizzle Schema Approach
 
-This implementation uses [Prisma's multi-file schema feature](https://www.prisma.io/docs/orm/prisma-schema/overview/location#multi-file-prisma-schema) to organize the database schema by domain:
+This implementation uses Drizzle's modular schema approach to organize the database schema by domain:
 
-- **Main schema** (`prisma/schema.prisma`) contains the datasource, generator, and better-auth models
-- **Service requests schema** (`layers/service-requests/prisma/service-requests.prisma`) contains only service request related models
-- **Configuration** via `prisma.config.ts` file (recommended approach)
-- **Automatic inclusion** of all `.prisma` files in the `prisma/` directory
+- **Main schema** (`db/schema/auth-schema.ts`) contains better-auth models and core authentication tables
+- **Service requests schema** (`db/schema/service-requests.ts`) contains only service request related models
+- **Schema aggregation** via `drizzle.config.ts` which points to the `db/schema/` directory
+- **Automatic inclusion** of all schema files exported from the schema directory
 - **Clean separation** of concerns between different feature domains
-- **Easy layer removal** by simply deleting the layer directory
+- **Easy layer removal** by simply deleting or commenting out the service-requests schema file
 
 ## Phase 1: Layer Structure Setup
 
@@ -49,12 +49,12 @@ layers/service-requests/
 ├── server/
 │   ├── api/
 │   └── utils/
-├── prisma/
-│   └── service-requests.prisma
 └── i18n/
     └── locales/
         ├── en.json
         └── nl.json
+
+Note: The Drizzle schema is defined in `db/schema/service-requests.ts` at the root level, not in the layer directory.
 ```
 
 ### 1.2 Create Layer Nuxt Config
@@ -71,119 +71,93 @@ export default defineNuxtConfig({
 
 ### 2.1 Define Service Request Schema
 
-Create `layers/service-requests/prisma/service-requests.prisma`:
-```prisma
-enum ServiceRequestStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-enum ServiceRequestPriority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
-}
-
-model ServiceRequest {
-  id             String                  @id @default(cuid())
-  title          String
-  description    String                  @db.Text
-  status         ServiceRequestStatus    @default(OPEN)
-  priority       ServiceRequestPriority  @default(MEDIUM)
-  category       String?
-  
-  // Organization relationship
-  organizationId String
-  organization   Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  // User relationships
-  createdById    String
-  createdBy      User                    @relation("ServiceRequestCreator", fields: [createdById], references: [id])
-  
-  assignedToId   String?
-  assignedTo     User?                   @relation("ServiceRequestAssignee", fields: [assignedToId], references: [id])
-  
-  // Metadata
-  attachments    Json?                   // Array of file URLs or metadata
-  internalNotes  String?                 @db.Text
-  
-  // Timestamps
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
-  resolvedAt     DateTime?
-  closedAt       DateTime?
-  
-  @@index([organizationId])
-  @@index([createdById])
-  @@index([assignedToId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("service_requests")
-}
-```
-
-### 2.2 Update Main Prisma Schema
-
-Add to `prisma/schema.prisma` in main layer:
-```prisma
-model User {
-  // ... existing fields
-  
-  createdServiceRequests  ServiceRequest[] @relation("ServiceRequestCreator")
-  assignedServiceRequests ServiceRequest[] @relation("ServiceRequestAssignee")
-}
-
-// Note: Organization model already exists from better-auth
-// Add serviceRequests relation to existing Organization model
-model Organization {
-  // ... existing better-auth fields
-  
-  serviceRequests ServiceRequest[]
-}
-```
-
-### 2.3 Configure Multi-File Prisma Schema
-
-Update `prisma/schema.prisma` to use multi-file schema:
-```prisma
-// This is your main Prisma schema file
-// The datasource and generator blocks must be in this file
-
-generator client {
-  provider = "prisma-client-js"
-  output   = "./generated/client"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-// Import service requests schema from layer
-// This will be automatically included when using multi-file schema
-```
-
-### 2.4 Configure Prisma for Multi-File Schema
-
-Create `prisma.config.ts` to specify the schema location:
+Create `db/schema/service-requests.ts`:
 ```typescript
-import path from 'node:path'
-import type { PrismaConfig } from 'prisma'
+import { pgEnum, pgTable, text, timestamp, jsonb, index } from 'drizzle-orm/pg-core'
 
-export default {
-  schema: path.join('prisma'),
-} satisfies PrismaConfig
+// Enums
+export const serviceRequestStatus = pgEnum('ServiceRequestStatus', [
+  'OPEN',
+  'IN_PROGRESS',
+  'RESOLVED',
+  'CLOSED',
+])
+
+export const serviceRequestPriority = pgEnum('ServiceRequestPriority', [
+  'LOW',
+  'MEDIUM',
+  'HIGH',
+  'URGENT',
+])
+
+// Table
+export const serviceRequest = pgTable(
+  'service_request',
+  {
+    id: text('id').primaryKey(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    status: serviceRequestStatus('status').default('OPEN').notNull(),
+    priority: serviceRequestPriority('priority').default('MEDIUM').notNull(),
+    category: text('category'),
+
+    // Relations (FKs by convention; define explicit FKs in migrations if desired)
+    organizationId: text('organizationId').notNull(),
+    createdById: text('createdById').notNull(),
+    assignedToId: text('assignedToId'),
+
+    // Metadata
+    attachments: jsonb('attachments'),
+    internalNotes: text('internalNotes'),
+
+    // Timestamps
+    createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull(),
+    resolvedAt: timestamp('resolvedAt', { mode: 'date' }),
+    closedAt: timestamp('closedAt', { mode: 'date' }),
+  },
+  (t) => ({
+    organizationIdIdx: index('service_request_organizationId_idx').on(t.organizationId),
+    createdByIdIdx: index('service_request_createdById_idx').on(t.createdById),
+    assignedToIdIdx: index('service_request_assignedToId_idx').on(t.assignedToId),
+    statusIdx: index('service_request_status_idx').on(t.status),
+    createdAtIdx: index('service_request_createdAt_idx').on(t.createdAt),
+  })
+)
 ```
 
-### 2.5 Run Migration
+### 2.2 Update Drizzle Config
 
+The `drizzle.config.ts` should already point to the `db/schema/` directory, which will automatically include all exported schema files:
+
+```typescript
+import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  schema: './db/schema',
+  out: './drizzle',
+  dialect: 'postgresql',
+  dbCredentials: { url: process.env.DATABASE_URL! },
+})
+```
+
+### 2.3 Export Schema from Index (Optional)
+
+Create or update `db/schema/index.ts` to export all schemas:
+```typescript
+export * from './auth-schema'
+export * from './service-requests'
+```
+
+### 2.4 Run Migration
+
+Generate and run Drizzle migrations:
 ```bash
-npx prisma migrate dev --name add_service_requests
-npx prisma generate
+npx drizzle-kit generate
+npx drizzle-kit migrate
 ```
+
+Note: Drizzle will automatically detect the new service request schema when you generate migrations.
 
 ## Phase 3: Type Definitions
 
@@ -355,6 +329,9 @@ export const filterServiceRequestSchema = z.object({
 Create `layers/service-requests/server/utils/service-request-helpers.ts`:
 ```typescript
 import { authClient } from '~~/lib/auth-client'
+import { db } from '~~/lib/db'
+import { eq, and, ilike, or } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export async function verifyOrganizationAccess(
   userId: string,
@@ -385,30 +362,33 @@ export async function verifyRequestOwnership(
   userId: string,
   requestId: string
 ): Promise<boolean> {
-  const request = await prisma.serviceRequest.findUnique({
-    where: { id: requestId },
-    select: { createdById: true }
-  })
-  return request?.createdById === userId
+  const [row] = await db
+    .select({ createdById: serviceRequest.createdById })
+    .from(serviceRequest)
+    .where(eq(serviceRequest.id, requestId))
+    .limit(1)
+  return row?.createdById === userId
 }
 
 export function buildRequestQuery(filters: any) {
-  const where: any = {}
+  const conditions = []
   
-  if (filters.status) where.status = filters.status
-  if (filters.priority) where.priority = filters.priority
-  if (filters.category) where.category = filters.category
-  if (filters.assignedToId) where.assignedToId = filters.assignedToId
-  if (filters.createdById) where.createdById = filters.createdById
+  if (filters.status) conditions.push(eq(serviceRequest.status, filters.status))
+  if (filters.priority) conditions.push(eq(serviceRequest.priority, filters.priority))
+  if (filters.category) conditions.push(eq(serviceRequest.category, filters.category))
+  if (filters.assignedToId) conditions.push(eq(serviceRequest.assignedToId, filters.assignedToId))
+  if (filters.createdById) conditions.push(eq(serviceRequest.createdById, filters.createdById))
   
   if (filters.search) {
-    where.OR = [
-      { title: { contains: filters.search, mode: 'insensitive' } },
-      { description: { contains: filters.search, mode: 'insensitive' } }
-    ]
+    conditions.push(
+      or(
+        ilike(serviceRequest.title, `%${filters.search}%`),
+        ilike(serviceRequest.description, `%${filters.search}%`)
+      )!
+    )
   }
   
-  return where
+  return conditions.length > 0 ? and(...conditions) : undefined
 }
 ```
 
@@ -419,6 +399,9 @@ export function buildRequestQuery(filters: any) {
 Create `layers/service-requests/server/api/service-requests/index.get.ts`:
 ```typescript
 import { authClient } from '~~/lib/auth-client'
+import { db } from '~~/lib/db'
+import { and, desc, eq, sql } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
@@ -437,28 +420,36 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'No organization found' })
   }
   
-  const where = {
-    organizationId,
-    ...buildRequestQuery(filters)
+  const whereConditions = [
+    eq(serviceRequest.organizationId, organizationId)
+  ]
+  const queryConditions = buildRequestQuery(filters)
+  if (queryConditions) {
+    whereConditions.push(queryConditions)
   }
+  const where = whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0]
   
-  const [requests, total] = await Promise.all([
-    prisma.serviceRequest.findMany({
-      where,
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true }
-        },
-        assignedTo: {
-          select: { id: true, name: true, email: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: ((filters.page || 1) - 1) * (filters.limit || 20),
-      take: filters.limit || 20
-    }),
-    prisma.serviceRequest.count({ where })
+  // Note: Drizzle doesn't have automatic relations like Prisma
+  // You'll need to join tables manually or fetch related data separately
+  const [requests, totalRows] = await Promise.all([
+    db
+      .select()
+      .from(serviceRequest)
+      .where(where)
+      .orderBy(desc(serviceRequest.createdAt))
+      .offset(((filters.page || 1) - 1) * (filters.limit || 20))
+      .limit(filters.limit || 20),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(serviceRequest)
+      .where(where)
   ])
+  
+  const total = Number(totalRows[0]?.count || 0)
+  
+  // Optionally fetch related user data separately if needed
+  // const userIds = [...new Set([...requests.map(r => r.createdById), ...requests.map(r => r.assignedToId).filter(Boolean)])]
+  // const users = await db.select().from(userTable).where(inArray(userTable.id, userIds))
   
   return {
     requests,
@@ -477,6 +468,8 @@ export default defineEventHandler(async (event) => {
 Create `layers/service-requests/server/api/service-requests/index.post.ts`:
 ```typescript
 import { authClient } from '~~/lib/auth-client'
+import { db } from '~~/lib/db'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
@@ -495,20 +488,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'No organization found' })
   }
   
-  const request = await prisma.serviceRequest.create({
-    data: {
+  const [request] = await db
+    .insert(serviceRequest)
+    .values({
       ...data,
       organizationId,
       createdById: session.user.id,
       status: 'OPEN',
-      priority: data.priority || 'MEDIUM'
-    },
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      }
-    }
-  })
+      priority: (data.priority || 'MEDIUM') as any,
+    })
+    .returning()
   
   return request
 })
@@ -519,6 +508,9 @@ export default defineEventHandler(async (event) => {
 Create `layers/service-requests/server/api/service-requests/[id].get.ts`:
 ```typescript
 import { authClient } from '~~/lib/auth-client'
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
@@ -528,17 +520,11 @@ export default defineEventHandler(async (event) => {
   
   const id = getRouterParam(event, 'id')
   
-  const request = await prisma.serviceRequest.findUnique({
-    where: { id },
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      },
-      assignedTo: {
-        select: { id: true, name: true, email: true }
-      }
-    }
-  })
+  const [request] = await db
+    .select()
+    .from(serviceRequest)
+    .where(eq(serviceRequest.id, id!))
+    .limit(1)
   
   if (!request) {
     throw createError({ statusCode: 404, message: 'Request not found' })
@@ -570,6 +556,10 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].patch.ts`:
 ```typescript
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   if (!session?.user) {
@@ -594,18 +584,11 @@ export default defineEventHandler(async (event) => {
   if (data.priority) allowedUpdates.priority = data.priority
   if (data.category) allowedUpdates.category = data.category
   
-  const request = await prisma.serviceRequest.update({
-    where: { id },
-    data: allowedUpdates,
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      },
-      assignedTo: {
-        select: { id: true, name: true, email: true }
-      }
-    }
-  })
+  const [request] = await db
+    .update(serviceRequest)
+    .set(allowedUpdates)
+    .where(eq(serviceRequest.id, id!))
+    .returning()
   
   return request
 })
@@ -615,6 +598,10 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].delete.ts`:
 ```typescript
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
+
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
   if (!session?.user) {
@@ -630,9 +617,9 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
   
-  await prisma.serviceRequest.delete({
-    where: { id }
-  })
+  await db
+    .delete(serviceRequest)
+    .where(eq(serviceRequest.id, id!))
   
   return { success: true }
 })
@@ -645,6 +632,9 @@ export default defineEventHandler(async (event) => {
 Create `layers/service-requests/server/api/service-requests/admin/index.get.ts`:
 ```typescript
 import { authClient } from '~~/lib/auth-client'
+import { db } from '~~/lib/db'
+import { desc, sql } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
@@ -665,30 +655,32 @@ export default defineEventHandler(async (event) => {
   
   const where = buildRequestQuery(filters)
   
-  const [requests, total, stats] = await Promise.all([
-    prisma.serviceRequest.findMany({
-      where,
-      include: {
-        createdBy: {
-          select: { id: true, name: true, email: true }
-        },
-        assignedTo: {
-          select: { id: true, name: true, email: true }
-        },
-        organization: {
-          select: { id: true, name: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: ((filters.page || 1) - 1) * (filters.limit || 20),
-      take: filters.limit || 20
-    }),
-    prisma.serviceRequest.count({ where }),
-    prisma.serviceRequest.groupBy({
-      by: ['status'],
-      _count: true
-    })
+  const [requests, totalRows, statusCounts] = await Promise.all([
+    db
+      .select()
+      .from(serviceRequest)
+      .where(where)
+      .orderBy(desc(serviceRequest.createdAt))
+      .offset(((filters.page || 1) - 1) * (filters.limit || 20))
+      .limit(filters.limit || 20),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(serviceRequest)
+      .where(where),
+    db
+      .select({ 
+        status: serviceRequest.status,
+        count: sql<number>`count(*)`
+      })
+      .from(serviceRequest)
+      .groupBy(serviceRequest.status)
   ])
+  
+  const total = Number(totalRows[0]?.count || 0)
+  const stats = statusCounts.reduce((acc, item) => {
+    acc[item.status] = Number(item.count)
+    return acc
+  }, {} as Record<string, number>)
   
   return {
     requests,
@@ -698,10 +690,7 @@ export default defineEventHandler(async (event) => {
       limit: filters.limit || 20,
       pages: Math.ceil(total / (filters.limit || 20))
     },
-    stats: stats.reduce((acc, item) => {
-      acc[item.status] = item._count
-      return acc
-    }, {} as Record<string, number>)
+    stats
   }
 })
 ```
@@ -711,6 +700,9 @@ export default defineEventHandler(async (event) => {
 Create `layers/service-requests/server/api/service-requests/admin/[id].patch.ts`:
 ```typescript
 import { authClient } from '~~/lib/auth-client'
+import { db } from '~~/lib/db'
+import { eq } from 'drizzle-orm'
+import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await getUserSession(event)
@@ -741,21 +733,11 @@ export default defineEventHandler(async (event) => {
     updateData.closedAt = new Date()
   }
   
-  const request = await prisma.serviceRequest.update({
-    where: { id },
-    data: updateData,
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true }
-      },
-      assignedTo: {
-        select: { id: true, name: true, email: true }
-      },
-      organization: {
-        select: { id: true, name: true }
-      }
-    }
-  })
+  const [request] = await db
+    .update(serviceRequest)
+    .set(updateData)
+    .where(eq(serviceRequest.id, id!))
+    .returning()
   
   return request
 })
@@ -2188,7 +2170,7 @@ if (widget) {
 
 **Layer Structure:**
 - `layers/service-requests/nuxt.config.ts`
-- `layers/service-requests/prisma/service-requests.prisma`
+- `db/schema/service-requests.ts` (Drizzle schema at root level)
 - `layers/service-requests/app/types/service-request.d.ts`
 
 **Server:**
@@ -2232,8 +2214,8 @@ if (widget) {
 - Update `app/components/AppHeader.vue`
 - Update `app/pages/dashboard.vue`
 - Create `app/components/RecentServiceRequestsWidget.vue`
-- Update `prisma/schema.prisma` (add relations)
-- Create `prisma.config.ts` (for multi-file schema configuration)
+- Update `drizzle.config.ts` (should already point to `db/schema/`)
+- Create or update `db/schema/index.ts` (optional, to export all schemas)
 
 ## Testing
 
@@ -2259,7 +2241,7 @@ if (widget) {
 ## To-dos
 
 - [ ] Create service requests layer directory structure
-- [ ] Define ServiceRequest Prisma schema in layer using multi-file schema (using existing better-auth Organization model)
+- [ ] Define ServiceRequest Drizzle schema in `db/schema/service-requests.ts` (using existing better-auth Organization model)
 - [ ] Build customer-facing Vue components (form, list, detail, badge)
 - [ ] Create customer pages for listing, creating, and viewing requests
 - [ ] Implement useServiceRequests composable for customer operations (using better-auth organization client)
@@ -2275,4 +2257,4 @@ if (widget) {
 - [ ] Update dashboard to conditionally show service request widget
 - [ ] Add internationalization keys for service requests in layer locale files
 - [ ] Create and run database migrations for service requests (extending existing better-auth schema)
-- [ ] Create prisma.config.ts for multi-file schema configuration
+- [ ] Verify `drizzle.config.ts` includes `db/schema/` directory
