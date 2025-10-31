@@ -360,74 +360,13 @@ export async function isOrganizationMember(userId: string, organizationId: strin
 }
 ```
 
-## Phase 8: Data Migration for Existing Users
+## Phase 8: Vue UI Components
 
-### 8.1 Create Migration Script Using Better-Auth API
-
-Create `scripts/migrate-users-to-organizations.ts`:
-```typescript
-import { auth } from '../lib/auth'
-import { db } from '../lib/db'
-import { userTable, memberTable } from '~/db/schema/auth-schema'
-import { eq, isNull, notInArray, sql } from 'drizzle-orm'
-
-// Script to create organizations for existing users using better-auth API
-async function migrateExistingUsers() {
-  // Get users who are not members of any organization
-  const usersWithOrgs = await db
-    .select({ userId: memberTable.userId })
-    .from(memberTable)
-    .groupBy(memberTable.userId)
-  
-  const userIdsWithOrgs = usersWithOrgs.map(m => m.userId)
-  
-  const usersWithoutOrg = userIdsWithOrgs.length > 0
-    ? await db
-        .select()
-        .from(userTable)
-        .where(notInArray(userTable.id, userIdsWithOrgs))
-    : await db.select().from(userTable)
-  
-  for (const user of usersWithoutOrg) {
-    const orgName = user.name || user.email.split('@')[0]
-    const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${user.id.slice(0, 8)}`
-    
-    try {
-      // Use better-auth API to create organization
-      await auth.api.createOrganization({
-        body: {
-          name: `${orgName}'s Organization`,
-          slug: orgSlug,
-          userId: user.id,
-          keepCurrentActiveOrganization: false
-        }
-      })
-      
-      console.log(`Created organization for user ${user.email}`)
-    } catch (error) {
-      console.error(`Failed to create organization for user ${user.email}:`, error)
-    }
-  }
-}
-
-migrateExistingUsers()
-```
-
-### 8.2 Add Migration to package.json
-
-```json
-"scripts": {
-  "migrate:organizations": "tsx scripts/migrate-users-to-organizations.ts"
-}
-```
-
-## Phase 9: Vue UI Components
-
-### 9.1 Create Custom Vue Components
+### 8.1 Create Custom Vue Components
 
 Since better-auth-ui is React-based, we'll create custom Vue components using the better-auth client methods:
 
-### 9.2 Organization Switcher Component
+### 8.2 Organization Switcher Component
 
 Create `app/components/OrganizationSwitcher.vue`:
 
@@ -531,7 +470,7 @@ onMounted(() => {
 </style>
 ```
 
-### 9.3 Organization Settings Component
+### 8.3 Organization Settings Component
 
 Create `app/components/OrganizationSettings.vue`:
 
@@ -704,7 +643,7 @@ onMounted(() => {
 </style>
 ```
 
-### 9.4 Member Management Component
+### 8.4 Member Management Component
 
 Create `app/components/OrganizationMembers.vue`:
 
@@ -920,31 +859,6 @@ onMounted(() => {
 - Secure invitation system
 - Row-level security via organization membership
 
-### Backward Compatibility
-- Migration script handles existing users
-- Better-auth manages schema updates
-- Graceful fallback if organization not found
-
-## Files to Create/Modify
-
-**Modified:**
-- `lib/auth.ts` - Add organization plugin configuration
-- `lib/auth-client.ts` - Add organization client plugin
-
-**Created:**
-- `app/composables/useCurrentOrganization.ts` - Organization helper composable
-- `app/composables/useOrganizationHelpers.ts` - Additional organization utilities
-- `app/components/OrganizationSwitcher.vue` - Organization switcher component
-- `app/components/OrganizationSettings.vue` - Organization settings component
-- `app/components/OrganizationMembers.vue` - Member management component
-- `scripts/migrate-users-to-organizations.ts` - Migration script
-
-**No longer needed:**
-- Custom Drizzle schema modifications (handled by better-auth)
-- Custom API endpoints (provided by better-auth)
-- Custom permission system for organizations (built into better-auth)
-- React-based better-auth-ui components (not compatible with Vue)
-
 ## Testing
 
 1. Test auto-creation on new user signup using better-auth hooks
@@ -965,15 +879,21 @@ onMounted(() => {
 ## Updated To-dos
 
 - [x] Research better-auth organization plugin documentation and API
-- [ ] Configure organization plugin in lib/auth.ts
-- [ ] Run better-auth migration: `npx @better-auth/cli migrate`
-- [ ] Add organization client plugin to lib/auth-client.ts
-- [ ] Create useCurrentOrganization composable using better-auth client
-- [ ] Create useOrganizationHelpers composable
-- [ ] Update user creation hook to auto-create organizations
-- [ ] Create migration script for existing users using better-auth API
-- [ ] Create Vue components: OrganizationSwitcher.vue
-- [ ] Create Vue components: OrganizationSettings.vue
-- [ ] Create Vue components: OrganizationMembers.vue
+- [x] Configure organization plugin in lib/auth.ts
+- [x] Run better-auth migration: `npx @better-auth/cli migrate`
+- [x] Add organization client plugin to lib/auth-client.ts
+- [x] Create useCurrentOrganization composable using better-auth client
+- [x] Create useOrganizationHelpers composable
+- [x] Update user creation hook to auto-create organizations
+- [x] Create migration script for existing users using better-auth API
+- [x] Create Vue components: OrganizationSwitcher.vue
+- [x] Create Vue components: OrganizationSettings.vue
+- [x] Create Vue components: OrganizationMembers.vue
+- [ ] Create menu option to create an organization
+- [ ] Create menu option to invite a user
+- [ ] Create a page for organization admins/owners where they can view the members and invitations
+- [ ] Create a page for admin users to view all organizations
+- [ ] Create a page for admin users to view all users
+- [ ] Create a form to update a users roles
 - [ ] Test organization creation and assignment flows
 - [ ] Test Vue components with better-auth client methods

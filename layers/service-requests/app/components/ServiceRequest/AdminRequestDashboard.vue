@@ -27,16 +27,10 @@
         </div>
       </UCard>
     </div>
-    
+
     <!-- Filters and Table -->
-    <AdminRequestTable 
-      :requests="requests"
-      :loading="loading"
-      :pagination="pagination"
-      @select="$emit('select', $event)"
-      @filter="$emit('filter', $event)"
-      @update="$emit('update', $event)"
-    />
+    <AdminRequestTable :requests="requests" :loading="loading" :pagination="pagination"
+      @select="$emit('select', $event)" @filter="$emit('filter', $event)" @update="$emit('update', $event)" />
   </div>
 </template>
 
@@ -54,4 +48,3 @@ const emit = defineEmits<{
   update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
 }>()
 </script>
-

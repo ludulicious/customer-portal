@@ -10,7 +10,7 @@ const { data: page } = await useAsyncData(
 const { data: posts } = await useAsyncData(
   () => `blog-posts-${locale.value}-${route.path}`,
   () => queryCollection(locale.value === 'en' ? 'posts_en' : 'posts_nl')
-    .order('path', 'DESC')
+    .order('id', 'DESC')
     .all()
 )
 
@@ -39,12 +39,11 @@ definePageMeta({
         v-bind="page"
         class="py-[50px]"
       />
-
       <UPageBody>
         <UBlogPosts>
           <UBlogPost
             v-for="(post, index) in posts"
-            :key="index"
+            :key="post.id"
             :to="localePath(post.path)"
             :title="post.title"
             :description="post.description"
