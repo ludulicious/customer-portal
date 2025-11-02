@@ -27,24 +27,24 @@ const activeTab = ref<'organizations' | 'users'>('organizations')
           <div class="border-b border-gray-200 dark:border-gray-700">
             <nav class="-mb-px flex gap-6">
               <button
-                @click="activeTab = 'organizations'"
                 :class="[
                   'py-2 px-1 border-b-2 font-medium text-sm',
                   activeTab === 'organizations'
                     ? 'border-primary text-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 ]"
+                @click="activeTab = 'organizations'"
               >
                 Organizations
               </button>
               <button
-                @click="activeTab = 'users'"
                 :class="[
                   'py-2 px-1 border-b-2 font-medium text-sm',
                   activeTab === 'users'
                     ? 'border-primary text-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 ]"
+                @click="activeTab = 'users'"
               >
                 Users
               </button>
@@ -58,4 +58,3 @@ const activeTab = ref<'organizations' | 'users'>('organizations')
     </UContainer>
   </div>
 </template>
-

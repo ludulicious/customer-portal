@@ -31,13 +31,10 @@ onMounted(() => {
   <UCard>
     <template #header>
       <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold">All Organizations</h2>
-        <UButton
-          icon="i-lucide-refresh-cw"
-          variant="outline"
-          @click="loadOrganizations"
-          :loading="loading"
-        >
+        <h2 class="text-xl font-semibold">
+          All Organizations
+        </h2>
+        <UButton icon="i-lucide-refresh-cw" variant="outline" :loading="loading" @click="loadOrganizations">
           Refresh
         </UButton>
       </div>
@@ -45,39 +42,35 @@ onMounted(() => {
 
     <div v-if="loading" class="text-center py-8">
       <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
-      <p class="text-gray-600 dark:text-gray-400 mt-2">Loading organizations...</p>
+      <p class="text-gray-600 dark:text-gray-400 mt-2">
+        Loading organizations...
+      </p>
     </div>
 
-    <UAlert
-      v-else-if="error"
-      color="red"
-      variant="soft"
-      :title="error"
-    />
+    <UAlert v-else-if="error" color="red" variant="soft" :title="error" />
 
     <div v-else-if="organizations.length === 0" class="text-center py-8">
-      <p class="text-gray-600 dark:text-gray-400">No organizations found</p>
+      <p class="text-gray-600 dark:text-gray-400">
+        No organizations found
+      </p>
     </div>
 
     <div v-else class="space-y-4">
-      <div
-        v-for="org in organizations"
-        :key="org.id"
-        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-      >
+      <div v-for="org in organizations" :key="org.id"
+        class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="font-semibold text-lg">{{ org.name }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">Slug: {{ org.slug }}</p>
+            <h3 class="font-semibold text-lg">
+              {{ org.name }}
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Slug: {{ org.slug }}
+            </p>
             <p class="text-xs text-gray-500 mt-1">
               Created: {{ new Date(org.createdAt).toLocaleDateString() }}
             </p>
           </div>
-          <UButton
-            :to="`/organization/${org.id}`"
-            variant="outline"
-            size="sm"
-          >
+          <UButton :to="`/organization/${org.id}`" variant="outline" size="sm">
             View
           </UButton>
         </div>
