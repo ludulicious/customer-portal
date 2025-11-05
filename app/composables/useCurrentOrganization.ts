@@ -1,10 +1,11 @@
 import { authClient } from '~~/lib/auth-client'
+import type { OrganizationMemberWithUser, MemberRole } from '~~/types'
 
 export const useCurrentOrganization = () => {
   const session = authClient.useSession()
 
   // Reactive organization data
-  const currentOrganization = ref<any>(null)
+  const currentOrganization = ref<OrganizationMemberWithUser | null>(null)
   const organizationId = ref<string | null>(null)
 
   // Fetch current organization data
@@ -42,7 +43,7 @@ export const useCurrentOrganization = () => {
     })
   }
 
-  const inviteMember = async (email: string, organizationId: string, role: 'admin' | 'member' | 'owner' = 'member') => {
+  const inviteMember = async (email: string, organizationId: string, role: MemberRole = 'member') => {
     return await authClient.organization.inviteMember({
       email,
       organizationId,

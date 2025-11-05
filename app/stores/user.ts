@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { SessionUser } from '~~/types'
 
 interface UserPermissions {
   [key: string]: boolean
@@ -13,7 +14,7 @@ export const useUserStore = defineStore('user', () => {
   const permissions = ref<UserPermissions>({})
   const role = ref<string | null>(null)
   const isLoading = ref(false)
-  const currentUser = ref<any | null>(null)
+  const currentUser = ref<SessionUser | null>(null)
   const hasFetchedPermissions = ref(false)
 
   const colorMode = useColorMode() // Use the colorMode composable
@@ -52,8 +53,8 @@ export const useUserStore = defineStore('user', () => {
 
   const loggedInUsingEmail = computed(() => {
     const user = currentUser.value
-    if (!user || typeof (user as any).providerId === 'undefined') return false
-    return (user as any).providerId === 'credential'
+    if (!user || typeof user.providerId === 'undefined') return false
+    return user.providerId === 'credential'
   })
 
 
@@ -98,7 +99,7 @@ export const useUserStore = defineStore('user', () => {
     // No longer need to reset lastSessionCheckTime
   }
 
-  function setUser(user: any | null) {
+  function setUser(user: SessionUser | null) {
     if (user) {
       if (!currentUser.value || currentUser.value.id !== user.id) {
         console.log('setUser: User changed or new user. Resetting permission status.')

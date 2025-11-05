@@ -7,7 +7,7 @@
 
     <UAlert
       v-else-if="error"
-      color="red"
+      color="error"
       variant="soft"
       :title="error"
     />
@@ -52,7 +52,7 @@
         </UButton>
         <UButton
           type="button"
-          color="red"
+          color="error"
           variant="outline"
           @click="deleteOrganization"
         >
@@ -64,8 +64,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { authClient } from '~/lib/auth-client'
+import { authClient } from '~~/lib/auth-client'
+import type { ApiError, Organization } from '~~/types'
 
 const loading = ref(true)
 const updating = ref(false)
@@ -81,16 +81,21 @@ const loadOrganization = async () => {
   try {
     loading.value = true
     const { data: member } = await authClient.organization.getActiveMember()
-    if (member?.organization) {
-      formData.value = {
-        id: member.organization.id,
-        name: member.organization.name,
-        slug: member.organization.slug,
-        logo: member.organization.logo || ''
+    if (member?.organizationId) {
+      // Fetch organization details using organizationId
+      const organization = await $fetch<Organization>(`/api/organizations/${member.organizationId}`)
+      if (organization) {
+        formData.value = {
+          id: organization.id,
+          name: organization.name,
+          slug: organization.slug,
+          logo: organization.logo || ''
+        }
       }
     }
-  } catch (err: any) {
-    error.value = err.message || 'Failed to load organization'
+  } catch (err) {
+    const apiError = err as ApiError
+    error.value = apiError.message || 'Failed to load organization'
   } finally {
     loading.value = false
   }
@@ -105,8 +110,9 @@ const updateOrganization = async () => {
     })
     // Show success message
     error.value = ''
-  } catch (err: any) {
-    error.value = err.message || 'Failed to update organization'
+  } catch (err) {
+    const apiError = err as ApiError
+    error.value = apiError.message || 'Failed to update organization'
   } finally {
     updating.value = false
   }
@@ -121,8 +127,9 @@ const deleteOrganization = async () => {
     })
     // Redirect to organization list or create new
     await navigateTo('/organizations')
-  } catch (err: any) {
-    error.value = err.message || 'Failed to delete organization'
+  } catch (err) {
+    const apiError = err as ApiError
+    error.value = apiError.message || 'Failed to delete organization'
   }
 }
 
@@ -130,5 +137,3 @@ onMounted(() => {
   loadOrganization()
 })
 </script>
-
-

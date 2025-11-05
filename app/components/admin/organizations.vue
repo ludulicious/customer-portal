@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { AdminOrganizationsResponse, ApiError } from '~~/types'
+
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
 
@@ -9,14 +11,15 @@ if (!isAdmin.value) {
 
 const loading = ref(true)
 const error = ref('')
-const organizations = ref<any[]>([])
+const organizations = ref<AdminOrganizationsResponse>([])
 
 const loadOrganizations = async () => {
   try {
     loading.value = true
-    organizations.value = await $fetch('/api/admin/organizations')
-  } catch (err: any) {
-    error.value = err.message || 'Failed to load organizations'
+    organizations.value = await $fetch<AdminOrganizationsResponse>('/api/admin/organizations')
+  } catch (err) {
+    const apiError = err as ApiError
+    error.value = apiError.message || 'Failed to load organizations'
   } finally {
     loading.value = false
   }
@@ -47,7 +50,7 @@ onMounted(() => {
       </p>
     </div>
 
-    <UAlert v-else-if="error" color="red" variant="soft" :title="error" />
+    <UAlert v-else-if="error" color="error" variant="soft" :title="error" />
 
     <div v-else-if="organizations.length === 0" class="text-center py-8">
       <p class="text-gray-600 dark:text-gray-400">

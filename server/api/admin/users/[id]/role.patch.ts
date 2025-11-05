@@ -3,15 +3,16 @@ import { auth } from '@@/lib/auth'
 import { db } from '@@/lib/db'
 import { user as userTable } from '@@/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
+import type { SessionUser, UpdateUserRoleRequest, UpdateUserRoleResponse } from '~~/types'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler<UpdateUserRoleResponse>(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
   // Check if user is admin
-  const user = session.user as any
+  const user = session.user as SessionUser
   if (user.role !== 'admin') {
     throw createError({ statusCode: 403, message: 'Admin access required' })
   }
@@ -21,7 +22,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'User ID is required' })
   }
 
-  const body = await readBody(event)
+  const body = await readBody<UpdateUserRoleRequest>(event)
   const { role } = body
 
   if (!role || !['user', 'admin'].includes(role)) {

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, UpdateUserRoleResponse, ApiError, UserRole } from '~~/types'
+
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
 
@@ -9,25 +11,26 @@ if (!isAdmin.value) {
 
 const loading = ref(true)
 const error = ref('')
-const users = ref<any[]>([])
+const users = ref<AdminUsersResponse>([])
 const editingUserId = ref<string | null>(null)
-const editingRole = ref<'user' | 'admin'>('user')
+const editingRole = ref<UserRole>('user')
 const updating = ref(false)
 
 const loadUsers = async () => {
   try {
     loading.value = true
-    users.value = await $fetch('/api/admin/users')
-  } catch (err: any) {
-    error.value = err.message || 'Failed to load users'
+    users.value = await $fetch<AdminUsersResponse>('/api/admin/users')
+  } catch (err) {
+    const apiError = err as ApiError
+    error.value = apiError.message || 'Failed to load users'
   } finally {
     loading.value = false
   }
 }
 
-const startEditRole = (user: any) => {
+const startEditRole = (user: AdminUserResponse) => {
   editingUserId.value = user.id
-  editingRole.value = (user.role || 'user') as 'user' | 'admin'
+  editingRole.value = (user.role || 'user') as UserRole
 }
 
 const cancelEdit = () => {
@@ -37,14 +40,15 @@ const cancelEdit = () => {
 const updateUserRole = async (userId: string) => {
   try {
     updating.value = true
-    await $fetch(`/api/admin/users/${userId}/role`, {
+    await $fetch<UpdateUserRoleResponse>(`/api/admin/users/${userId}/role`, {
       method: 'PATCH',
-      body: { role: editingRole.value }
+      body: { role: editingRole.value } satisfies UpdateUserRoleRequest
     })
     await loadUsers()
     editingUserId.value = null
-  } catch (err: any) {
-    error.value = err.message || 'Failed to update user role'
+  } catch (err) {
+    const apiError = err as ApiError
+    error.value = apiError.message || 'Failed to update user role'
   } finally {
     updating.value = false
   }
@@ -78,7 +82,7 @@ onMounted(() => {
 
     <UAlert
       v-else-if="error"
-      color="red"
+      color="error"
       variant="soft"
       :title="error"
     />
@@ -136,7 +140,7 @@ onMounted(() => {
               </div>
               <div v-else class="flex items-center gap-2">
                 <UBadge
-                  :color="user.role === 'admin' ? 'purple' : 'gray'"
+                  :color="user.role === 'admin' ? 'primary' : 'neutral'"
                   variant="soft"
                 >
                   {{ user.role || 'user' }}
@@ -151,7 +155,7 @@ onMounted(() => {
             </td>
             <td class="p-4">
               <UBadge
-                :color="user.emailVerified ? 'green' : 'yellow'"
+                :color="user.emailVerified ? 'success' : 'warning'"
                 variant="soft"
               >
                 {{ user.emailVerified ? 'Verified' : 'Pending' }}

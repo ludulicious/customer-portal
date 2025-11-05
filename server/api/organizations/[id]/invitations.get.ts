@@ -1,10 +1,11 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { auth } from '@@/lib/auth'
 import { db } from '@@/lib/db'
-import { invitation as invitationTable, organization as organizationTable } from '@@/db/schema/auth-schema'
+import { invitation as invitationTable } from '@@/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
+import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, ApiError } from '~~/types'
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<OrganizationInvitationsResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
@@ -20,15 +21,19 @@ export default defineEventHandler(async (event) => {
   try {
     const result = await auth.api.listMembers({
       query: { organizationId }
-    })
-    
+    }) as unknown as { members?: OrganizationMemberWithUser[] } | OrganizationMemberWithUser[]
+
+    // Handle both array and object response
+    const members = Array.isArray(result) ? result : result.members || []
+
     // Check if current user is in the members list
-    const hasAccess = result.some((m: any) => m.userId === session.user.id)
+    const hasAccess = members.some(m => m.userId === session.user.id)
     if (!hasAccess) {
       throw createError({ statusCode: 403, message: 'Access denied' })
     }
-  } catch (err: any) {
-    if (err.statusCode === 403) throw err
+  } catch (err) {
+    const error = err as ApiError
+    if (error.statusCode === 403) throw err
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 
@@ -45,4 +50,3 @@ export default defineEventHandler(async (event) => {
 
   return invitations
 })
-
