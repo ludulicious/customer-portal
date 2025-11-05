@@ -2,6 +2,7 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { authClient } from '@@/lib/auth-client'
+import type { ApiError } from '~~/types'
 
 definePageMeta({
   layout: 'auth',
@@ -80,9 +81,10 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
       // Redirect to OTP verification page with email parameter
       navigateTo(`/verify-email?email=${encodeURIComponent(payload.data.email)}`)
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error('Email signup failed:', err)
-    const errorMessage = err.message || t('signup.errors.unknownError')
+    const apiError = err as ApiError
+    const errorMessage = apiError.message || t('signup.errors.unknownError')
     error.value = errorMessage
     toast.add({ title: t('signup.errors.errorTitle'), description: errorMessage, color: 'error' })
   } finally {

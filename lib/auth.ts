@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { db } from './db'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
 import { ac, user, admin as adminRole } from './auth/permissions'
 
@@ -29,8 +28,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
-    autoSignInAfterVerification: true
+    requireEmailVerification: true
   },
   socialProviders: {
     github: {
@@ -41,35 +39,60 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        after: async (user: any) => {
+        after: async (user) => {
+          // Type assertion for user object
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const createdUser = user as any as { id: string, email: string, name: string }
+
           // Existing admin role assignment
-          if (user.email && adminEmails.includes(user.email.toLowerCase())) {
-            await db.update(userTable).set({ role: 'admin' }).where(eq(userTable.id, user.id))
+          if (createdUser.email && adminEmails.includes(createdUser.email.toLowerCase())) {
+            await db.update(userTable).set({ role: 'admin' }).where(eq(userTable.id, createdUser.id))
           }
 
-          // Auto-create organization using better-auth API
-          const orgName = user.name || user.email.split('@')[0]
-          const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${user.id.slice(0, 8)}`
+          // Auto-create organization directly in database
+          const orgName = createdUser.name || createdUser.email?.split('@')[0]
+          if (!orgName) {
+            console.error('Cannot create organization: no name or email available')
+            return
+          }
+
+          const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${createdUser.id.slice(0, 8)}`
 
           try {
-            await auth.api.createOrganization({
-              body: {
+            // Create organization (database will generate the ID using gen_random_uuid())
+            const [organization] = await db
+              .insert(organizationTable)
+              .values({
+                id: sql`gen_random_uuid()`,
                 name: `${orgName}'s Organization`,
                 slug: orgSlug,
-                userId: user.id,
-                keepCurrentActiveOrganization: false
-              }
-            })
-            console.log(`Auto-created organization for user ${user.email}`)
+                createdAt: new Date()
+              })
+              .returning()
+
+            if (organization) {
+              // Create member with owner role (database will generate the ID using gen_random_uuid())
+              await db
+                .insert(organizationMemberTable)
+                .values({
+                  id: sql`gen_random_uuid()`,
+                  organizationId: organization.id,
+                  userId: createdUser.id,
+                  role: 'owner',
+                  createdAt: new Date()
+                })
+
+              console.log(`Auto-created organization ${organization.name} for user ${createdUser.email}`)
+            }
           } catch (error) {
-            console.error(`Failed to auto-create organization for user ${user.email}:`, error)
+            console.error(`Failed to auto-create organization for user ${createdUser.email}:`, error)
           }
         }
       }
     },
     session: {
       create: {
-        after: async (session: any) => {
+        after: async (session: { userId: string }) => {
           const [u] = await db
             .select({ email: userTable.email, role: userTable.role })
             .from(userTable)
