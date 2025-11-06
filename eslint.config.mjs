@@ -11,6 +11,7 @@ export default defineFlatConfigs(
         'vue/html-indent': 'off',
         '@stylistic/comma-dangle': 'off',
         '@stylistic/no-trailing-spaces': 'off',
+        '@stylistic/arrow-parens': 'off',
         'vue/max-attributes-per-line': 'off',
         'vue/block-tag-newline': 'off',
         'vue/html-closing-bracket-newline': 'off',

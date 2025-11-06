@@ -18,7 +18,7 @@ CREATE TABLE "account" (
 --> statement-breakpoint
 CREATE TABLE "invitation" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"organization_id" text NOT NULL,
+	"organization_id" uuid NOT NULL,
 	"email" text NOT NULL,
 	"role" text,
 	"status" text DEFAULT 'pending' NOT NULL,
@@ -27,15 +27,15 @@ CREATE TABLE "invitation" (
 );
 --> statement-breakpoint
 CREATE TABLE "member" (
-	"id" text PRIMARY KEY NOT NULL,
-	"organization_id" text NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"organization_id" uuid NOT NULL,
 	"user_id" uuid NOT NULL,
 	"role" text DEFAULT 'member' NOT NULL,
 	"created_at" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "organization" (
-	"id" text PRIMARY KEY NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
 	"logo" text,
@@ -89,7 +89,7 @@ CREATE TABLE "service_request" (
 	"status" "ServiceRequestStatus" DEFAULT 'OPEN' NOT NULL,
 	"priority" "ServiceRequestPriority" DEFAULT 'MEDIUM' NOT NULL,
 	"category" text,
-	"organizationId" text NOT NULL,
+	"organizationId" uuid NOT NULL,
 	"createdById" uuid NOT NULL,
 	"assignedToId" uuid,
 	"attachments" jsonb,
@@ -105,4 +105,24 @@ ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organization_id_organization
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_inviter_id_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "member" ADD CONSTRAINT "member_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "member" ADD CONSTRAINT "member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "account_user_id_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "account_account_id_idx" ON "account" USING btree ("account_id");--> statement-breakpoint
+CREATE INDEX "account_provider_id_idx" ON "account" USING btree ("provider_id");--> statement-breakpoint
+CREATE INDEX "invitation_organization_id_idx" ON "invitation" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "invitation_inviter_id_idx" ON "invitation" USING btree ("inviter_id");--> statement-breakpoint
+CREATE INDEX "invitation_email_idx" ON "invitation" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "member_organization_id_idx" ON "member" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "member_user_id_idx" ON "member" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "organization_slug_idx" ON "organization" USING btree ("slug");--> statement-breakpoint
+CREATE INDEX "session_user_id_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "session_active_organization_id_idx" ON "session" USING btree ("active_organization_id");--> statement-breakpoint
+CREATE INDEX "user_name_idx" ON "user" USING btree ("name");--> statement-breakpoint
+CREATE UNIQUE INDEX "user_email_idx" ON "user" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");--> statement-breakpoint
+CREATE INDEX "verification_value_idx" ON "verification" USING btree ("value");--> statement-breakpoint
+CREATE INDEX "service_request_organization_id_idx" ON "service_request" USING btree ("organizationId");--> statement-breakpoint
+CREATE INDEX "service_request_created_by_id_idx" ON "service_request" USING btree ("createdById");--> statement-breakpoint
+CREATE INDEX "service_request_assigned_to_id_idx" ON "service_request" USING btree ("assignedToId");--> statement-breakpoint
+CREATE INDEX "service_request_status_idx" ON "service_request" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "service_request_created_at_idx" ON "service_request" USING btree ("createdAt");

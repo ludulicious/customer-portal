@@ -63,7 +63,6 @@ export const auth = betterAuth({
             const [organization] = await db
               .insert(organizationTable)
               .values({
-                id: sql`gen_random_uuid()`,
                 name: `${orgName}'s Organization`,
                 slug: orgSlug,
                 createdAt: new Date()
@@ -75,7 +74,6 @@ export const auth = betterAuth({
               await db
                 .insert(organizationMemberTable)
                 .values({
-                  id: sql`gen_random_uuid()`,
                   organizationId: organization.id,
                   userId: createdUser.id,
                   role: 'owner',

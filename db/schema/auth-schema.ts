@@ -1,7 +1,7 @@
 /* eslint-disable @stylistic/semi */
 /* eslint-disable semi */
 /* eslint-disable @stylistic/quotes */
-import { pgTable, text, uuid, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, uuid, timestamp, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -18,7 +18,10 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
-});
+}, (table) => [
+  index("user_name_idx").on(table.name),
+  uniqueIndex("user_email_idx").on(table.email)
+]);
 
 export const session = pgTable("session", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -35,7 +38,10 @@ export const session = pgTable("session", {
     .references(() => user.id, { onDelete: "cascade" }),
   activeOrganizationId: text("active_organization_id"),
   impersonatedBy: uuid("impersonated_by"),
-});
+}, (table) => [
+  index("session_user_id_idx").on(table.userId),
+  index("session_active_organization_id_idx").on(table.activeOrganizationId)
+]);
 
 export const account = pgTable("account", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -55,7 +61,11 @@ export const account = pgTable("account", {
   updatedAt: timestamp("updated_at")
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-});
+}, (table) => [
+  index("account_user_id_idx").on(table.userId),
+  index("account_account_id_idx").on(table.accountId),
+  index("account_provider_id_idx").on(table.providerId)
+]);
 
 export const verification = pgTable("verification", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -67,20 +77,25 @@ export const verification = pgTable("verification", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-});
+}, (table) => [
+  index("verification_identifier_idx").on(table.identifier),
+  index("verification_value_idx").on(table.value)
+]);
 
 export const organization = pgTable("organization", {
-  id: text("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   logo: text("logo"),
   createdAt: timestamp("created_at").notNull(),
   metadata: text("metadata"),
-});
+}, (table) => [
+  index("organization_slug_idx").on(table.slug)
+]);
 
 export const member = pgTable("member", {
-  id: text("id").primaryKey(),
-  organizationId: text("organization_id")
+  id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: uuid("organization_id")
     .notNull()
     .references(() => organization.id, { onDelete: "cascade" }),
   userId: uuid("user_id")
@@ -88,11 +103,14 @@ export const member = pgTable("member", {
     .references(() => user.id, { onDelete: "cascade" }),
   role: text("role").default("member").notNull(),
   createdAt: timestamp("created_at").notNull(),
-});
+}, (table) => [
+  index("member_organization_id_idx").on(table.organizationId),
+  index("member_user_id_idx").on(table.userId)
+]);
 
 export const invitation = pgTable("invitation", {
   id: uuid("id").defaultRandom().primaryKey(),
-  organizationId: text("organization_id")
+  organizationId: uuid("organization_id")
     .notNull()
     .references(() => organization.id, { onDelete: "cascade" }),
   email: text("email").notNull(),
@@ -102,4 +120,8 @@ export const invitation = pgTable("invitation", {
   inviterId: uuid("inviter_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-});
+}, (table) => [
+  index("invitation_organization_id_idx").on(table.organizationId),
+  index("invitation_inviter_id_idx").on(table.inviterId),
+  index("invitation_email_idx").on(table.email)
+]);

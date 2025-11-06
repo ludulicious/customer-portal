@@ -1,4 +1,7 @@
-import { pgEnum, pgTable, text, uuid, timestamp, jsonb } from 'drizzle-orm/pg-core'
+/* eslint-disable @stylistic/semi */
+/* eslint-disable semi */
+/* eslint-disable @stylistic/quotes */
+import { pgEnum, pgTable, text, uuid, timestamp, jsonb, index } from 'drizzle-orm/pg-core'
 
 // Enums
 export const serviceRequestStatus = pgEnum('ServiceRequestStatus', [
@@ -25,7 +28,7 @@ export const serviceRequest = pgTable('service_request', {
   category: text('category'),
 
   // Relations (FKs by convention; define explicit FKs in migrations if desired)
-  organizationId: text('organizationId').notNull(),
+  organizationId: uuid('organizationId').notNull(),
   createdById: uuid('createdById').notNull(),
   assignedToId: uuid('assignedToId'),
 
@@ -38,4 +41,10 @@ export const serviceRequest = pgTable('service_request', {
   updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull(),
   resolvedAt: timestamp('resolvedAt', { mode: 'date' }),
   closedAt: timestamp('closedAt', { mode: 'date' }),
-})
+}, (table) => [
+  index("service_request_organization_id_idx").on(table.organizationId),
+  index("service_request_created_by_id_idx").on(table.createdById),
+  index("service_request_assigned_to_id_idx").on(table.assignedToId),
+  index("service_request_status_idx").on(table.status),
+  index("service_request_created_at_idx").on(table.createdAt)
+]);
