@@ -34,18 +34,18 @@ export const useUserStore = defineStore('user', () => {
   const userInitials = computed(() => {
     const user = currentUser.value
     if (!user) {
-      return null
+      return undefined
     }
     const name = user.name || user.email || ''
     if (!name) {
       return ''
     }
     const parts = name.split(' ')
-    if (parts.length === 1) {
+    if (parts[0]) {
       return parts[0].charAt(0).toUpperCase()
     } else if (parts.length > 1) {
       return (
-        parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
+        parts[0]?.charAt(0) || '?' + (parts[parts.length - 1]?.charAt(0) || '?')
       ).toUpperCase()
     }
     return ''
@@ -56,7 +56,6 @@ export const useUserStore = defineStore('user', () => {
     if (!user || typeof user.providerId === 'undefined') return false
     return user.providerId === 'credential'
   })
-
 
   async function fetchUserPermissions() {
     // If there is no current user, or permissions have already been fetched, do nothing.

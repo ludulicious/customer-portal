@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import type { SelectItem } from '@nuxt/ui'
+import type { SelectItem, TableColumn } from '@nuxt/ui'
 import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, UpdateUserRoleResponse, ApiError, UserRole } from '~~/types'
 
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
+const { t, locale } = useI18n()
 
 // Redirect if not admin
 if (!isAdmin.value) {
-  throw createError({ statusCode: 403, message: 'Admin access required' })
+  throw createError({ statusCode: 403, message: t('admin.errors.accessRequired') })
 }
 
 const loading = ref(true)
 const error = ref('')
-const users = ref<AdminUsersResponse>([])
+const users = ref<AdminUserResponse[]>([])
 const editingUserId = ref<string | null>(null)
 const editingRole = ref<UserRole>('user')
 const updating = ref(false)
@@ -23,7 +24,7 @@ const loadUsers = async () => {
     users.value = await $fetch<AdminUsersResponse>('/api/admin/users')
   } catch (err) {
     const apiError = err as ApiError
-    error.value = apiError.message || 'Failed to load users'
+    error.value = apiError.message || t('admin.errors.failedToLoadUsers')
   } finally {
     loading.value = false
   }
@@ -51,21 +52,30 @@ const updateUserRole = async (userId: string) => {
     editingUserId.value = null
   } catch (err) {
     const apiError = err as ApiError
-    error.value = apiError.message || 'Failed to update user role'
+    error.value = apiError.message || t('admin.errors.failedToUpdateRole')
   } finally {
     updating.value = false
   }
 }
 
-const roles = ref<SelectItem[]>([
+const roles = computed<SelectItem[]>(() => [
   {
-    label: 'user',
+    label: t('admin.roles.user'),
     value: 'user'
   },
   {
-    label: 'admin',
+    label: t('admin.roles.admin'),
     value: 'admin'
   }
+])
+
+const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
+  { accessorKey: 'name', header: t('admin.table.name') },
+  { accessorKey: 'email', header: t('admin.table.email') },
+  { accessorKey: 'role', header: t('admin.table.role') },
+  { accessorKey: 'emailVerified', header: t('admin.table.verified') },
+  { accessorKey: 'createdAt', header: t('admin.table.created') },
+  { accessorKey: 'actions', header: t('admin.table.actions') }
 ])
 
 </script>
@@ -74,73 +84,64 @@ const roles = ref<SelectItem[]>([
   <UCard>
     <template #header>
       <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold">All Users</h2>
+        <h2 class="text-xl font-semibold">{{ t('admin.table.title') }}</h2>
         <UButton icon="i-lucide-refresh-cw" variant="outline" :loading="loading" @click="loadUsers">
-          Refresh
+          {{ t('admin.table.refresh') }}
         </UButton>
       </div>
     </template>
 
-    <div v-if="loading" class="text-center py-8">
-      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
-      <p class="text-gray-600 dark:text-gray-400 mt-2">Loading users...</p>
-    </div>
-
-    <UAlert v-else-if="error" color="error" variant="soft" :title="error" />
+    <UAlert v-if="error" color="error" variant="soft" :title="error" />
 
     <div v-else-if="users.length === 0" class="text-center py-8">
-      <p class="text-gray-600 dark:text-gray-400">No users found</p>
+      <p class="text-gray-600 dark:text-gray-400">{{ t('admin.table.noUsersFound') }}</p>
     </div>
 
-    <div v-else class="overflow-x-auto">
-      <table class="w-full">
-        <thead>
-          <tr class="border-b border-gray-200 dark:border-gray-700">
-            <th class="text-left p-4 font-semibold">Name</th>
-            <th class="text-left p-4 font-semibold">Email</th>
-            <th class="text-left p-4 font-semibold">Role</th>
-            <th class="text-left p-4 font-semibold">Verified</th>
-            <th class="text-left p-4 font-semibold">Created</th>
-            <th class="text-left p-4 font-semibold">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in users" :key="user.id" class="border-b border-gray-100 dark:border-gray-800">
-            <td class="p-4">{{ user.name || 'N/A' }}</td>
-            <td class="p-4">{{ user.email }}</td>
-            <td class="p-4">
-              <div v-if="editingUserId === user.id" class="flex items-center gap-2">
-                <USelect v-model="editingRole" :items="roles" size="sm" class="w-24" />
-                <UButton size="xs" :loading="updating" @click="updateUserRole(user.id)">
-                  Save
-                </UButton>
-                <UButton size="xs" variant="outline" @click="cancelEdit">
-                  Cancel
-                </UButton>
-              </div>
-              <div v-else class="flex items-center gap-2">
-                <UBadge :color="user.role === 'admin' ? 'primary' : 'neutral'" class="w-12" variant="soft">
-                  {{ user.role || 'user' }}
-                </UBadge>
-                <UButton icon="i-lucide-pencil" size="xs" variant="ghost" @click="startEditRole(user)" />
-              </div>
-            </td>
-            <td class="p-4">
-              <UBadge :color="user.emailVerified ? 'success' : 'warning'" variant="soft">
-                {{ user.emailVerified ? 'Verified' : 'Pending' }}
-              </UBadge>
-            </td>
-            <td class="p-4 text-sm text-gray-600 dark:text-gray-400">
-              {{ new Date(user.createdAt).toLocaleDateString() }}
-            </td>
-            <td class="p-4">
-              <UButton variant="ghost" size="sm" icon="i-lucide-eye">
-                View
-              </UButton>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <UTable
+      v-else-if="users.length > 0"
+      :data="users"
+      :columns="columns"
+      :loading="loading"
+    >
+      <template #name-cell="{ row }">
+        {{ row.original.name || t('admin.table.notAvailable') }}
+      </template>
+
+      <template #role-cell="{ row }">
+        <div v-if="editingUserId === row.original.id" class="flex items-center gap-2">
+          <USelect v-model="editingRole" :items="roles" size="sm" class="w-32" />
+          <UButton size="xs" :loading="updating" @click="updateUserRole(row.original.id)">
+            {{ t('common.save') }}
+          </UButton>
+          <UButton size="xs" variant="outline" @click="cancelEdit">
+            {{ t('common.cancel') }}
+          </UButton>
+        </div>
+        <div v-else class="flex items-center gap-2">
+          <UBadge :color="row.original.role === 'admin' ? 'primary' : 'neutral'" class="justify-center w-20" variant="soft">
+            {{ row.original.role === 'admin' ? t('admin.roles.admin') : t('admin.roles.user') }}
+          </UBadge>
+          <UButton icon="i-lucide-pencil" size="xs" variant="ghost" @click="startEditRole(row.original)" />
+        </div>
+      </template>
+
+      <template #emailVerified-cell="{ row }">
+        <UBadge :color="row.original.emailVerified ? 'success' : 'warning'" variant="soft">
+          {{ row.original.emailVerified ? t('admin.verification.verified') : t('admin.verification.pending') }}
+        </UBadge>
+      </template>
+
+      <template #createdAt-cell="{ row }">
+        <span class="text-sm text-gray-600 dark:text-gray-400">
+          {{ new Date(row.original.createdAt).toLocaleDateString(locale) }}
+        </span>
+      </template>
+
+      <template #actions-cell>
+        <UButton variant="ghost" size="sm" icon="i-lucide-eye">
+          {{ t('common.view') }}
+        </UButton>
+      </template>
+    </UTable>
   </UCard>
 </template>

@@ -8,22 +8,22 @@ export interface User {
   name: string
   email: string
   emailVerified: boolean
-  image: string | null
+  image?: string
   createdAt: Date
   updatedAt: Date
-  role: string | null
-  banned: boolean | null
-  banReason: string | null
-  banExpires: Date | null
+  role?: string
+  banned?: boolean
+  banReason?: string
+  banExpires?: Date
 }
 
 export interface Organization {
   id: string
   name: string
   slug: string
-  logo: string | null
+  logo?: string
   createdAt: Date
-  metadata: string | null
+  metadata?: string
 }
 
 export interface Member {
@@ -38,7 +38,7 @@ export interface Invitation {
   id: string
   organizationId: string
   email: string
-  role: string | null
+  role?: string
   status: string
   expiresAt: Date
   inviterId: string
@@ -50,11 +50,11 @@ export interface Session {
   token: string
   createdAt: Date
   updatedAt: Date
-  ipAddress: string | null
-  userAgent: string | null
+  ipAddress?: string
+  userAgent?: string
   userId: string
-  activeOrganizationId: string | null
-  impersonatedBy: string | null
+  activeOrganizationId?: string
+  impersonatedBy?: string
 }
 
 export interface Account {
@@ -62,13 +62,13 @@ export interface Account {
   accountId: string
   providerId: string
   userId: string
-  accessToken: string | null
-  refreshToken: string | null
-  idToken: string | null
-  accessTokenExpiresAt: Date | null
-  refreshTokenExpiresAt: Date | null
-  scope: string | null
-  password: string | null
+  accessToken: string
+  refreshToken: string
+  idToken: string
+  accessTokenExpiresAt: Date
+  refreshTokenExpiresAt: Date
+  scope: string
+  password: string
   createdAt: Date
   updatedAt: Date
 }
@@ -81,4 +81,3 @@ export interface Verification {
   createdAt: Date
   updatedAt: Date
 }
-

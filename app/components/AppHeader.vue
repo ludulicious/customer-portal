@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '@@/lib/auth-client'
+import type { DropdownMenuItem } from '@nuxt/ui'
 
 const localePath = useLocalePath()
 const route = useRoute()
@@ -29,7 +30,7 @@ onMounted(async () => {
 
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => {
-  const menuItems: any[] = [
+  const menuItems = [
     [
       {
         label: currentUser.value?.name || currentUser.value?.email || 'User',
@@ -47,10 +48,10 @@ const userMenuItems = computed(() => {
         to: localePath('/profile')
       }
     ]
-  ]
+  ] as DropdownMenuItem[]
 
   // Add organization menu items for admins/owners
-  if (isOrgAdmin.value) {
+  if (isOrgAdmin.value && menuItems[1]) {
     menuItems[1].push({
       label: 'Create Organization',
       icon: 'i-lucide-plus-circle',

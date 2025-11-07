@@ -14,15 +14,7 @@ export type AdminOrganizationsResponse = Organization[]
  * GET /api/admin/users
  * Response: Array of users with selected fields
  */
-export interface AdminUserResponse {
-  id: string
-  name: string
-  email: string
-  role: string | null
-  emailVerified: boolean
-  createdAt: Date
-  banned: boolean | null
-}
+export type AdminUserResponse = User
 
 export type AdminUsersResponse = AdminUserResponse[]
 
@@ -48,4 +40,3 @@ export interface UpdateUserRoleResponse {
  * Response: Array of invitations for an organization
  */
 export type OrganizationInvitationsResponse = Invitation[]
-
