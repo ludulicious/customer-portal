@@ -22,6 +22,8 @@ export default defineFlatConfigs(
         'vue/html-end-tags': 'off',
         'vue/first-attribute-linebreak': 'off',
         'nuxt/nuxt-config-keys-order': 'off',
+        '@typescript-eslint/no-unused-vars': 'warn',
+        'vue/singleline-html-element-content-newline': 'off',
       }
     }
   )

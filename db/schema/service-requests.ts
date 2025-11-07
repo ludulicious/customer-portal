@@ -1,7 +1,7 @@
 /* eslint-disable @stylistic/semi */
 /* eslint-disable semi */
 /* eslint-disable @stylistic/quotes */
-import { pgEnum, pgTable, text, uuid, timestamp, jsonb, index } from 'drizzle-orm/pg-core'
+import { pgEnum, pgTable, text, timestamp, jsonb, index } from 'drizzle-orm/pg-core'
 
 // Enums
 export const serviceRequestStatus = pgEnum('ServiceRequestStatus', [
@@ -20,7 +20,7 @@ export const serviceRequestPriority = pgEnum('ServiceRequestPriority', [
 
 // Table
 export const serviceRequest = pgTable('service_request', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: text('id').primaryKey(),
   title: text('title').notNull(),
   description: text('description').notNull(),
   status: serviceRequestStatus('status').default('OPEN').notNull(),
@@ -28,9 +28,9 @@ export const serviceRequest = pgTable('service_request', {
   category: text('category'),
 
   // Relations (FKs by convention; define explicit FKs in migrations if desired)
-  organizationId: uuid('organizationId').notNull(),
-  createdById: uuid('createdById').notNull(),
-  assignedToId: uuid('assignedToId'),
+  organizationId: text('organizationId').notNull(),
+  createdById: text('createdById').notNull(),
+  assignedToId: text('assignedToId'),
 
   // Metadata
   attachments: jsonb('attachments'),

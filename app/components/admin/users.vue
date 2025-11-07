@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SelectItem } from '@nuxt/ui'
 import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, UpdateUserRoleResponse, ApiError, UserRole } from '~~/types'
 
 const userStore = useUserStore()
@@ -28,6 +29,8 @@ const loadUsers = async () => {
   }
 }
 
+await loadUsers()
+
 const startEditRole = (user: AdminUserResponse) => {
   editingUserId.value = user.id
   editingRole.value = (user.role || 'user') as UserRole
@@ -54,9 +57,17 @@ const updateUserRole = async (userId: string) => {
   }
 }
 
-onMounted(() => {
-  loadUsers()
-})
+const roles = ref<SelectItem[]>([
+  {
+    label: 'user',
+    value: 'user'
+  },
+  {
+    label: 'admin',
+    value: 'admin'
+  }
+])
+
 </script>
 
 <template>
@@ -64,12 +75,7 @@ onMounted(() => {
     <template #header>
       <div class="flex items-center justify-between">
         <h2 class="text-xl font-semibold">All Users</h2>
-        <UButton
-          icon="i-lucide-refresh-cw"
-          variant="outline"
-          @click="loadUsers"
-          :loading="loading"
-        >
+        <UButton icon="i-lucide-refresh-cw" variant="outline" :loading="loading" @click="loadUsers">
           Refresh
         </UButton>
       </div>
@@ -80,12 +86,7 @@ onMounted(() => {
       <p class="text-gray-600 dark:text-gray-400 mt-2">Loading users...</p>
     </div>
 
-    <UAlert
-      v-else-if="error"
-      color="error"
-      variant="soft"
-      :title="error"
-    />
+    <UAlert v-else-if="error" color="error" variant="soft" :title="error" />
 
     <div v-else-if="users.length === 0" class="text-center py-8">
       <p class="text-gray-600 dark:text-gray-400">No users found</p>
@@ -104,60 +105,28 @@ onMounted(() => {
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="user in users"
-            :key="user.id"
-            class="border-b border-gray-100 dark:border-gray-800"
-          >
+          <tr v-for="user in users" :key="user.id" class="border-b border-gray-100 dark:border-gray-800">
             <td class="p-4">{{ user.name || 'N/A' }}</td>
             <td class="p-4">{{ user.email }}</td>
             <td class="p-4">
               <div v-if="editingUserId === user.id" class="flex items-center gap-2">
-                <USelect
-                  v-model="editingRole"
-                  :options="[
-                    { label: 'User', value: 'user' },
-                    { label: 'Admin', value: 'admin' }
-                  ]"
-                  option-attribute="label"
-                  value-attribute="value"
-                  size="sm"
-                />
-                <UButton
-                  size="xs"
-                  @click="updateUserRole(user.id)"
-                  :loading="updating"
-                >
+                <USelect v-model="editingRole" :items="roles" size="sm" class="w-24" />
+                <UButton size="xs" :loading="updating" @click="updateUserRole(user.id)">
                   Save
                 </UButton>
-                <UButton
-                  size="xs"
-                  variant="outline"
-                  @click="cancelEdit"
-                >
+                <UButton size="xs" variant="outline" @click="cancelEdit">
                   Cancel
                 </UButton>
               </div>
               <div v-else class="flex items-center gap-2">
-                <UBadge
-                  :color="user.role === 'admin' ? 'primary' : 'neutral'"
-                  variant="soft"
-                >
+                <UBadge :color="user.role === 'admin' ? 'primary' : 'neutral'" class="w-12" variant="soft">
                   {{ user.role || 'user' }}
                 </UBadge>
-                <UButton
-                  icon="i-lucide-pencil"
-                  size="xs"
-                  variant="ghost"
-                  @click="startEditRole(user)"
-                />
+                <UButton icon="i-lucide-pencil" size="xs" variant="ghost" @click="startEditRole(user)" />
               </div>
             </td>
             <td class="p-4">
-              <UBadge
-                :color="user.emailVerified ? 'success' : 'warning'"
-                variant="soft"
-              >
+              <UBadge :color="user.emailVerified ? 'success' : 'warning'" variant="soft">
                 {{ user.emailVerified ? 'Verified' : 'Pending' }}
               </UBadge>
             </td>
@@ -165,11 +134,7 @@ onMounted(() => {
               {{ new Date(user.createdAt).toLocaleDateString() }}
             </td>
             <td class="p-4">
-              <UButton
-                variant="ghost"
-                size="sm"
-                icon="i-lucide-eye"
-              >
+              <UButton variant="ghost" size="sm" icon="i-lucide-eye">
                 View
               </UButton>
             </td>

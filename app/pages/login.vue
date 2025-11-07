@@ -2,7 +2,6 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { signIn, authClient } from '@@/lib/auth-client'
-import { ProseP } from '#components'
 
 definePageMeta({
   layout: 'auth',
@@ -81,7 +80,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
           loading.value = true
           errorMessage.value = null
         },
-        onResponse: (ctx) => {
+        onResponse: (_ctx) => {
           // Typically handled by onError or onSuccess
         },
         onSuccess: async (ctx) => {
@@ -121,8 +120,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
   } catch (error) {
     console.error('Unexpected login error:', error)
     errorMessage.value = t('login.errors.unexpectedError')
-  }
-  finally {
+  } finally {
     loading.value = false
   }
 }
@@ -142,28 +140,30 @@ const handleGitHubLogin = async () => {
 </script>
 
 <template>
-  <UAlert v-if="successMessage" color="success" variant="soft" :description="successMessage" />
-  <UAlert v-if="errorMessage" color="error" variant="soft" :description="errorMessage" />
+  <div>
+    <UAlert v-if="successMessage" color="success" variant="soft" :description="successMessage" />
+    <UAlert v-if="errorMessage" color="error" variant="soft" :description="errorMessage" />
 
-  <!-- Company Logo -->
-  <div class="flex justify-center mb-8">
-    <AppLogo class="w-auto h-8 shrink-0" />
+    <!-- Company Logo -->
+    <div class="flex justify-center mb-8">
+      <AppLogo class="w-auto h-8 shrink-0" />
+    </div>
+
+    <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('login.title')" icon="i-lucide-lock"
+      @submit="onSubmit">
+      <template #description>
+        {{ t('login.description') }} <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }}
+        </ULink>.
+      </template>
+
+      <template #password-hint>
+        <ULink :to="$localePath('/forgot-password')" class="text-primary font-medium" tabindex="-1">{{
+          t('login.forgotPassword') }}</ULink>
+      </template>
+
+      <template #footer>
+        {{ t('login.footer') }} <ULink to="/" class="text-primary font-medium">{{ t('login.termsLink') }}</ULink>.
+      </template>
+    </UAuthForm>
   </div>
-
-  <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('login.title')" icon="i-lucide-lock"
-    @submit="onSubmit">
-    <template #description>
-      {{ t('login.description') }} <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }}
-      </ULink>.
-    </template>
-
-    <template #password-hint>
-      <ULink :to="$localePath('/forgot-password')" class="text-primary font-medium" tabindex="-1">{{
-        t('login.forgotPassword') }}</ULink>
-    </template>
-
-    <template #footer>
-      {{ t('login.footer') }} <ULink to="/" class="text-primary font-medium">{{ t('login.termsLink') }}</ULink>.
-    </template>
-  </UAuthForm>
 </template>

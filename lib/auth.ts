@@ -3,9 +3,18 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { db } from './db'
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
 import { ac, user, admin as adminRole } from './auth/permissions'
+import { nanoid } from 'nanoid'
+
+/**
+ * Generate an ID in the same format as better-auth uses (nanoid)
+ * This ensures consistency across all ID generation in the application
+ */
+export function generateId(): string {
+  return nanoid()
+}
 
 const adminEmails = process.env.ADMIN_EMAILS?.split(',')
   .map(email => email.trim().toLowerCase())
@@ -59,10 +68,11 @@ export const auth = betterAuth({
           const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${createdUser.id.slice(0, 8)}`
 
           try {
-            // Create organization (database will generate the ID using gen_random_uuid())
+            // Create organization using the same ID generation method as better-auth
             const [organization] = await db
               .insert(organizationTable)
               .values({
+                id: generateId(),
                 name: `${orgName}'s Organization`,
                 slug: orgSlug,
                 createdAt: new Date()
@@ -70,10 +80,11 @@ export const auth = betterAuth({
               .returning()
 
             if (organization) {
-              // Create member with owner role (database will generate the ID using gen_random_uuid())
+              // Create member with owner role using the same ID generation method as better-auth
               await db
                 .insert(organizationMemberTable)
                 .values({
+                  id: generateId(),
                   organizationId: organization.id,
                   userId: createdUser.id,
                   role: 'owner',
