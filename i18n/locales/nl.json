@@ -1,4 +1,37 @@
 {
+  "admin": {
+    "dashboard": {
+      "description": "Beheer organisaties en gebruikers",
+      "organizations": "Organisaties",
+      "title": "Beheerders Dashboard",
+      "users": "Gebruikers"
+    },
+    "errors": {
+      "accessRequired": "Beheerders toegang vereist",
+      "failedToLoadUsers": "Gebruikers laden mislukt",
+      "failedToUpdateRole": "Gebruikersrol bijwerken mislukt"
+    },
+    "roles": {
+      "admin": "beheerder",
+      "user": "gebruiker"
+    },
+    "table": {
+      "actions": "Acties",
+      "created": "Aangemaakt",
+      "email": "E-mail",
+      "name": "Naam",
+      "noUsersFound": "Geen gebruikers gevonden",
+      "notAvailable": "N.v.t.",
+      "refresh": "Vernieuwen",
+      "role": "Rol",
+      "title": "Alle Gebruikers",
+      "verified": "Geverifieerd"
+    },
+    "verification": {
+      "pending": "In behandeling",
+      "verified": "Geverifieerd"
+    }
+  },
   "common": {
     "cancel": "Annuleren",
     "close": "Sluiten",
@@ -252,34 +285,8 @@
       "passwordMinLength": "Moet minimaal 8 tekens zijn"
     }
   },
-  "admin": {
-    "errors": {
-      "accessRequired": "Beheerders toegang vereist",
-      "failedToLoadUsers": "Gebruikers laden mislukt",
-      "failedToUpdateRole": "Gebruikersrol bijwerken mislukt"
-    },
-    "roles": {
-      "admin": "beheerder",
-      "user": "gebruiker"
-    },
-    "table": {
-      "actions": "Acties",
-      "created": "Aangemaakt",
-      "email": "E-mail",
-      "name": "Naam",
-      "noUsersFound": "Geen gebruikers gevonden",
-      "notAvailable": "N.v.t.",
-      "refresh": "Vernieuwen",
-      "role": "Rol",
-      "title": "Alle Gebruikers",
-      "verified": "Geverifieerd"
-    },
-    "verification": {
-      "pending": "In behandeling",
-      "verified": "Geverifieerd"
-    }
-  },
   "nav": {
+    "admin": "Beheer",
     "blog": "Blog",
     "contact": "Contact",
     "dashboard": "Dashboard",

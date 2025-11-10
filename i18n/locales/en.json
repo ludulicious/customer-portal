@@ -1,4 +1,37 @@
 {
+  "admin": {
+    "dashboard": {
+      "description": " Manage organizations and users",
+      "organizations": "Organizations",
+      "title": "Admin Dashboard",
+      "users": "Users"
+    },
+    "errors": {
+      "accessRequired": "Admin access required",
+      "failedToLoadUsers": "Failed to load users",
+      "failedToUpdateRole": "Failed to update user role"
+    },
+    "roles": {
+      "admin": "admin",
+      "user": "user"
+    },
+    "table": {
+      "actions": "Actions",
+      "created": "Created",
+      "email": "Email",
+      "name": "Name",
+      "noUsersFound": "No users found",
+      "notAvailable": "N/A",
+      "refresh": "Refresh",
+      "role": "Role",
+      "title": "All Users",
+      "verified": "Verified"
+    },
+    "verification": {
+      "pending": "Pending",
+      "verified": "Verified"
+    }
+  },
   "common": {
     "cancel": "Cancel",
     "close": "Close",
@@ -250,33 +283,6 @@
     "validation": {
       "invalidEmail": "Invalid email",
       "passwordMinLength": "Must be at least 8 characters"
-    }
-  },
-  "admin": {
-    "errors": {
-      "accessRequired": "Admin access required",
-      "failedToLoadUsers": "Failed to load users",
-      "failedToUpdateRole": "Failed to update user role"
-    },
-    "roles": {
-      "admin": "admin",
-      "user": "user"
-    },
-    "table": {
-      "actions": "Actions",
-      "created": "Created",
-      "email": "Email",
-      "name": "Name",
-      "noUsersFound": "No users found",
-      "notAvailable": "N/A",
-      "refresh": "Refresh",
-      "role": "Role",
-      "title": "All Users",
-      "verified": "Verified"
-    },
-    "verification": {
-      "pending": "Pending",
-      "verified": "Verified"
     }
   },
   "nav": {
