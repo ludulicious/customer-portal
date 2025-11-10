@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SelectItem, TableColumn } from '@nuxt/ui'
-import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, UpdateUserRoleResponse, ApiError, UserRole } from '~~/types'
+import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, UpdateUserRoleResponse, ApiError, UserRole } from '#types'
 
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)

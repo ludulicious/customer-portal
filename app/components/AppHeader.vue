@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { en, nl } from '@nuxt/ui/locale'
-import { authClient } from '@@/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 const localePath = useLocalePath()

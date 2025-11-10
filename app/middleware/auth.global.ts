@@ -1,4 +1,4 @@
-import { authClient } from '@@/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 // No longer needed: const publicPaths = ['/', '/sign-up', '/login']
 
@@ -8,7 +8,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const publicRoutes = ['/login', '/signup', '/blog', '/contact']
   const isPublicRoute = publicRoutes.find(route => to.path.includes(route))
 
-  if (isPublicRoute || to.meta?.public === true || to.path == "/" || to.path == "/en" || to.path == "/nl") {
+  if (isPublicRoute || to.meta?.public === true || to.path == '/' || to.path == '/en' || to.path == '/nl') {
     console.log('Public route, allowing navigation:', to.path)
     // If it's public, allow navigation without checking auth
     return

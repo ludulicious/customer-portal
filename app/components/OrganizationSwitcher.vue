@@ -7,15 +7,15 @@
       <select
         id="org-select"
         v-model="selectedOrg"
-        @change="switchOrganization"
         class="org-select"
+        @change="switchOrganization"
       >
         <option value="">Select Organization</option>
         <option v-for="org in organizations" :key="org.id" :value="org.id">
           {{ org.name }}
         </option>
       </select>
-      <button @click="createNewOrg" class="create-btn">
+      <button class="create-btn" @click="createNewOrg">
         Create New Organization
       </button>
     </div>
@@ -23,7 +23,7 @@
 </template>
 
 <script setup>
-import { authClient } from '~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 const organizations = ref([])
 const selectedOrg = ref('')
@@ -94,4 +94,3 @@ onMounted(() => {
   background: #2563eb;
 }
 </style>
-

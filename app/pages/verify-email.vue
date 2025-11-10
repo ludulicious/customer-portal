@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { authClient } from '@@/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 const route = useRoute()
 const router = useRouter()

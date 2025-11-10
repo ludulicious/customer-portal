@@ -1,5 +1,5 @@
-import { authClient } from '~~/lib/auth-client'
-import type { OrganizationMemberWithUser, MemberRole } from '~~/types'
+import { authClient } from '~/utils/auth-client'
+import type { OrganizationMemberWithUser, MemberRole } from '~~/shared/types'
 
 export const useCurrentOrganization = () => {
   const session = authClient.useSession()

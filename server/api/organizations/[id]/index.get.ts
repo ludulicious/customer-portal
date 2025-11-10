@@ -1,11 +1,11 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
-import { auth } from '@@/lib/auth'
-import { db } from '@@/lib/db'
-import { organization as organizationTable } from '@@/db/schema/auth-schema'
+import { auth } from '~~/server/utils/auth'
+import { db } from '~~/server/utils/db'
+import { organization as organizationTable } from '~~/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
-import type { Organization, ApiError } from '~~/types'
+import type { Organization, ApiError } from '~~/shared/types'
 
-export default defineEventHandler<Organization>(async (event) => {
+export default defineEventHandler(async (event): Promise<Organization> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
@@ -20,9 +20,9 @@ export default defineEventHandler<Organization>(async (event) => {
   try {
     const result = await auth.api.listMembers({
       query: { organizationId }
-    }) as Array<{ userId: string }>
-    
-    const hasAccess = result.some((m) => m.userId === session.user.id)
+    }) as unknown as { members: Array<{ userId: string }> }
+
+    const hasAccess = result.members.some((m: { userId: string }) => m.userId === session.user.id)
     if (!hasAccess) {
       throw createError({ statusCode: 403, message: 'Access denied' })
     }
@@ -43,6 +43,5 @@ export default defineEventHandler<Organization>(async (event) => {
     throw createError({ statusCode: 404, message: 'Organization not found' })
   }
 
-  return organization
+  return organization as Organization
 })
-

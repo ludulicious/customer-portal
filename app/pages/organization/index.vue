@@ -9,7 +9,7 @@ const isAdmin = ref(false)
 onMounted(async () => {
   await fetchCurrentOrganization()
   isAdmin.value = await isOrganizationAdmin()
-  
+
   // Show invite modal if query param is set
   if (route.query.invite === 'true') {
     showInviteModal.value = true
@@ -34,9 +34,9 @@ watch(organizationId, async () => {
           </h1>
           <UButton
             v-if="isAdmin"
-            @click="showInviteModal = true"
             icon="i-lucide-user-plus"
             color="primary"
+            @click="showInviteModal = true"
           >
             Invite Member
           </UButton>
@@ -61,4 +61,3 @@ watch(organizationId, async () => {
     </UContainer>
   </div>
 </template>
-

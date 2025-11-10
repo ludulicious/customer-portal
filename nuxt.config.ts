@@ -16,7 +16,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
   alias: {
-    '#lib': fileURLToPath(new URL('./lib', import.meta.url)),
+    '#types': fileURLToPath(new URL('./shared/types', import.meta.url)),
   },
   image: {
     quality: 80,

@@ -33,4 +33,3 @@ export type {
   UpdateUserRoleResponse,
   OrganizationInvitationsResponse
 } from './api'
-

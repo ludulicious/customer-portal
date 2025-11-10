@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { authClient } from '@@/lib/auth-client'
-import type { ApiError } from '~~/types'
+import { authClient } from '~/utils/auth-client'
+import type { ApiError } from '~~/shared/types'
 
 definePageMeta({
   layout: 'auth',

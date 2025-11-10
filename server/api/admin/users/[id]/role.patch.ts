@@ -1,11 +1,11 @@
 import { defineEventHandler, createError, getRouterParam, readBody } from 'h3'
-import { auth } from '@@/lib/auth'
-import { db } from '@@/lib/db'
-import { user as userTable } from '@@/db/schema/auth-schema'
+import { auth } from '~~/server/utils/auth'
+import { db } from '~~/server/utils/db'
+import { user as userTable } from '~~/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
-import type { SessionUser, UpdateUserRoleRequest, UpdateUserRoleResponse } from '~~/types'
+import type { SessionUser, UpdateUserRoleRequest, UpdateUserRoleResponse } from '~~/shared/types'
 
-export default defineEventHandler<UpdateUserRoleResponse>(async (event) => {
+export default defineEventHandler(async (event): Promise<UpdateUserRoleResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
@@ -37,4 +37,3 @@ export default defineEventHandler<UpdateUserRoleResponse>(async (event) => {
 
   return { success: true, message: 'User role updated successfully' }
 })
-

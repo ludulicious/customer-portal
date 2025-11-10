@@ -1,8 +1,8 @@
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 import { verifyOrganizationAccess } from '../../utils/service-request-helpers'
-import { db } from '~~/lib/db'
+import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
   const isAdmin = role?.role === 'owner' || role?.role === 'admin'
 
   if (!isAdmin) {
-    delete request.internalNotes
+    delete (request as any).internalNotes
   }
 
   return request

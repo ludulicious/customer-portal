@@ -1,9 +1,9 @@
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 import { updateServiceRequestSchema } from '../../utils/service-request-validation'
 import { verifyRequestOwnership } from '../../utils/service-request-helpers'
-import { db } from '~~/lib/db'
+import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
   const session = await authClient.getSession()
@@ -16,14 +16,14 @@ export default defineEventHandler(async (event) => {
   const data = updateServiceRequestSchema.parse(body)
 
   // Verify ownership or organization membership
-  const isOwner = await verifyRequestOwnership(session.data.user.id, id)
+  const isOwner = await verifyRequestOwnership(session.data.user.id!, id!)
 
   if (!isOwner) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 
   // Users can only update certain fields
-  const allowedUpdates: any = {}
+  const allowedUpdates: Record<string, string> = {}
   if (data.title) allowedUpdates.title = data.title
   if (data.description) allowedUpdates.description = data.description
   if (data.priority) allowedUpdates.priority = data.priority

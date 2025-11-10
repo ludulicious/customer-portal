@@ -64,8 +64,8 @@
 </template>
 
 <script setup lang="ts">
-import { authClient } from '~~/lib/auth-client'
-import type { ApiError, Organization } from '~~/types'
+import { authClient } from '~/utils/auth-client'
+import type { ApiError, Organization } from '~~/shared/types'
 
 const loading = ref(true)
 const updating = ref(false)

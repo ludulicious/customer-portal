@@ -1,9 +1,9 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
-import { auth } from '@@/lib/auth'
-import { db } from '@@/lib/db'
-import { invitation as invitationTable } from '@@/db/schema/auth-schema'
+import { auth } from '~~/server/utils/auth'
+import { db } from '~~/server/utils/db'
+import { invitation as invitationTable } from '~~/server/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
-import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, ApiError } from '~~/types'
+import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, ApiError } from '~~/shared/types'
 
 export default defineEventHandler(async (event): Promise<OrganizationInvitationsResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
@@ -48,5 +48,5 @@ export default defineEventHandler(async (event): Promise<OrganizationInvitations
       )
     )
 
-  return invitations
+  return invitations as OrganizationInvitationsResponse
 })

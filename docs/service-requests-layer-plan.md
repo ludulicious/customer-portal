@@ -8,7 +8,7 @@ Create a standalone Nuxt layer for service requests that can be easily added or 
 
 - Better-auth with organization plugin configured and implemented
 - Better-auth with admin plugin configured
-- Drizzle ORM configured (db instance available from `~/lib/db`)
+- Drizzle ORM configured (db instance available from `~/server/utils/db`)
 - Nuxt UI components available
 
 ## Key Changes for Better-Auth Integration
@@ -328,8 +328,8 @@ export const filterServiceRequestSchema = z.object({
 
 Create `layers/service-requests/server/utils/service-request-helpers.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
-import { db } from '~~/lib/db'
+import { authClient } from '~/utils/auth-client'
+import { db } from '~~/server/utils/db'
 import { eq, and, ilike, or } from 'drizzle-orm'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
@@ -398,8 +398,8 @@ export function buildRequestQuery(filters: any) {
 
 Create `layers/service-requests/server/api/service-requests/index.get.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
-import { db } from '~~/lib/db'
+import { authClient } from '~/utils/auth-client'
+import { db } from '~~/server/utils/db'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
@@ -467,8 +467,8 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/index.post.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
-import { db } from '~~/lib/db'
+import { authClient } from '~/utils/auth-client'
+import { db } from '~~/server/utils/db'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
@@ -507,8 +507,8 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].get.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
-import { db } from '~~/lib/db'
+import { authClient } from '~/utils/auth-client'
+import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
@@ -556,7 +556,7 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].patch.ts`:
 ```typescript
-import { db } from '~~/lib/db'
+import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
@@ -598,7 +598,7 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].delete.ts`:
 ```typescript
-import { db } from '~~/lib/db'
+import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
@@ -631,8 +631,8 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/admin/index.get.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
-import { db } from '~~/lib/db'
+import { authClient } from '~/utils/auth-client'
+import { db } from '~~/server/utils/db'
 import { desc, sql } from 'drizzle-orm'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
@@ -699,8 +699,8 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/admin/[id].patch.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
-import { db } from '~~/lib/db'
+import { authClient } from '~/utils/auth-client'
+import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
 import { serviceRequest } from '~~/db/schema/service-requests'
 
@@ -749,7 +749,7 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/app/composables/useServiceRequests.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 export const useServiceRequests = () => {
   const requests = ref<ServiceRequestWithRelations[]>([])
@@ -878,7 +878,7 @@ export const useServiceRequests = () => {
 
 Create `layers/service-requests/app/composables/useAdminServiceRequests.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 export const useAdminServiceRequests = () => {
   const requests = ref<ServiceRequestWithRelations[]>([])
@@ -1967,7 +1967,7 @@ export default defineNuxtConfig({
 
 Create `layers/service-requests/app/composables/useServiceRequestMenu.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 export const useServiceRequestMenu = () => {
   const { data: role } = authClient.organization.getActiveMemberRole()
@@ -2065,7 +2065,7 @@ const serviceRequestWidget = useServiceRequestWidget?.() || null
 
 Create `layers/service-requests/app/composables/useServiceRequestWidget.ts`:
 ```typescript
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 export const useServiceRequestWidget = () => {
   const { requests, loading, fetchRequests } = useServiceRequests()

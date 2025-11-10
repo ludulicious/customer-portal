@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { SessionUser } from '~~/types'
+import type { SessionUser } from '~~/shared/types'
 
 interface UserPermissions {
   [key: string]: boolean

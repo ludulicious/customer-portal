@@ -1,7 +1,7 @@
 import type {
   QueryInput,
   FilterOperator as FilterOperatorType,
-} from '../types/queryBuilder'
+} from '#types/queryBuilder'
 import { z } from 'zod'
 
 // Schema for FilterOperator - now using z.enum with actual values
@@ -54,7 +54,7 @@ export const BaseQuerySchema = z.object({
   sortField: z.string().optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
   filters: z.preprocess((val) => {
-      if (typeof val === 'string') {
+    if (typeof val === 'string') {
       try {
         return JSON.parse(val)
       } catch (e) {
@@ -66,7 +66,7 @@ export const BaseQuerySchema = z.object({
 })
 
 // Map filter operators to Prisma query operators
-const operatorMap: Record<FilterOperatorType, (value: any) => any> = {
+const operatorMap: Record<FilterOperatorType, (value: unknown) => unknown> = {
   eq: (value) => ({ equals: value }),
   neq: (value) => ({ not: value }),
   gt: (value) => ({ gt: value }),
@@ -85,18 +85,18 @@ const operatorMap: Record<FilterOperatorType, (value: any) => any> = {
  * Example: "answers.questionId", "equals", "someValue"
  * Becomes: { answers: { questionId: { equals: "someValue" } } }
  */
-function createNestedFilter(fieldPath: string, operator: FilterOperatorType, value: any): Record<string, any> {
+function createNestedFilter(fieldPath: string, operator: FilterOperatorType, value: unknown): Record<string, unknown> {
   console.log('createNestedFilter', fieldPath, operator, value)
   const pathParts = fieldPath.split('.')
   if (pathParts.length === 0) {
     console.log('pathParts.length === 0', operatorMap[operator](value))
     return operatorMap[operator](value == null ? null : value)
   }
-  const root: Record<string, any> = {}
+  const root: Record<string, unknown> = {}
   let currentLevel = root
 
   for (let i = 0; i < pathParts.length; i++) {
-    const part = pathParts[i]
+    const part = pathParts[i] || 'xxx'
     if (i === pathParts.length - 1) {
       // This is the actual field to apply the operator on
       currentLevel[part] = operatorMap[operator](value)
@@ -104,7 +104,7 @@ function createNestedFilter(fieldPath: string, operator: FilterOperatorType, val
       // This part is a relation. Assume 'some' for to-many relations.
       // This addresses the Prisma requirement for filtering on related records.
       currentLevel[part] = { some: {} }
-      currentLevel = currentLevel[part].some
+      currentLevel = (currentLevel[part] as Record<string, unknown>)?.some as unknown as Record<string, unknown>
     }
   }
   return root
@@ -138,11 +138,11 @@ export function buildPrismaQueryArgs<
   let finalWhereClause: BaseWhere | Record<string, any> | undefined = undefined
   const filtersFromQueryInput = queryInput.filters?.length
     ? {
-        AND: queryInput.filters.map((f) => {
-          // Use createNestedFilter to handle potentially nested fields
-          return createNestedFilter(f.field, f.operator as FilterOperatorType, f.value)
-        }),
-      }
+      AND: queryInput.filters.map((f) => {
+        // Use createNestedFilter to handle potentially nested fields
+        return createNestedFilter(f.field, f.operator as FilterOperatorType, f.value)
+      }),
+    }
     : undefined
   const whereFromBaseArgs = baseArgs?.where
 
@@ -165,8 +165,8 @@ export function buildPrismaQueryArgs<
     | BaseOrderBy
     | Array<Record<string, 'asc' | 'desc'>>
     | undefined = queryInput.sortField && queryInput.sortDirection
-    ? [{ [queryInput.sortField]: queryInput.sortDirection }]
-    : (baseArgs?.orderBy as BaseOrderBy | undefined)
+      ? [{ [queryInput.sortField]: queryInput.sortDirection }]
+      : (baseArgs?.orderBy as BaseOrderBy | undefined)
 
   // 3. Construct 'take' and 'skip' - queryInput.limit/offset take precedence
   const finalTake: BaseTake | number | undefined =

@@ -1,7 +1,7 @@
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 import { createServiceRequestSchema } from '../../utils/service-request-validation'
-import { db } from '~~/lib/db'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { db } from '~~/server/utils/db'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
 import { defineEventHandler, createError, readBody } from 'h3'
 
 export default defineEventHandler(async (event) => {

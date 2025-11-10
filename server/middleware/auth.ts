@@ -1,5 +1,5 @@
-import { defineEventHandler, H3Event, createError } from 'h3'
-import { auth } from '@@/lib/auth'
+import { defineEventHandler, type H3Event, createError } from 'h3'
+import { auth } from '../utils/auth'
 
 async function isAuthenticated(event: H3Event): Promise<boolean> {
   const session = await auth.api.getSession({
@@ -37,9 +37,9 @@ export default defineEventHandler(async (event) => {
   )
 
   if (
-    (isQuestionnaireResponseIndex && event.method === 'POST') ||
-    (isSpecificQuestionnaireResponse &&
-      (event.method === 'PUT' || event.method === 'GET'))
+    (isQuestionnaireResponseIndex && event.method === 'POST')
+    || (isSpecificQuestionnaireResponse
+      && (event.method === 'PUT' || event.method === 'GET'))
   ) {
     return
   }

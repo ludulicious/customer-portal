@@ -1,7 +1,7 @@
-import { authClient } from '~~/lib/auth-client'
-import { db } from '~~/lib/db'
+import { authClient } from '~/utils/auth-client'
+import { db } from '~~/server/utils/db'
 import { eq, and, ilike } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
 
 export async function verifyOrganizationAccess(
   userId: string,

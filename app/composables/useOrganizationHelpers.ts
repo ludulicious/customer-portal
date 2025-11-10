@@ -1,4 +1,4 @@
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 
 export const useOrganizationHelpers = () => {
   // Get current user's organization

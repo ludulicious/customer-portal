@@ -5,7 +5,7 @@ import { admin, customSession, emailOTP, organization } from 'better-auth/plugin
 import { db } from './db'
 import { eq } from 'drizzle-orm'
 import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
-import { ac, user, admin as adminRole } from './auth/permissions'
+import { ac, user, admin as adminRole } from '../../shared/permissions'
 import { nanoid } from 'nanoid'
 
 /**

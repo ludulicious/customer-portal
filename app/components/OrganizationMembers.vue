@@ -138,9 +138,9 @@
 </template>
 
 <script setup lang="ts">
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 import { useCurrentOrganization } from '~/composables/useCurrentOrganization'
-import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, MemberRole, ApiError } from '~~/types'
+import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, MemberRole, ApiError } from '~~/shared/types'
 
 interface Props {
   showInviteModal?: boolean

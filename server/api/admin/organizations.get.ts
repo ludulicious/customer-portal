@@ -1,10 +1,10 @@
 import { defineEventHandler, createError } from 'h3'
-import { auth } from '@@/lib/auth'
-import { db } from '@@/lib/db'
-import { organization as organizationTable } from '@@/db/schema/auth-schema'
-import type { SessionUser, AdminOrganizationsResponse } from '~~/types'
+import { auth } from '~~/server/utils/auth'
+import { db } from '~~/server/utils/db'
+import { organization as organizationTable } from '~~/server/db/schema/auth-schema'
+import type { SessionUser, AdminOrganizationsResponse } from '~~/shared/types'
 
-export default defineEventHandler<AdminOrganizationsResponse>(async (event) => {
+export default defineEventHandler(async (event): Promise<AdminOrganizationsResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
@@ -22,6 +22,5 @@ export default defineEventHandler<AdminOrganizationsResponse>(async (event) => {
     .from(organizationTable)
     .orderBy(organizationTable.createdAt)
 
-  return organizations
+  return organizations as AdminOrganizationsResponse
 })
-

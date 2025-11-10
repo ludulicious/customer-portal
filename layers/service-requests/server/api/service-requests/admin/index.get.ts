@@ -1,9 +1,9 @@
-import { authClient } from '~~/lib/auth-client'
+import { authClient } from '~/utils/auth-client'
 import { filterServiceRequestSchema } from '../../../utils/service-request-validation'
 import { buildRequestQuery } from '../../../utils/service-request-helpers'
-import { db } from '~~/lib/db'
+import { db } from '~~/server/utils/db'
 import { desc } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
 import { defineEventHandler, createError, getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {

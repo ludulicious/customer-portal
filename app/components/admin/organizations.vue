@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdminOrganizationsResponse, ApiError } from '~~/types'
+import type { AdminOrganizationsResponse, ApiError } from '~~/shared/types'
 
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)

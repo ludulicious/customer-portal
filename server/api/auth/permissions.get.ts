@@ -1,6 +1,6 @@
 import { defineEventHandler, createError } from 'h3'
-import { statement, user as userRole, admin as adminRole } from '@@/lib/auth/permissions'
-import { auth } from '@@/lib/auth'
+import { statement, user as userRole, admin as adminRole } from '~~/shared/permissions'
+import { auth } from '~~/server/utils/auth'
 
 // type SubjectType = keyof typeof statement
 

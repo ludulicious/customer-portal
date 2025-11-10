@@ -1,4 +1,4 @@
-import { authClient } from '@@/lib/auth-client'
+import { authClient } from './auth-client'
 
 /**
  * Checks if a role has a specific permission for a subject
@@ -13,8 +13,7 @@ export const hasPermission = async (subject: string, permission: string): Promis
         [subject]: [permission]
       }
     })
-    // @ts-ignore - The response type is not properly typed but we know it returns a boolean
-    return response.data.success
+    return response?.data?.success || false
   } catch (error) {
     console.error('Error checking permission:', error)
     return false
