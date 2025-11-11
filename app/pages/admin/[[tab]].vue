@@ -2,7 +2,6 @@
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
 const { t } = useI18n()
-const localePath = useLocalePath()
 // Redirect if not admin
 if (!isAdmin.value) {
   throw createError({ statusCode: 403, message: 'Admin access required' })
@@ -23,7 +22,7 @@ const tabs = computed(() => [
 ])
 
 watch(activeTab, (newTab) => {
-  history.pushState(null, '', `${localePath('/admin')}/${newTab}`)
+  history.pushState(null, '', `/admin/${newTab}`)
 }, { immediate: true })
 </script>
 

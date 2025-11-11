@@ -37,7 +37,7 @@ if (!RESEND_FROM_EMAIL) {
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 
 // Path to the email template
-const templatePath = path.join(process.cwd(), 'lib', 'email-template.html')
+const templatePath = path.join(process.cwd(), 'server', 'utils', 'email-template.html')
 let emailTemplate = ''
 try {
   emailTemplate = fs.readFileSync(templatePath, 'utf-8')

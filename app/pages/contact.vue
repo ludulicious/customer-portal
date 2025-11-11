@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const { t, locale } = useI18n()
 const toast = useToast()
-const localePath = useLocalePath()
 
 // Contact form state
 const form = ref({

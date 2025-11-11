@@ -1,15 +1,13 @@
 <script setup lang="ts">
 const route = useRoute()
-const { locale } = useI18n()
-const localePath = useLocalePath()
 
 const { data: page } = await useAsyncData(
-  () => `blog-${locale.value}`,
-  () => queryCollection(locale.value === 'en' ? 'blog_en' : 'blog_nl').first()
+  () => 'blog-en',
+  () => queryCollection('blog_en').first()
 )
 const { data: posts } = await useAsyncData(
-  () => `blog-posts-${locale.value}-${route.path}`,
-  () => queryCollection(locale.value === 'en' ? 'posts_en' : 'posts_nl')
+  () => `blog-posts-en-${route.path}`,
+  () => queryCollection('posts_en')
     .order('id', 'DESC')
     .all()
 )
@@ -44,7 +42,7 @@ definePageMeta({
           <UBlogPost
             v-for="(post, index) in posts"
             :key="post.id"
-            :to="localePath(post.path)"
+            :to="post.path"
             :title="post.title"
             :description="post.description"
             :image="post.image"

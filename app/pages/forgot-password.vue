@@ -10,7 +10,6 @@ definePageMeta({
 
 const { t } = useI18n()
 const router = useRouter()
-const localePath = useLocalePath()
 
 useSeoMeta({
   title: t('forgotPassword.title'),
@@ -159,7 +158,7 @@ const resetPassword = async (payload: FormSubmitEvent<{ otp: string; newPassword
 
       // Redirect to login after a short delay
       await new Promise(resolve => setTimeout(resolve, 2000))
-      router.push(localePath('/dashboard'))
+      router.push('/dashboard')
     } else {
       console.error(resetResult.error)
       error.value = t('forgotPassword.messages.resetError')
@@ -246,7 +245,7 @@ watch(otpCode, async (newValue) => {
 
     <!-- Back to Login -->
     <div class="text-center mt-10">
-      <NuxtLink :to="localePath('/login')" class="text-sm text-primary hover:text-primary/80">
+      <NuxtLink to="/login" class="text-sm text-primary hover:text-primary/80">
         {{ t('forgotPassword.buttons.backToLogin') }}
       </NuxtLink>
     </div>

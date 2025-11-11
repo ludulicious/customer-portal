@@ -95,9 +95,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
           await authClient.getSession()
           // Use window.location for a full page refresh to ensure session state is properly loaded
           const redirectTo = route.query.redirect?.toString() || '/dashboard'
-          const localePath = useLocalePath()
-          const fullPath = localePath(redirectTo)
-          window.location.href = fullPath
+          window.location.href = redirectTo
         },
         onError: (ctx) => {
           const error = ctx.error
@@ -157,7 +155,7 @@ const handleGitHubLogin = async () => {
       </template>
 
       <template #password-hint>
-        <ULink :to="$localePath('/forgot-password')" class="text-primary font-medium" tabindex="-1">{{
+        <ULink to="/forgot-password" class="text-primary font-medium" tabindex="-1">{{
           t('login.forgotPassword') }}</ULink>
       </template>
 

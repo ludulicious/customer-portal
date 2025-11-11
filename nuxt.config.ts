@@ -73,12 +73,10 @@ export default defineNuxtConfig({
   nitro: {
     routeRules: {
       '/': { swr: 300 },
-      '/en': { swr: 300 },
-      '/blog/**': { swr: 600 },
-      '/en/blog/**': { swr: 600 }
+      '/blog/**': { swr: 600 }
     },
     prerender: {
-      routes: ['/', '/nl', '/contact', '/nl/contact'],
+      routes: ['/', '/contact'],
       crawlLinks: false,
       failOnError: false
     }
@@ -114,7 +112,7 @@ export default defineNuxtConfig({
       }
     ],
     defaultLocale: 'en',
-    strategy: 'prefix_except_default',
+    strategy: 'no_prefix',
     detectBrowserLanguage: {
       useCookie: true,
       cookieKey: 'i18n_redirected',

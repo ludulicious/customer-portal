@@ -3,11 +3,8 @@ import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '~/utils/auth-client'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
-const localePath = useLocalePath()
 const route = useRoute()
 const { t, locale, setLocale } = useI18n()
-const router = useRouter()
-const path = computed(() => route.path)
 
 // User store
 const userStore = useUserStore()
@@ -45,7 +42,7 @@ const userMenuItems = computed(() => {
       {
         label: 'Profile',
         icon: 'i-lucide-user',
-        to: localePath('/profile')
+        to: '/profile'
       }
     ]
   ] as DropdownMenuItem[]
@@ -55,13 +52,13 @@ const userMenuItems = computed(() => {
     menuItems[1].push({
       label: 'Create Organization',
       icon: 'i-lucide-plus-circle',
-      to: localePath('/organizations/create')
+      to: '/organizations/create'
     }, {
       label: 'Invite User',
       icon: 'i-lucide-user-plus',
       onSelect: () => {
         // Navigate to organization page with invite modal
-        navigateTo(localePath('/organization?invite=true'))
+        navigateTo('/organization?invite=true')
       }
     })
   }
@@ -72,7 +69,7 @@ const userMenuItems = computed(() => {
       icon: 'i-lucide-log-out',
       onSelect: async () => {
         await authClient.signOut()
-        await navigateTo(localePath('/'))
+        await navigateTo('/')
       }
     }
   ])
@@ -84,15 +81,12 @@ const userMenuItems = computed(() => {
 const isRouteActive = (itemPath: string) => {
   const currentPath = route.path
 
-  // Remove locale prefix for comparison (e.g., /en/blog -> /blog)
-  const pathWithoutLocale = currentPath.replace(/^\/[a-z]{2}(\/|$)/, '/')
-
   // Exact match for root paths
-  if (itemPath === '/' && (currentPath === '/' || currentPath === '/en' || currentPath === '/nl')) return true
+  if (itemPath === '/' && currentPath === '/') return true
 
   // For other paths, check if current path starts with the item path
   // This handles sub-pages like /blog/[slug] matching /blog
-  if (itemPath !== '/' && pathWithoutLocale.startsWith(itemPath)) return true
+  if (itemPath !== '/' && currentPath.startsWith(itemPath)) return true
 
   return false
 }
@@ -101,11 +95,11 @@ const isRouteActive = (itemPath: string) => {
 const items = computed(() => {
   const publicItems = [{
     label: t('nav.blog'),
-    to: localePath('/blog'),
+    to: '/blog',
     active: isRouteActive('/blog')
   }, {
     label: t('nav.contact'),
-    to: localePath('/contact'),
+    to: '/contact',
     active: isRouteActive('/contact')
   }]
 
@@ -116,7 +110,7 @@ const items = computed(() => {
 
   const privateItems = [{
     label: t('nav.dashboard'),
-    to: localePath('/dashboard'),
+    to: '/dashboard',
     active: isRouteActive('/dashboard')
   }]
 
@@ -124,7 +118,7 @@ const items = computed(() => {
   if (isOrgAdmin.value) {
     privateItems.push({
       label: t('nav.organization'),
-      to: localePath('/organization'),
+      to: '/organization',
       active: isRouteActive('/organization')
     })
   }
@@ -133,7 +127,7 @@ const items = computed(() => {
   if (userStore.isAdmin) {
     privateItems.push({
       label: t('nav.admin'),
-      to: localePath('/admin'),
+      to: '/admin',
       active: isRouteActive('/admin')
     })
   }
@@ -176,13 +170,13 @@ watch(locale, (newLocale) => {
   currentLocale.value = newLocale
   setLocale(newLocale)
   console.log('Locale changed to:', newLocale)
-  router.push(localePath(path.value))
+  // No URL change needed with no_prefix strategy
 }, { immediate: false })
 
 // Watch currentLocale changes to update the global locale
 watch(currentLocale, (newLocale) => {
   setLocale(newLocale)
-  router.push(localePath(path.value))
+  // No URL change needed with no_prefix strategy
 })
 
 </script>
@@ -190,7 +184,7 @@ watch(currentLocale, (newLocale) => {
 <template>
   <UHeader>
     <template #left>
-      <NuxtLink :to="localePath('/')">
+      <NuxtLink to="/">
         <AppLogo class="w-auto h-6 shrink-0" />
       </NuxtLink>
     </template>

@@ -4,7 +4,6 @@ import { authClient } from '~/utils/auth-client'
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
-const localePath = useLocalePath()
 
 // Get email from query params or session and decode it
 const email = ref(decodeURIComponent(route.query.email as string || ''))
@@ -117,8 +116,7 @@ const verifyCode = async () => {
         success.value = t('verify.success') + ' Please sign in to continue.'
         await new Promise(resolve => setTimeout(resolve, 2000))
         const redirectTo = route.query.redirect as string || '/dashboard'
-        const localePath = useLocalePath()
-        const loginPath = localePath('/login')
+        const loginPath = '/login'
         const fullPath = `${loginPath}?email=${encodeURIComponent(email.value)}&redirect=${encodeURIComponent(redirectTo)}`
         console.log('Redirecting to login:', fullPath)
         window.location.href = fullPath
@@ -141,10 +139,8 @@ const verifyCode = async () => {
       // The user should now be automatically signed in after email verification
       // Use window.location for a full page refresh to ensure session state is updated
       const redirectTo = route.query.redirect as string || '/dashboard'
-      const localePath = useLocalePath()
-      const fullPath = localePath(redirectTo)
-      console.log('Redirecting to:', fullPath)
-      window.location.href = fullPath
+      console.log('Redirecting to:', redirectTo)
+      window.location.href = redirectTo
     } else {
       console.log('Verification failed:', result.error)
       error.value = result.error?.message as string || t('verify.invalidCode')
@@ -234,7 +230,7 @@ definePageMeta({
 
     <!-- Back to Login -->
     <div class="text-center">
-      <NuxtLink :to="localePath('/login')" class="text-sm text-primary hover:text-primary/80">
+      <NuxtLink to="/login" class="text-sm text-primary hover:text-primary/80">
         {{ $t('verify.backToLogin') }}
       </NuxtLink>
     </div>

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const { createOrganization } = useCurrentOrganization()
-const localePath = useLocalePath()
 const router = useRouter()
 
 const loading = ref(false)
@@ -36,7 +35,7 @@ const handleSubmit = async () => {
     })
     
     // Redirect to organization page
-    await router.push(localePath('/organization'))
+    await router.push('/organization')
   } catch (err: any) {
     error.value = err.message || 'Failed to create organization'
   } finally {
@@ -92,7 +91,7 @@ const handleSubmit = async () => {
             <UButton
               type="button"
               variant="outline"
-              @click="router.push(localePath('/organization'))"
+              @click="router.push('/organization')"
             >
               Cancel
             </UButton>

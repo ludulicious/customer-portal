@@ -2,7 +2,6 @@
 const { locale } = useI18n()
 const userStore = useUserStore()
 const { currentUser } = storeToRefs(userStore)
-const localePath = useLocalePath()
 
 // Authentication is handled by the global auth middleware
 // No need for additional redirect logic here
@@ -142,7 +141,7 @@ useSeoMeta({
           </div>
           <div class="flex items-center space-x-4">
             <UButton
-              :to="localePath('/orders')"
+              to="/orders"
               color="primary"
               variant="outline"
               icon="i-lucide-clipboard-list"
@@ -150,7 +149,7 @@ useSeoMeta({
               {{ $t('dashboard.buttons.viewAllOrders') }}
             </UButton>
             <UButton
-              :to="localePath('/invoices')"
+              to="/invoices"
               color="neutral"
               variant="outline"
               icon="i-lucide-file-text"
@@ -346,7 +345,7 @@ useSeoMeta({
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                   {{ $t('dashboard.activity.recentActivity') }}
                 </h3>
-                <UButton size="sm" variant="ghost" :to="localePath('/activity')">
+                <UButton size="sm" variant="ghost" to="/activity">
                   {{ $t('dashboard.buttons.viewAll') }}
                 </UButton>
               </div>
@@ -419,7 +418,7 @@ useSeoMeta({
             </template>
             <div class="space-y-3">
               <UButton
-                :to="localePath('/orders/new')"
+                to="/orders/new"
                 color="primary"
                 variant="outline"
                 block
@@ -428,7 +427,7 @@ useSeoMeta({
                 {{ $t('dashboard.buttons.newOrder') }}
               </UButton>
               <UButton
-                :to="localePath('/requests/new')"
+                to="/requests/new"
                 color="neutral"
                 variant="outline"
                 block
@@ -437,7 +436,7 @@ useSeoMeta({
                 {{ $t('dashboard.buttons.newRequest') }}
               </UButton>
               <UButton
-                :to="localePath('/reports')"
+                to="/reports"
                 color="neutral"
                 variant="outline"
                 block

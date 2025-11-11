@@ -10,7 +10,6 @@ const { data: page } = await useAsyncData(
 const title = page.value?.seo?.title || page.value?.title
 const description = page.value?.seo?.description || page.value?.description
 const isLoggedIn = computed(() => currentUser.value !== null)
-const localePath = useLocalePath()
 
 // Dynamic hero links based on login status
 const heroLinks = computed(() => {
@@ -19,7 +18,7 @@ const heroLinks = computed(() => {
       {
         label: locale.value === 'en' ? 'My Dashboard' : 'Mijn Dashboard',
         icon: 'i-lucide-layout-dashboard',
-        to: localePath('/dashboard'),
+        to: '/dashboard',
         size: 'xl',
         color: 'primary'
       }
@@ -34,7 +33,7 @@ const ctaLinks = computed(() => {
     return [
       {
         label: locale.value === 'en' ? 'Go to Dashboard' : 'Ga naar Dashboard',
-        to: localePath('/dashboard'),
+        to: '/dashboard',
         color: 'primary',
         icon: 'i-lucide-layout-dashboard'
       }
