@@ -1,100 +1,27 @@
 <script setup lang="ts">
 const route = useRoute()
+const { locale } = useI18n()
 
-// Get the slug from the route
-const slug = computed(() => route.params.slug as string)
+const contentPath = computed(() => {
+  const path = route.path || ''
+  return path.replace(/^\/(en|nl)(?=\/|$)/, '') || '/'
+})
 
-// Find the post by matching the route path with post paths
-// Since blog index uses post.path directly, we need to match that format
 const { data: post } = await useAsyncData(
-  () => `blog-post-en-${route.path}`,
-  async () => {
-    // Get all posts and find the one that matches our route path
-    const allPosts = await queryCollection('posts_en').all()
-
-    // Try to find exact match first (with or without leading slash)
-    const routePath = route.path
-    const routePathNoSlash = routePath.replace(/^\//, '')
-
-    let found = allPosts.find(p => {
-      const postPath = p.path || ''
-      // Match exact path (with or without leading slash)
-      return postPath === routePath || postPath === routePathNoSlash
-    })
-
-    if (found) return found
-
-    // If no exact match, try to find by slug (path ends with slug)
-    found = allPosts.find(p => {
-      const postPath = p.path || ''
-      // Remove leading slash and trailing slash for comparison
-      const normalizedPostPath = postPath.replace(/^\/|\/$/g, '')
-      const normalizedRoutePath = routePath.replace(/^\/|\/$/g, '')
-
-      // Check if paths match or if post path ends with the route slug
-      return normalizedPostPath === normalizedRoutePath
-        || normalizedPostPath.endsWith(`/${slug.value}`)
-        || normalizedPostPath === slug.value
-    })
-
-    return found || null
-  }
+  () => `blog-post-${locale.value}-${contentPath.value}`,
+  () => queryCollection('posts_en').path(contentPath.value).first()
 )
-
 if (!post.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found', fatal: true })
 }
 
-// For surround, manually find prev/next posts based on id (filename) ordering
-// This ensures consistent ordering matching the blog index
 const { data: surround } = await useAsyncData(
-  () => `blog-post-surround-en-${route.path}`,
-  async () => {
-    if (!post.value?.path) {
-      return null
-    }
-
-    // Get all posts ordered by id DESC (filename DESC, same as blog index)
-    const allPosts = await queryCollection('posts_en')
-      .order('id', 'DESC')
-      .all()
-
-    // Find current post index
-    const currentIndex = allPosts.findIndex(p => {
-      const postPath = p.path || ''
-      const currentPath = post.value.path || ''
-      return postPath === currentPath
-        || postPath === currentPath.replace(/^\//, '')
-        || currentPath.replace(/^\//, '') === postPath
-    })
-
-    if (currentIndex === -1) {
-      return null
-    }
-
-    // Get previous and next posts
-    const prev = currentIndex > 0 ? allPosts[currentIndex - 1] : null
-    const next = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null
-
-    return { prev, next }
-  }
+  () => `blog-post-surround-${locale.value}-${contentPath.value}`,
+  () => queryCollectionItemSurroundings(
+    'posts_en',
+    contentPath.value
+  ).order('id', 'DESC')
 )
-
-// queryCollectionItemSurroundings returns { prev, next } object, not an array
-// Convert to array format expected by UContentSurround component
-const surroundLocalized = computed(() => {
-  if (!surround.value) return []
-
-  const result = []
-  if (surround.value.prev && surround.value.prev.path) {
-    result.push({ ...surround.value.prev, path: surround.value.prev.path })
-  }
-  if (surround.value.next && surround.value.next.path) {
-    result.push({ ...surround.value.next, path: surround.value.next.path })
-  }
-
-  return result
-})
 
 const title = post.value.seo?.title || post.value.title
 const description = post.value.seo?.description || post.value.description
@@ -138,9 +65,9 @@ definePageMeta({
         <UPageBody>
           <ContentRenderer v-if="post" :value="post" />
 
-          <USeparator v-if="surroundLocalized?.length" />
+          <USeparator v-if="surround?.length" />
 
-          <UContentSurround :surround="surroundLocalized" />
+          <UContentSurround :surround="surround" />
         </UPageBody>
 
         <template v-if="post?.body?.toc?.links?.length" #right>
