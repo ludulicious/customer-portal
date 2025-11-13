@@ -38,12 +38,14 @@
   "common": {
     "cancel": "Annuleren",
     "close": "Sluiten",
+    "createdAt": "Aangemaakt op",
     "delete": "Verwijderen",
     "edit": "Bewerken",
     "error": "Er is een fout opgetreden",
     "learnMore": "Meer informatie",
     "loading": "Laden...",
     "readMore": "Lees meer",
+    "reset": "Resetten",
     "save": "Opslaan",
     "success": "Succesvol!",
     "view": "Bekijken"
@@ -297,6 +299,30 @@
     "contact": "Contact",
     "dashboard": "Dashboard",
     "language": "Taal"
+  },
+  "profile": {
+    "description": "Beheer uw persoonlijke informatie en profielinstellingen",
+    "fields": {
+      "email": "E-mail",
+      "emailDescription": "Uw e-mailadres kan niet worden gewijzigd",
+      "name": "Naam",
+      "nameDescription": "Uw weergavenaam",
+      "namePlaceholder": "Voer uw naam in",
+      "profilePicture": "Profielfoto",
+      "profilePictureDescription": "Voer een URL in voor uw profielfoto",
+      "profilePicturePlaceholder": "https://voorbeeld.nl/avatar.jpg"
+    },
+    "messages": {
+      "error": "Fout",
+      "profileUpdated": "Uw profiel is succesvol bijgewerkt",
+      "success": "Succes",
+      "updateFailed": "Profiel bijwerken mislukt"
+    },
+    "sections": {
+      "organizations": "Mijn organisaties",
+      "profileInfo": "Profielinformatie"
+    },
+    "title": "Profielinstellingen"
   },
   "signup": {
     "description": "Heb je al een account?",

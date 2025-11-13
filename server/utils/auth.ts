@@ -27,10 +27,10 @@ export const auth = betterAuth({
       user: userTable,
       account: accountTable,
       session: sessionTable,
+      member: organizationMemberTable,
       verification: verificationTable,
       organization: organizationTable,
-      organizationMember: organizationMemberTable,
-      organizationInvitation: organizationInvitationTable,
+      invitation: organizationInvitationTable,
     },
     usePlural: false,
     // Tables are singular (e.g., "user"), so no need for usePlural

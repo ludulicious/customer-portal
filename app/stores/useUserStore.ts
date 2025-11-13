@@ -71,7 +71,7 @@ export const useUserStore = defineStore('user', () => {
 
     // At this point, we have a currentUser, but no permissions fetched for them yet.
     isLoading.value = true
-    console.log('Fetching user permissions from API for user:', currentUser.value.id)
+    // console.log('Fetching user permissions from API for user:', currentUser.value.id)
     try {
       const data = await $fetch<PermissionsResponse>('/api/auth/permissions')
       if (data) {
@@ -102,7 +102,7 @@ export const useUserStore = defineStore('user', () => {
   const setUser = (user: SessionUser | null) => {
     if (user) {
       if (!currentUser.value || currentUser.value.id !== user.id) {
-        console.log('setUser: User changed or new user. Resetting permission status.')
+        // console.log('setUser: User changed or new user. Resetting permission status.')
         permissions.value = {}
         role.value = null
         hasFetchedPermissions.value = false
@@ -110,7 +110,7 @@ export const useUserStore = defineStore('user', () => {
       }
       currentUser.value = user
     } else {
-      console.log('setUser: Setting user to null. Clearing all user data.')
+      // console.log('setUser: Setting user to null. Clearing all user data.')
       clearUserData()
     }
   }

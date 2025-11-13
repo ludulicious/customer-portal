@@ -38,12 +38,14 @@
   "common": {
     "cancel": "Cancel",
     "close": "Close",
+    "createdAt": "Created at",
     "delete": "Delete",
     "edit": "Edit",
     "error": "An error occurred",
     "learnMore": "Learn more",
     "loading": "Loading...",
     "readMore": "Read more",
+    "reset": "Reset",
     "save": "Save",
     "success": "Success!",
     "view": "View"
@@ -299,6 +301,30 @@
     "language": "Language",
     "organization": "Organization",
     "portfolio": "Portfolio"
+  },
+  "profile": {
+    "description": "Manage your personal information and profile settings",
+    "fields": {
+      "email": "Email",
+      "emailDescription": "Your email address cannot be changed",
+      "name": "Name",
+      "nameDescription": "Your display name",
+      "namePlaceholder": "Enter your name",
+      "profilePicture": "Profile Picture",
+      "profilePictureDescription": "Enter a URL for your profile picture",
+      "profilePicturePlaceholder": "https://example.com/avatar.jpg"
+    },
+    "messages": {
+      "error": "Error",
+      "profileUpdated": "Your profile has been updated successfully",
+      "success": "Success",
+      "updateFailed": "Failed to update profile"
+    },
+    "sections": {
+      "organizations": "My organizations",
+      "profileInfo": "Profile Information"
+    },
+    "title": "Profile Settings"
   },
   "signup": {
     "description": "Already have an account?",
