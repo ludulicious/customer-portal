@@ -3,6 +3,8 @@ import type {
   FilterOperator as FilterOperatorType,
 } from '#types'
 import { z } from 'zod'
+import type { SQL, SQLWrapper, AnyColumn } from 'drizzle-orm'
+import { and, eq, ne, gt, lt, gte, lte, ilike, inArray, notInArray, asc, desc } from 'drizzle-orm'
 
 // Schema for FilterOperator - now using z.enum with actual values
 export const FilterOperatorSchema = z.enum([
@@ -22,7 +24,7 @@ export const FilterOperatorSchema = z.enum([
 // Schema for a single filter object
 export const FilterSchema = z.object({
   field: z.string(),
-  operator: FilterOperatorSchema, // Now uses the refined enum schema
+  operator: FilterOperatorSchema,
   // Basic JSON value types. For more complex scenarios (e.g. Date), this might need refinement.
   value: z.union([
     z.string(),
@@ -49,15 +51,13 @@ export const BaseQuerySchema = z.object({
     (val) => (val ? Number(val) : undefined),
     z.number().int().min(0).optional(),
   ),
-  // Replace sortField and sortDirection with a single 'sort' object
-  // The client would need to pass sort as a stringified JSON object: e.g., sort={\"field\":\"createdAt\",\"direction\":\"desc\"}
   sortField: z.string().optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
   filters: z.preprocess((val) => {
     if (typeof val === 'string') {
       try {
         return JSON.parse(val)
-      } catch (e) {
+      } catch {
         return undefined
       }
     }
@@ -65,131 +65,187 @@ export const BaseQuerySchema = z.object({
   }, z.array(FilterSchema).optional()),
 })
 
-// Map filter operators to Prisma query operators
-const operatorMap: Record<FilterOperatorType, (value: unknown) => unknown> = {
-  eq: (value) => ({ equals: value }),
-  neq: (value) => ({ not: value }),
-  gt: (value) => ({ gt: value }),
-  lt: (value) => ({ lt: value }),
-  gte: (value) => ({ gte: value }),
-  lte: (value) => ({ lte: value }),
-  contains: (value) => ({ contains: value, mode: 'insensitive' }),
-  startsWith: (value) => ({ startsWith: value, mode: 'insensitive' }),
-  endsWith: (value) => ({ endsWith: value, mode: 'insensitive' }),
-  in: (value) => ({ in: value }),
-  notIn: (value) => ({ notIn: value }),
+/**
+ * Type for a function that resolves a field path to a Drizzle column reference.
+ * This allows the query builder to work with any table schema.
+ */
+export type FieldResolver = (fieldPath: string) => AnyColumn | SQLWrapper | undefined
+
+/**
+ * Creates a Drizzle SQL condition from a filter.
+ * For nested fields (e.g., "relation.field"), you'll need to handle joins separately.
+ * This function supports flat fields only.
+ *
+ * @param fieldResolver - Function to resolve field paths to column references
+ * @param fieldPath - The field path (e.g., "name", "email", "createdAt")
+ * @param operator - The filter operator
+ * @param value - The filter value
+ * @returns A Drizzle SQL condition
+ */
+function createFilterCondition(
+  fieldResolver: FieldResolver,
+  fieldPath: string,
+  operator: FilterOperatorType,
+  value: unknown,
+): SQL | undefined {
+  const column = fieldResolver(fieldPath)
+  if (!column) {
+    console.warn(`Field "${fieldPath}" could not be resolved to a column`)
+    return undefined
+  }
+
+  // Type guard to ensure column is valid
+  if (typeof column !== 'object' || column === null) {
+    return undefined
+  }
+
+  // Handle null values
+  if (value === null || value === undefined) {
+    if (operator === 'eq') {
+      return eq(column, null)
+    }
+    if (operator === 'neq') {
+      return ne(column, null)
+    }
+    return undefined
+  }
+
+  switch (operator) {
+    case 'eq':
+      return eq(column, value)
+    case 'neq':
+      return ne(column, value)
+    case 'gt':
+      return gt(column, value)
+    case 'lt':
+      return lt(column, value)
+    case 'gte':
+      return gte(column, value)
+    case 'lte':
+      return lte(column, value)
+    case 'contains':
+      return ilike(column as AnyColumn, `%${String(value)}%`)
+    case 'startsWith':
+      return ilike(column as AnyColumn, `${String(value)}%`)
+    case 'endsWith':
+      return ilike(column as AnyColumn, `%${String(value)}`)
+    case 'in':
+      if (!Array.isArray(value)) {
+        return undefined
+      }
+      return inArray(column, value)
+    case 'notIn':
+      if (!Array.isArray(value)) {
+        return undefined
+      }
+      return notInArray(column, value)
+    default:
+      return undefined
+  }
 }
 
 /**
- * Creates a nested object structure for Prisma queries from a dot-separated field path.
- * Example: "answers.questionId", "equals", "someValue"
- * Becomes: { answers: { questionId: { equals: "someValue" } } }
+ * Query builder result containing Drizzle-compatible query conditions
  */
-function createNestedFilter(fieldPath: string, operator: FilterOperatorType, value: unknown): Record<string, unknown> {
-  console.log('createNestedFilter', fieldPath, operator, value)
-  const pathParts = fieldPath.split('.')
-  if (pathParts.length === 0) {
-    console.log('pathParts.length === 0', operatorMap[operator](value))
-    return operatorMap[operator](value == null ? null : value)
-  }
-  const root: Record<string, unknown> = {}
-  let currentLevel = root
+export interface DrizzleQueryResult {
+  /** Drizzle SQL where condition (can be used with .where()) */
+  where: SQL | undefined
+  /** Drizzle orderBy expression (can be used with .orderBy()) */
+  orderBy: SQL | undefined
+  /** Limit for pagination */
+  limit: number | undefined
+  /** Offset for pagination */
+  offset: number | undefined
+}
 
-  for (let i = 0; i < pathParts.length; i++) {
-    const part = pathParts[i] || 'xxx'
-    if (i === pathParts.length - 1) {
-      // This is the actual field to apply the operator on
-      currentLevel[part] = operatorMap[operator](value)
-    } else {
-      // This part is a relation. Assume 'some' for to-many relations.
-      // This addresses the Prisma requirement for filtering on related records.
-      currentLevel[part] = { some: {} }
-      currentLevel = (currentLevel[part] as Record<string, unknown>)?.some as unknown as Record<string, unknown>
+/**
+ * Builds Drizzle ORM query conditions from a QueryInput object.
+ *
+ * @param queryInput - The QueryInput object containing dynamic filters, sorting, and pagination.
+ * @param fieldResolver - Function to resolve field paths to Drizzle column references.
+ *                       Example: (field) => userTable[field] or a more sophisticated resolver.
+ * @param baseWhere - Optional base where condition to combine with filters (using AND).
+ * @returns An object with `where`, `orderBy`, `limit`, and `offset` suitable for Drizzle queries.
+ *
+ * @example
+ * ```ts
+ * const { where, orderBy, limit, offset } = buildDrizzleQuery(
+ *   { filters: [{ field: 'email', operator: 'contains', value: 'example' }] },
+ *   (field) => userTable[field]
+ * )
+ *
+ * let query = db.select().from(userTable)
+ * if (where) query = query.where(where)
+ * if (orderBy) query = query.orderBy(orderBy)
+ * if (limit) query = query.limit(limit)
+ * if (offset) query = query.offset(offset)
+ * const users = await query
+ * ```
+ */
+export function buildDrizzleQuery(
+  queryInput: QueryInput,
+  fieldResolver: FieldResolver,
+  baseWhere?: SQL,
+): DrizzleQueryResult {
+  // 1. Build where conditions from filters
+  const filterConditions: SQL[] = []
+
+  if (queryInput.filters?.length) {
+    for (const filter of queryInput.filters) {
+      const condition = createFilterCondition(
+        fieldResolver,
+        filter.field,
+        filter.operator as FilterOperatorType,
+        filter.value,
+      )
+      if (condition) {
+        filterConditions.push(condition)
+      }
     }
   }
-  return root
+
+  // Combine baseWhere and filter conditions with AND
+  let finalWhere: SQL | undefined = undefined
+  if (baseWhere && filterConditions.length > 0) {
+    finalWhere = and(baseWhere, ...filterConditions)!
+  } else if (baseWhere) {
+    finalWhere = baseWhere
+  } else if (filterConditions.length > 0) {
+    finalWhere = filterConditions.length === 1
+      ? filterConditions[0]
+      : and(...filterConditions)!
+  }
+
+  // 2. Build orderBy
+  let orderBy: SQL | undefined = undefined
+  if (queryInput.sortField) {
+    const column = fieldResolver(queryInput.sortField)
+    if (column) {
+      const direction = queryInput.sortDirection || 'asc'
+      orderBy = direction === 'desc' ? desc(column) : asc(column)
+    }
+  }
+
+  // 3. Extract limit and offset
+  const limit = queryInput.take
+  const offset = queryInput.skip
+
+  return {
+    where: finalWhere,
+    orderBy,
+    limit,
+    offset,
+  }
 }
 
 /**
- * Builds arguments for Prisma's findMany and count methods by merging
- * a QueryInput object with base Prisma arguments.
- *
- * @template TBaseArgs - The type of the base arguments, typically including select/include.
- *                      It's recommended to pass a const-asserted object for baseArgs
- *                      to preserve literal types for select/include, aiding Prisma's inference.
- * @param queryInput - The QueryInput object containing dynamic filters, sorting, and pagination.
- * @param baseArgs - Optional base arguments for the Prisma query (e.g., select, include, initial where).
- * @returns An object with `findManyArgs` and `countArgs` suitable for Prisma client calls.
+ * Legacy function name for backward compatibility.
+ * @deprecated Use buildDrizzleQuery instead
  */
-export function buildPrismaQueryArgs<
-  TBaseArgs extends Record<string, any> | undefined = undefined,
->(queryInput: QueryInput, baseArgs?: TBaseArgs) {
-  // Type helpers to extract parts from TBaseArgs if they exist
-  type BaseWhere = TBaseArgs extends { where?: infer W }
-    ? W
-    : Record<string, any>
-  type BaseOrderBy = TBaseArgs extends { orderBy?: infer O }
-    ? O
-    : Record<string, 'asc' | 'desc'> | Array<Record<string, 'asc' | 'desc'>>
-  type BaseTake = TBaseArgs extends { take?: infer T } ? T : number | undefined
-  type BaseSkip = TBaseArgs extends { skip?: infer S } ? S : number | undefined
-
-  // 1. Construct the final 'where' clause
-  let finalWhereClause: BaseWhere | Record<string, any> | undefined = undefined
-  const filtersFromQueryInput = queryInput.filters?.length
-    ? {
-        AND: queryInput.filters.map((f) => {
-        // Use createNestedFilter to handle potentially nested fields
-          return createNestedFilter(f.field, f.operator as FilterOperatorType, f.value)
-        }),
-      }
-    : undefined
-  const whereFromBaseArgs = baseArgs?.where
-
-  if (whereFromBaseArgs && filtersFromQueryInput) {
-    // If both exist, ensure they are treated as objects for AND clause
-    finalWhereClause = {
-      AND: [whereFromBaseArgs as object, filtersFromQueryInput as object],
-    } as BaseWhere
-  } else {
-    finalWhereClause = (whereFromBaseArgs || filtersFromQueryInput) as
-    | BaseWhere
-    | undefined
-  }
-
-  if (queryInput.sortField && !queryInput.sortDirection) {
-    queryInput.sortDirection = 'asc'
-  }
-  // 2. Construct 'orderBy' clause - queryInput.sort takes precedence
-  const finalOrderByClause:
-    | BaseOrderBy
-    | Array<Record<string, 'asc' | 'desc'>>
-    | undefined = queryInput.sortField && queryInput.sortDirection
-      ? [{ [queryInput.sortField]: queryInput.sortDirection }]
-      : (baseArgs?.orderBy as BaseOrderBy | undefined)
-
-  // 3. Construct 'take' and 'skip' - queryInput.limit/offset take precedence
-  const finalTake: BaseTake | number | undefined
-    = queryInput.take ?? (baseArgs?.take as BaseTake | undefined)
-  const finalSkip: BaseSkip | number | undefined
-    = queryInput.skip ?? (baseArgs?.skip as BaseSkip | undefined)
-
-  // 4. Assemble the final arguments for Prisma's findMany call.
-  // Spread baseArgs first (this includes select/include and any other properties).
-  // Then, explicitly set/override where, orderBy, take, skip.
-
-  const findManyArgs = {
-    ...(baseArgs ?? ({} as TBaseArgs)),
-    where: finalWhereClause,
-    orderBy: finalOrderByClause,
-    take: finalTake,
-    skip: finalSkip,
-  } as const // `as const` ensures the returned object has a literal type, aiding Prisma inference.
-
-  // 5. Assemble arguments for count (typically only 'where')
-  const countArgs = {
-    where: finalWhereClause,
-  } as const
-
-  return { findManyArgs, countArgs }
+export function buildPrismaQueryArgs(
+  queryInput: QueryInput,
+  fieldResolver: FieldResolver,
+  baseWhere?: SQL,
+): DrizzleQueryResult {
+  return buildDrizzleQuery(queryInput, fieldResolver, baseWhere)
 }
