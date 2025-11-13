@@ -1,9 +1,7 @@
 import { authClient } from '~/utils/auth-client'
-import type { OrganizationMemberWithUser, MemberRole } from '~~/shared/types'
+import type { OrganizationMemberWithUser, MemberRole } from '#types'
 
 export const useCurrentOrganization = () => {
-  const session = authClient.useSession()
-
   // Reactive organization data
   const currentOrganization = ref<OrganizationMemberWithUser | null>(null)
   const organizationId = ref<string | null>(null)
@@ -13,7 +11,7 @@ export const useCurrentOrganization = () => {
     try {
       const { data: member } = await authClient.organization.getActiveMember()
       if (member) {
-        currentOrganization.value = member
+        currentOrganization.value = member as OrganizationMemberWithUser
         organizationId.value = member.organizationId
       }
     } catch (error) {
@@ -29,7 +27,7 @@ export const useCurrentOrganization = () => {
   })
 
   // Use better-auth client methods
-  const createOrganization = async (data: { name: string; slug: string }) => {
+  const createOrganization = async (data: { name: string, slug: string }) => {
     return await authClient.organization.create(data)
   }
 

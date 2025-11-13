@@ -1,63 +1,3 @@
-<template>
-  <div class="container mx-auto py-8 max-w-4xl">
-    <div v-if="loading">
-      <USpinner />
-    </div>
-
-    <div v-else-if="request" class="space-y-6">
-      <!-- Full request details with admin controls -->
-      <CustomerRequestDetail :request="request" />
-
-      <UDivider />
-
-      <!-- Admin Actions -->
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-semibold">Admin Actions</h3>
-        </template>
-
-        <div class="space-y-4">
-          <UFormField label="Status">
-            <USelect
-              v-model="adminUpdates.status"
-              :options="statusOptions"
-              @change="handleQuickUpdate"
-            />
-          </UFormField>
-
-          <UFormField label="Priority">
-            <USelect
-              v-model="adminUpdates.priority"
-              :options="priorityOptions"
-              @change="handleQuickUpdate"
-            />
-          </UFormField>
-
-          <UFormField label="Assign To">
-            <USelect
-              v-model="adminUpdates.assignedToId"
-              :options="userOptions"
-              @change="handleQuickUpdate"
-            />
-          </UFormField>
-
-          <UFormField label="Internal Notes">
-            <UTextarea
-              v-model="adminUpdates.internalNotes"
-              :rows="4"
-              placeholder="Notes visible only to admins..."
-            />
-          </UFormField>
-
-          <UButton @click="handleUpdate" :loading="updating">
-            Save Changes
-          </UButton>
-        </div>
-      </UCard>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 const route = useRoute()
 const requestId = route.params.id as string
@@ -140,3 +80,63 @@ definePageMeta({
   middleware: ['auth', 'admin']
 })
 </script>
+
+<template>
+  <div class="container mx-auto py-8 max-w-4xl">
+    <div v-if="loading">
+      <USpinner />
+    </div>
+
+    <div v-else-if="request" class="space-y-6">
+      <!-- Full request details with admin controls -->
+      <CustomerRequestDetail :request="request" />
+
+      <UDivider />
+
+      <!-- Admin Actions -->
+      <UCard>
+        <template #header>
+          <h3 class="text-lg font-semibold">Admin Actions</h3>
+        </template>
+
+        <div class="space-y-4">
+          <UFormField label="Status">
+            <USelect
+              v-model="adminUpdates.status"
+              :options="statusOptions"
+              @change="handleQuickUpdate"
+            />
+          </UFormField>
+
+          <UFormField label="Priority">
+            <USelect
+              v-model="adminUpdates.priority"
+              :options="priorityOptions"
+              @change="handleQuickUpdate"
+            />
+          </UFormField>
+
+          <UFormField label="Assign To">
+            <USelect
+              v-model="adminUpdates.assignedToId"
+              :options="userOptions"
+              @change="handleQuickUpdate"
+            />
+          </UFormField>
+
+          <UFormField label="Internal Notes">
+            <UTextarea
+              v-model="adminUpdates.internalNotes"
+              :rows="4"
+              placeholder="Notes visible only to admins..."
+            />
+          </UFormField>
+
+          <UButton :loading="updating" @click="handleUpdate">
+            Save Changes
+          </UButton>
+        </div>
+      </UCard>
+    </div>
+  </div>
+</template>

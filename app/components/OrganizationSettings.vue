@@ -1,68 +1,3 @@
-<template>
-  <div class="space-y-4">
-    <div v-if="loading" class="text-center py-8">
-      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
-      <p class="text-gray-600 dark:text-gray-400 mt-2">Loading...</p>
-    </div>
-
-    <UAlert
-      v-else-if="error"
-      color="error"
-      variant="soft"
-      :title="error"
-    />
-
-    <UForm v-else @submit="updateOrganization" class="space-y-4">
-      <UFormGroup label="Organization Name" required>
-        <UInput
-          v-model="formData.name"
-          type="text"
-          placeholder="Organization name"
-          required
-        />
-      </UFormGroup>
-
-      <UFormGroup label="Organization Slug" required>
-        <UInput
-          v-model="formData.slug"
-          type="text"
-          placeholder="organization-slug"
-          required
-        />
-        <template #hint>
-          URL-friendly identifier for your organization
-        </template>
-      </UFormGroup>
-
-      <UFormGroup label="Logo URL">
-        <UInput
-          v-model="formData.logo"
-          type="url"
-          placeholder="https://example.com/logo.png"
-        />
-      </UFormGroup>
-
-      <div class="flex gap-4">
-        <UButton
-          type="submit"
-          :disabled="updating"
-          :loading="updating"
-        >
-          Update Organization
-        </UButton>
-        <UButton
-          type="button"
-          color="error"
-          variant="outline"
-          @click="deleteOrganization"
-        >
-          Delete Organization
-        </UButton>
-      </div>
-    </UForm>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { authClient } from '~/utils/auth-client'
 import type { ApiError, Organization } from '~~/shared/types'
@@ -137,3 +72,68 @@ onMounted(() => {
   loadOrganization()
 })
 </script>
+
+<template>
+  <div class="space-y-4">
+    <div v-if="loading" class="text-center py-8">
+      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
+      <p class="text-gray-600 dark:text-gray-400 mt-2">Loading...</p>
+    </div>
+
+    <UAlert
+      v-else-if="error"
+      color="error"
+      variant="soft"
+      :title="error"
+    />
+
+    <UForm v-else class="space-y-4" @submit="updateOrganization">
+      <UFormGroup label="Organization Name" required>
+        <UInput
+          v-model="formData.name"
+          type="text"
+          placeholder="Organization name"
+          required
+        />
+      </UFormGroup>
+
+      <UFormGroup label="Organization Slug" required>
+        <UInput
+          v-model="formData.slug"
+          type="text"
+          placeholder="organization-slug"
+          required
+        />
+        <template #hint>
+          URL-friendly identifier for your organization
+        </template>
+      </UFormGroup>
+
+      <UFormGroup label="Logo URL">
+        <UInput
+          v-model="formData.logo"
+          type="url"
+          placeholder="https://example.com/logo.png"
+        />
+      </UFormGroup>
+
+      <div class="flex gap-4">
+        <UButton
+          type="submit"
+          :disabled="updating"
+          :loading="updating"
+        >
+          Update Organization
+        </UButton>
+        <UButton
+          type="button"
+          color="error"
+          variant="outline"
+          @click="deleteOrganization"
+        >
+          Delete Organization
+        </UButton>
+      </div>
+    </UForm>
+  </div>
+</template>

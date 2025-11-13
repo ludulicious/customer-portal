@@ -28,16 +28,17 @@ const handleSubmit = async () => {
   try {
     loading.value = true
     error.value = ''
-    
+
     await createOrganization({
       name: formData.value.name,
       slug: formData.value.slug
     })
-    
+
     // Redirect to organization page
     await router.push('/organization')
-  } catch (err: any) {
-    error.value = err.message || 'Failed to create organization'
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error.value = errorMessage || 'Failed to create organization'
   } finally {
     loading.value = false
   }
@@ -52,7 +53,7 @@ const handleSubmit = async () => {
           <h1 class="text-2xl font-bold">Create Organization</h1>
         </template>
 
-        <form @submit.prevent="handleSubmit" class="space-y-6">
+        <form class="space-y-6" @submit.prevent="handleSubmit">
           <UFormGroup label="Organization Name" required>
             <UInput
               v-model="formData.name"
@@ -74,7 +75,7 @@ const handleSubmit = async () => {
 
           <UAlert
             v-if="error"
-            color="red"
+            color="error"
             variant="soft"
             :title="error"
             class="mb-4"
@@ -101,4 +102,3 @@ const handleSubmit = async () => {
     </UContainer>
   </div>
 </template>
-

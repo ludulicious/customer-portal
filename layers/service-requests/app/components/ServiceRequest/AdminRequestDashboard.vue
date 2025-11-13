@@ -1,3 +1,18 @@
+<script setup lang="ts">
+const props = defineProps<{
+  requests: ServiceRequestWithRelations[]
+  loading: boolean
+  pagination: any
+  stats: Record<string, number>
+}>()
+
+const emit = defineEmits<{
+  select: [id: string]
+  filter: [filters: ServiceRequestFilters]
+  update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
+}>()
+</script>
+
 <template>
   <div class="space-y-6">
     <!-- Stats Overview -->
@@ -33,18 +48,3 @@
       @select="$emit('select', $event)" @filter="$emit('filter', $event)" @update="$emit('update', $event)" />
   </div>
 </template>
-
-<script setup lang="ts">
-const props = defineProps<{
-  requests: ServiceRequestWithRelations[]
-  loading: boolean
-  pagination: any
-  stats: Record<string, number>
-}>()
-
-const emit = defineEmits<{
-  select: [id: string]
-  filter: [filters: ServiceRequestFilters]
-  update: [data: { id: string, updates: AdminServiceRequestUpdateInput }]
-}>()
-</script>

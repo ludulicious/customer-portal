@@ -1,7 +1,7 @@
 import type {
   QueryInput,
   FilterOperator as FilterOperatorType,
-} from '#types/queryBuilder'
+} from '~~/shared/types/sections/queryBuilder'
 import { z } from 'zod'
 
 // Schema for FilterOperator - now using z.enum with actual values
@@ -138,11 +138,11 @@ export function buildPrismaQueryArgs<
   let finalWhereClause: BaseWhere | Record<string, any> | undefined = undefined
   const filtersFromQueryInput = queryInput.filters?.length
     ? {
-      AND: queryInput.filters.map((f) => {
+        AND: queryInput.filters.map((f) => {
         // Use createNestedFilter to handle potentially nested fields
-        return createNestedFilter(f.field, f.operator as FilterOperatorType, f.value)
-      }),
-    }
+          return createNestedFilter(f.field, f.operator as FilterOperatorType, f.value)
+        }),
+      }
     : undefined
   const whereFromBaseArgs = baseArgs?.where
 
@@ -153,8 +153,8 @@ export function buildPrismaQueryArgs<
     } as BaseWhere
   } else {
     finalWhereClause = (whereFromBaseArgs || filtersFromQueryInput) as
-      | BaseWhere
-      | undefined
+    | BaseWhere
+    | undefined
   }
 
   if (queryInput.sortField && !queryInput.sortDirection) {
@@ -169,10 +169,10 @@ export function buildPrismaQueryArgs<
       : (baseArgs?.orderBy as BaseOrderBy | undefined)
 
   // 3. Construct 'take' and 'skip' - queryInput.limit/offset take precedence
-  const finalTake: BaseTake | number | undefined =
-    queryInput.take ?? (baseArgs?.take as BaseTake | undefined)
-  const finalSkip: BaseSkip | number | undefined =
-    queryInput.skip ?? (baseArgs?.skip as BaseSkip | undefined)
+  const finalTake: BaseTake | number | undefined
+    = queryInput.take ?? (baseArgs?.take as BaseTake | undefined)
+  const finalSkip: BaseSkip | number | undefined
+    = queryInput.skip ?? (baseArgs?.skip as BaseSkip | undefined)
 
   // 4. Assemble the final arguments for Prisma's findMany call.
   // Spread baseArgs first (this includes select/include and any other properties).

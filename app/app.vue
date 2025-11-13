@@ -43,7 +43,6 @@ const navigation = ref([])
 
 provide('navigation', navigation)
 
-
 </script>
 
 <template>

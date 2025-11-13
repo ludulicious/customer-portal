@@ -1,15 +1,3 @@
-<template>
-  <div class="container mx-auto py-8 max-w-2xl">
-    <h1 class="text-3xl font-bold mb-6">Create Service Request</h1>
-
-    <CustomerRequestForm
-      :loading="loading"
-      @submit="handleSubmit"
-      @cancel="navigateTo('/requests')"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 const { createRequest, loading } = useServiceRequests()
 const toast = useToast()
@@ -35,3 +23,15 @@ definePageMeta({
   middleware: 'auth'
 })
 </script>
+
+<template>
+  <div class="container mx-auto py-8 max-w-2xl">
+    <h1 class="text-3xl font-bold mb-6">Create Service Request</h1>
+
+    <CustomerRequestForm
+      :loading="loading"
+      @submit="handleSubmit"
+      @cancel="navigateTo('/requests')"
+    />
+  </div>
+</template>

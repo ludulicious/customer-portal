@@ -24,6 +24,9 @@ export default defineFlatConfigs(
         'nuxt/nuxt-config-keys-order': 'off',
         '@typescript-eslint/no-unused-vars': 'warn',
         'vue/singleline-html-element-content-newline': 'off',
+        'vue/block-order': ['error', {
+          order: ['script', 'template', 'style']
+        }],
       }
     }
   )

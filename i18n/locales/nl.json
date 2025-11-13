@@ -181,6 +181,9 @@
       "getInTouch": "Neem Contact Op",
       "viewPortfolio": "Bekijk Ons Portfolio"
     },
+    "links": {
+      "dashboard": "Mijn Dashboard"
+    },
     "sections": {
       "developmentExpertise": {
         "description": "Wij specialiseren ons in het creëren van moderne, schaalbare webapplicaties met de nieuwste technologieën. Van concept tot implementatie, wij beheren elk aspect van uw digitale project.",

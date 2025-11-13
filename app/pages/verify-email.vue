@@ -2,10 +2,8 @@
 import { authClient } from '~/utils/auth-client'
 
 const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
 
-// Get email from query params or session and decode it
 const email = ref(decodeURIComponent(route.query.email as string || ''))
 const otpCode = ref('')
 const isLoading = ref(false)
@@ -13,11 +11,9 @@ const error = ref('')
 const success = ref('')
 const resendCooldown = ref(0)
 let cooldownTimer: NodeJS.Timeout | null = null
-
-// Auto-focus the OTP input and send initial OTP
+const emailRef = ref<{ input: HTMLInputElement } | null>(null)
 onMounted(async () => {
-  const input = document.querySelector('input[type="text"]') as HTMLInputElement
-  if (input) input.focus()
+  emailRef.value?.input.focus()
 
   // Only auto-send OTP for login verification, not signup verification
   // Signup verification already sends an OTP during the signup process
@@ -101,9 +97,9 @@ const verifyCode = async () => {
     }
 
     // Check for success - signIn.emailOtp returns user data, verifyEmail fallback returns status
-    const isSuccess = result.data?.user || (result.data as any)?.status === true
+    const isSuccess = result.data?.user || (result.data as unknown as { status: boolean })?.status === true
 
-    console.log('Verification success check:', { isSuccess, hasUser: !!result.data?.user, hasStatus: !!(result.data as any)?.status })
+    console.log('Verification success check:', { isSuccess, hasUser: !!result.data?.user, hasStatus: !!(result.data as unknown as { status: boolean })?.status })
 
     if (isSuccess) {
       success.value = t('verify.success')
@@ -145,11 +141,11 @@ const verifyCode = async () => {
       console.log('Verification failed:', result.error)
       error.value = result.error?.message as string || t('verify.invalidCode')
     }
-  } catch (err: any) {
-    error.value = err.message as string || t('verify.error')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error.value = errorMessage || t('verify.error')
   } finally {
     isLoading.value = false
-
   }
 }
 
@@ -183,8 +179,9 @@ const resendCode = async () => {
         error.value = result.error?.message || t('verify.resendError')
       }
     })
-  } catch (err: any) {
-    error.value = err.message || t('verify.resendError')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error.value = errorMessage || t('verify.resendError')
   } finally {
     isLoading.value = false
   }
@@ -204,35 +201,15 @@ definePageMeta({
 </script>
 
 <template>
-  <CustomPageCard :title="$t('verify.title')"
-  :description="$t('verify.subtitle', { email })" :success="success" :error="error">
-
+  <CustomPageCard :title="$t('verify.title')" :description="$t('verify.subtitle', { email })" :success="success"
+    :error="error">
     <div>
       <label for="otp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         {{ $t('verify.enterCode') }}
       </label>
-      <input id="otp" v-model="otpCode" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+      <UInput id="otp" ref="emailRef" v-model="otpCode" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
         class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-center text-2xl font-mono tracking-widest"
         :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput" />
-    </div>
-
-    <UButton :loading="isLoading" :disabled="otpCode.length !== 6 || isLoading" color="primary" size="lg" block
-      @click="verifyCode">
-      {{ $t('verify.verifyButton') }}
-    </UButton>
-
-    <!-- Resend Code -->
-    <div class="text-center">
-      <UButton :disabled="resendCooldown > 0 || isLoading" variant="ghost" size="sm" @click="resendCode">
-        {{ resendCooldown > 0 ? $t('verify.resendIn', { seconds: resendCooldown }) : $t('verify.resendCode') }}
-      </UButton>
-    </div>
-
-    <!-- Back to Login -->
-    <div class="text-center">
-      <NuxtLink to="/login" class="text-sm text-primary hover:text-primary/80">
-        {{ $t('verify.backToLogin') }}
-      </NuxtLink>
     </div>
   </CustomPageCard>
 </template>

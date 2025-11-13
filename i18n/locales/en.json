@@ -181,6 +181,9 @@
       "getInTouch": "Get In Touch",
       "viewPortfolio": "View Our Portfolio"
     },
+    "links": {
+      "dashboard": "My Dashboard"
+    },
     "sections": {
       "developmentExpertise": {
         "description": "We specialize in creating modern, scalable web applications using the latest technologies. From concept to deployment, we handle every aspect of your digital project.",

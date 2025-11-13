@@ -1,42 +1,3 @@
-<template>
-  <div class="container mx-auto py-8 max-w-4xl">
-    <div v-if="loading" class="text-center py-8">
-      <USpinner />
-    </div>
-
-    <div v-else-if="!request" class="text-center py-8">
-      <p>Request not found</p>
-      <UButton @click="navigateTo('/requests')">Back to Requests</UButton>
-    </div>
-
-    <div v-else>
-      <CustomerRequestDetail
-        :request="request"
-        :can-edit="canEdit"
-        :can-delete="canDelete"
-        @edit="showEditModal = true"
-        @delete="handleDelete"
-      />
-
-      <!-- Edit Modal -->
-      <UModal v-model="showEditModal">
-        <UCard>
-          <template #header>
-            <h2 class="text-xl font-bold">Edit Request</h2>
-          </template>
-
-          <CustomerRequestForm
-            :initial-data="request"
-            :loading="updating"
-            @submit="handleUpdate"
-            @cancel="showEditModal = false"
-          />
-        </UCard>
-      </UModal>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 const route = useRoute()
 const requestId = route.params.id as string
@@ -115,3 +76,42 @@ definePageMeta({
   middleware: 'auth'
 })
 </script>
+
+<template>
+  <div class="container mx-auto py-8 max-w-4xl">
+    <div v-if="loading" class="text-center py-8">
+      <USpinner />
+    </div>
+
+    <div v-else-if="!request" class="text-center py-8">
+      <p>Request not found</p>
+      <UButton @click="navigateTo('/requests')">Back to Requests</UButton>
+    </div>
+
+    <div v-else>
+      <CustomerRequestDetail
+        :request="request"
+        :can-edit="canEdit"
+        :can-delete="canDelete"
+        @edit="showEditModal = true"
+        @delete="handleDelete"
+      />
+
+      <!-- Edit Modal -->
+      <UModal v-model="showEditModal">
+        <UCard>
+          <template #header>
+            <h2 class="text-xl font-bold">Edit Request</h2>
+          </template>
+
+          <CustomerRequestForm
+            :initial-data="request"
+            :loading="updating"
+            @submit="handleUpdate"
+            @cancel="showEditModal = false"
+          />
+        </UCard>
+      </UModal>
+    </div>
+  </div>
+</template>

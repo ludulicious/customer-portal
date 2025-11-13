@@ -1,3 +1,30 @@
+<script setup lang="ts">
+const props = defineProps<{
+  request: ServiceRequestWithRelations
+  canEdit?: boolean
+  canDelete?: boolean
+}>()
+
+const emit = defineEmits<{
+  edit: []
+  delete: []
+}>()
+
+const getPriorityColor = (priority: ServiceRequestPriority) => {
+  switch (priority) {
+    case 'LOW': return 'green'
+    case 'MEDIUM': return 'blue'
+    case 'HIGH': return 'orange'
+    case 'URGENT': return 'red'
+    default: return 'gray'
+  }
+}
+
+const formatDate = (date: Date) => {
+  return new Date(date).toLocaleDateString()
+}
+</script>
+
 <template>
   <div v-if="request" class="space-y-6">
     <div class="flex justify-between items-start">
@@ -62,30 +89,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-const props = defineProps<{
-  request: ServiceRequestWithRelations
-  canEdit?: boolean
-  canDelete?: boolean
-}>()
-
-const emit = defineEmits<{
-  edit: []
-  delete: []
-}>()
-
-const getPriorityColor = (priority: ServiceRequestPriority) => {
-  switch (priority) {
-    case 'LOW': return 'green'
-    case 'MEDIUM': return 'blue'
-    case 'HIGH': return 'orange'
-    case 'URGENT': return 'red'
-    default: return 'gray'
-  }
-}
-
-const formatDate = (date: Date) => {
-  return new Date(date).toLocaleDateString()
-}
-</script>

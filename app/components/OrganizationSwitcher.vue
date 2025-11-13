@@ -1,27 +1,3 @@
-<template>
-  <div class="organization-switcher">
-    <div v-if="loading" class="loading">Loading organizations...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="switcher">
-      <label for="org-select">Organization:</label>
-      <select
-        id="org-select"
-        v-model="selectedOrg"
-        class="org-select"
-        @change="switchOrganization"
-      >
-        <option value="">Select Organization</option>
-        <option v-for="org in organizations" :key="org.id" :value="org.id">
-          {{ org.name }}
-        </option>
-      </select>
-      <button class="create-btn" @click="createNewOrg">
-        Create New Organization
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { authClient } from '~/utils/auth-client'
 
@@ -65,6 +41,30 @@ onMounted(() => {
   loadOrganizations()
 })
 </script>
+
+<template>
+  <div class="organization-switcher">
+    <div v-if="loading" class="loading">Loading organizations...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else class="switcher">
+      <label for="org-select">Organization:</label>
+      <select
+        id="org-select"
+        v-model="selectedOrg"
+        class="org-select"
+        @change="switchOrganization"
+      >
+        <option value="">Select Organization</option>
+        <option v-for="org in organizations" :key="org.id" :value="org.id">
+          {{ org.name }}
+        </option>
+      </select>
+      <button class="create-btn" @click="createNewOrg">
+        Create New Organization
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .organization-switcher {

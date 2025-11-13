@@ -104,8 +104,9 @@ const sendVerificationCode = async (payload: FormSubmitEvent<{ email: string }>)
     } else {
       error.value = result.error?.message || t('forgotPassword.messages.userNotFound')
     }
-  } catch (err: any) {
-    error.value = err.message || t('forgotPassword.messages.userNotFound')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error.value = errorMessage || t('forgotPassword.messages.userNotFound')
   } finally {
     isLoading.value = false
   }
@@ -133,15 +134,16 @@ const resendCode = async () => {
     } else {
       error.value = result.error?.message || t('forgotPassword.messages.resendError')
     }
-  } catch (err: any) {
-    error.value = err.message || t('forgotPassword.messages.resendError')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    error.value = errorMessage || t('forgotPassword.messages.resendError')
   } finally {
     isLoading.value = false
   }
 }
 
 // Step 2: Reset password with OTP
-const resetPassword = async (payload: FormSubmitEvent<{ otp: string; newPassword: string; confirmPassword: string }>) => {
+const resetPassword = async (payload: FormSubmitEvent<{ otp: string, newPassword: string, confirmPassword: string }>) => {
   isLoading.value = true
   error.value = ''
   success.value = ''
@@ -163,9 +165,10 @@ const resetPassword = async (payload: FormSubmitEvent<{ otp: string; newPassword
       console.error(resetResult.error)
       error.value = t('forgotPassword.messages.resetError')
     }
-  } catch (err: any) {
-    console.error('Error resetting password:', err)
-    error.value = t('forgotPassword.messages.resetError')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : String(err)
+    console.error('Error resetting password:', errorMessage)
+    error.value = errorMessage || t('forgotPassword.messages.resetError')
   } finally {
     isLoading.value = false
   }
@@ -181,7 +184,7 @@ watch(otpCode, async (newValue) => {
         newPassword: newPassword.value,
         confirmPassword: confirmPassword.value
       }
-      await resetPassword({ data: formData } as FormSubmitEvent<{ otp: string; newPassword: string; confirmPassword: string }>)
+      await resetPassword({ data: formData } as FormSubmitEvent<{ otp: string, newPassword: string, confirmPassword: string }>)
     }
   }
 })
@@ -195,7 +198,7 @@ watch(otpCode, async (newValue) => {
     <div v-if="currentStep === 1">
       <UForm :schema="emailSchema" :state="{ email }" class="space-y-4" @submit="sendVerificationCode">
         <UFormGroup :label="t('forgotPassword.fields.email')" name="email" required>
-          <UInput class="mb-4 w-full" v-model="email" type="email"
+          <UInput v-model="email" class="mb-4 w-full" type="email"
             :placeholder="t('forgotPassword.fields.emailPlaceholder')" :disabled="isLoading" size="lg" />
         </UFormGroup>
 
@@ -213,18 +216,18 @@ watch(otpCode, async (newValue) => {
         <UFormGroup :label="t('forgotPassword.fields.otp')" name="otp" required>
           <input id="otp" v-model="otpCode" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-center text-2xl font-mono tracking-widest"
-            :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput" />
+            :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput">
         </UFormGroup>
         <USeparator />
         <!-- New Password -->
         <UFormGroup :label="t('forgotPassword.fields.newPassword')" name="newPassword" required>
-          <UInput class="mb-4 w-full" v-model="newPassword" type="password"
+          <UInput v-model="newPassword" class="mb-4 w-full" type="password"
             :placeholder="t('forgotPassword.fields.newPasswordPlaceholder')" :disabled="isLoading" size="lg" />
         </UFormGroup>
 
         <!-- Confirm Password -->
         <UFormGroup :label="t('forgotPassword.fields.confirmPassword')" name="confirmPassword" required>
-          <UInput class="mb-4 w-full" v-model="confirmPassword" type="password"
+          <UInput v-model="confirmPassword" class="mb-4 w-full" type="password"
             :placeholder="t('forgotPassword.fields.confirmPasswordPlaceholder')" :disabled="isLoading" size="lg" />
         </UFormGroup>
 
@@ -237,8 +240,8 @@ watch(otpCode, async (newValue) => {
       <!-- Resend Code -->
       <div class="text-center">
         <UButton :disabled="resendCooldown > 0 || isLoading" variant="ghost" size="sm" @click="resendCode">
-          {{ resendCooldown > 0 ? t('forgotPassword.messages.resendIn', { seconds: resendCooldown }) :
-            t('forgotPassword.buttons.resendCode') }}
+          {{ resendCooldown > 0 ? t('forgotPassword.messages.resendIn', { seconds: resendCooldown })
+            : t('forgotPassword.buttons.resendCode') }}
         </UButton>
       </div>
     </div>

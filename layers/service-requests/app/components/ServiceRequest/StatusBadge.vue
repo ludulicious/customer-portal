@@ -1,9 +1,3 @@
-<template>
-  <UBadge :color="statusColor" :variant="variant">
-    {{ statusLabel }}
-  </UBadge>
-</template>
-
 <script setup lang="ts">
 const props = defineProps<{
   status: ServiceRequestStatus
@@ -26,3 +20,9 @@ const statusLabel = computed(() => {
   return t(`serviceRequest.status.${props.status.toLowerCase()}`)
 })
 </script>
+
+<template>
+  <UBadge :color="statusColor" :variant="variant">
+    {{ statusLabel }}
+  </UBadge>
+</template>

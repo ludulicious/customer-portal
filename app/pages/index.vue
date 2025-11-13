@@ -1,14 +1,14 @@
 <script setup lang="ts">
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const userStore = useUserStore()
 const { currentUser } = storeToRefs(userStore)
 const { data: page } = await useAsyncData(
   () => `index-${locale.value}`,
-  () => queryCollection(locale.value === 'en' ? 'index_en' : 'index_nl' as any).first()
+  () => queryCollection(locale.value === 'en' ? 'index_en' : 'index_nl' as never).first()
 )
 
-const title = page.value?.seo?.title || page.value?.title
-const description = page.value?.seo?.description || page.value?.description
+const title = page.value?.seo?.title || page.value?.title || ''
+const description = page.value?.seo?.description || page.value?.description || ''
 const isLoggedIn = computed(() => currentUser.value !== null)
 
 // Dynamic hero links based on login status
@@ -16,7 +16,7 @@ const heroLinks = computed(() => {
   if (isLoggedIn.value) {
     return [
       {
-        label: locale.value === 'en' ? 'My Dashboard' : 'Mijn Dashboard',
+        label: t('home.links.dashboard'),
         icon: 'i-lucide-layout-dashboard',
         to: '/dashboard',
         size: 'xl',
@@ -32,7 +32,7 @@ const ctaLinks = computed(() => {
   if (isLoggedIn.value) {
     return [
       {
-        label: locale.value === 'en' ? 'Go to Dashboard' : 'Ga naar Dashboard',
+        label: t('home.links.dashboard'),
         to: '/dashboard',
         color: 'primary',
         icon: 'i-lucide-layout-dashboard'
@@ -57,9 +57,8 @@ definePageMeta({
 
 <template>
   <div>
-
     <div v-if="page">
-      <UPageHero :title="page.title" v-if="page.hero" :description="page.description" :links="heroLinks"
+      <UPageHero v-if="page.hero" :title="page.title" :description="page.description" :links="heroLinks"
         class="py-2 md:py-4 mb-0">
         <template #top>
           <HeroBackground />
@@ -80,7 +79,7 @@ definePageMeta({
         </UPageGrid>
       </UPageSection>
 
-      <UPageSection id="testimonials" v-if="page.testimonials" :headline="page.testimonials.headline"
+      <UPageSection v-if="page.testimonials" id="testimonials" :headline="page.testimonials.headline"
         :title="page.testimonials.title" :description="page.testimonials.description">
         <UPageColumns class="xl:columns-4">
           <UPageCard v-for="(testimonial, index) in page.testimonials.items" :key="index" variant="subtle"

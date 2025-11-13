@@ -1,178 +1,17 @@
-<template>
-  <div class="organization-members">
-    <div class="members-header">
-      <h3>Organization Members</h3>
-      <button @click="showInviteModal = true" class="btn-primary">
-        Invite Member
-      </button>
-    </div>
-
-    <div v-if="loading" class="loading">Loading members...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="members-list">
-      <div v-for="member in members" :key="member.id" class="member-card">
-        <div class="member-info">
-          <div class="member-name">{{ member.user.name || member.user.email }}</div>
-          <div class="member-email">{{ member.user.email }}</div>
-          <div class="member-role">
-            <UBadge
-              :color="member.role === 'owner' ? 'primary' : member.role === 'admin' ? 'info' : 'neutral'"
-              variant="soft"
-            >
-              {{ Array.isArray(member.role) ? member.role.join(', ') : member.role }}
-            </UBadge>
-          </div>
-        </div>
-        <div class="member-actions">
-          <UDropdownMenu :items="[
-            {
-              label: 'Member',
-              onClick: () => updateMemberRole(member, 'member')
-            },
-            {
-              label: 'Admin',
-              onClick: () => updateMemberRole(member, 'admin')
-            },
-            {
-              label: 'Owner',
-              onClick: () => updateMemberRole(member, 'owner')
-            }
-          ]">
-            <UButton variant="outline" size="sm">
-              Change Role
-            </UButton>
-          </UDropdownMenu>
-          <UButton
-            @click="removeMember(member)"
-            color="error"
-            variant="outline"
-            size="sm"
-          >
-            Remove
-          </UButton>
-        </div>
-      </div>
-    </div>
-
-    <!-- Invitations List -->
-    <div v-if="invitations.length > 0" class="mt-6">
-      <h4 class="text-lg font-semibold mb-4">Pending Invitations</h4>
-      <div class="space-y-2">
-        <div
-          v-for="invitation in invitations"
-          :key="invitation.id"
-          class="member-card"
-        >
-          <div class="member-info">
-            <div class="member-email">{{ invitation.email }}</div>
-            <div class="member-role">{{ invitation.role || 'member' }}</div>
-            <div class="text-xs text-gray-500">
-              Expires: {{ new Date(invitation.expiresAt).toLocaleDateString() }}
-            </div>
-          </div>
-          <div class="member-actions">
-            <UBadge color="warning" variant="soft">Pending</UBadge>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Invite Modal -->
-    <UModal v-model="showInviteModalLocal" @close="closeModal">
-      <UCard>
-        <template #header>
-          <h3 class="text-lg font-semibold">Invite Member</h3>
-        </template>
-
-        <form @submit.prevent="inviteMember" class="space-y-4">
-          <UFormGroup label="Email" required>
-            <UInput
-              id="invite-email"
-              v-model="inviteEmail"
-              type="email"
-              placeholder="user@example.com"
-              required
-            />
-          </UFormGroup>
-
-          <UFormGroup label="Role">
-            <USelect
-              v-model="inviteRole"
-              :options="[
-                { label: 'Member', value: 'member' },
-                { label: 'Admin', value: 'admin' },
-                { label: 'Owner', value: 'owner' }
-              ]"
-              option-attribute="label"
-              value-attribute="value"
-            />
-          </UFormGroup>
-
-          <UAlert
-            v-if="error"
-            color="error"
-            variant="soft"
-            :title="error"
-          />
-
-          <div class="flex gap-4 justify-end">
-            <UButton
-              type="button"
-              variant="outline"
-              @click="closeModal"
-            >
-              Cancel
-            </UButton>
-            <UButton
-              type="submit"
-              :disabled="inviting"
-              :loading="inviting"
-            >
-              {{ inviting ? 'Sending...' : 'Send Invitation' }}
-            </UButton>
-          </div>
-        </form>
-      </UCard>
-    </UModal>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { authClient } from '~/utils/auth-client'
 import { useCurrentOrganization } from '~/composables/useCurrentOrganization'
-import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, MemberRole, ApiError } from '~~/shared/types'
+import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, MemberRole, ApiError } from '#types'
 
-interface Props {
-  showInviteModal?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  showInviteModal: false
-})
-
-const emit = defineEmits<{
-  closeInviteModal: []
-}>()
-
+const showInviteModal = defineModel<boolean>('showInviteModal', { required: false })
 const { organizationId } = useCurrentOrganization()
-
 const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const loading = ref(true)
 const error = ref('')
-const showInviteModalLocal = ref(props.showInviteModal)
 const inviteEmail = ref('')
 const inviteRole = ref<MemberRole>('member')
 const inviting = ref(false)
-
-watch(() => props.showInviteModal, (value) => {
-  showInviteModalLocal.value = value
-})
-
-const closeModal = () => {
-  showInviteModalLocal.value = false
-  emit('closeInviteModal')
-}
 
 const loadMembers = async () => {
   if (!organizationId.value) return
@@ -225,7 +64,7 @@ const inviteMember = async () => {
       organizationId: organizationId.value,
       role: inviteRole.value
     })
-    closeModal()
+    showInviteModal.value = false
     inviteEmail.value = ''
     inviteRole.value = 'member'
     await loadInvitations()
@@ -272,6 +111,145 @@ onMounted(() => {
   loadInvitations()
 })
 </script>
+
+<template>
+  <div class="organization-members">
+    <div class="members-header">
+      <h3>Organization Members</h3>
+      <button class="btn-primary" @click="showInviteModal = true">
+        Invite Member
+      </button>
+    </div>
+
+    <div v-if="loading" class="loading">Loading members...</div>
+    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-else class="members-list">
+      <div v-for="member in members" :key="member.id" class="member-card">
+        <div class="member-info">
+          <div class="member-name">{{ member.user.name || member.user.email }}</div>
+          <div class="member-email">{{ member.user.email }}</div>
+          <div class="member-role">
+            <UBadge
+              :color="member.role === 'owner' ? 'primary' : member.role === 'admin' ? 'info' : 'neutral'"
+              variant="soft"
+            >
+              {{ Array.isArray(member.role) ? member.role.join(', ') : member.role }}
+            </UBadge>
+          </div>
+        </div>
+        <div class="member-actions">
+          <UDropdownMenu :items="[
+            {
+              label: 'Member',
+              onClick: () => updateMemberRole(member, 'member')
+            },
+            {
+              label: 'Admin',
+              onClick: () => updateMemberRole(member, 'admin')
+            },
+            {
+              label: 'Owner',
+              onClick: () => updateMemberRole(member, 'owner')
+            }
+          ]">
+            <UButton variant="outline" size="sm">
+              Change Role
+            </UButton>
+          </UDropdownMenu>
+          <UButton
+            color="error"
+            variant="outline"
+            size="sm"
+            @click="removeMember(member)"
+          >
+            Remove
+          </UButton>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invitations List -->
+    <div v-if="invitations.length > 0" class="mt-6">
+      <h4 class="text-lg font-semibold mb-4">Pending Invitations</h4>
+      <div class="space-y-2">
+        <div
+          v-for="invitation in invitations"
+          :key="invitation.id"
+          class="member-card"
+        >
+          <div class="member-info">
+            <div class="member-email">{{ invitation.email }}</div>
+            <div class="member-role">{{ invitation.role || 'member' }}</div>
+            <div class="text-xs text-gray-500">
+              Expires: {{ new Date(invitation.expiresAt).toLocaleDateString() }}
+            </div>
+          </div>
+          <div class="member-actions">
+            <UBadge color="warning" variant="soft">Pending</UBadge>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invite Modal -->
+    <UModal v-model="showInviteModal" @close="showInviteModal = false">
+      <UCard>
+        <template #header>
+          <h3 class="text-lg font-semibold">Invite Member</h3>
+        </template>
+
+        <form class="space-y-4" @submit.prevent="inviteMember">
+          <UFormGroup label="Email" required>
+            <UInput
+              id="invite-email"
+              v-model="inviteEmail"
+              type="email"
+              placeholder="user@example.com"
+              required
+            />
+          </UFormGroup>
+
+          <UFormGroup label="Role">
+            <USelect
+              v-model="inviteRole"
+              :options="[
+                { label: 'Member', value: 'member' },
+                { label: 'Admin', value: 'admin' },
+                { label: 'Owner', value: 'owner' }
+              ]"
+              option-attribute="label"
+              value-attribute="value"
+            />
+          </UFormGroup>
+
+          <UAlert
+            v-if="error"
+            color="error"
+            variant="soft"
+            :title="error"
+          />
+
+          <div class="flex gap-4 justify-end">
+            <UButton
+              type="button"
+              variant="outline"
+              @click="showInviteModal = false"
+            >
+              Cancel
+            </UButton>
+            <UButton
+              type="submit"
+              :disabled="inviting"
+              :loading="inviting"
+            >
+              {{ inviting ? 'Sending...' : 'Send Invitation' }}
+            </UButton>
+          </div>
+        </form>
+      </UCard>
+    </UModal>
+  </div>
+</template>
 
 <style scoped>
 .organization-members {

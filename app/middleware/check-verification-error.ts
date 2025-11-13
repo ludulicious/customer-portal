@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware((to, from) => {
+export default defineNuxtRouteMiddleware((to, _from) => {
   // Check if navigating to the email verified page and if there's an error query param
   if (to.path === '/email-verified' && to.query.error) {
     console.log(

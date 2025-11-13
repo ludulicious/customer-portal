@@ -1,19 +1,3 @@
-<template>
-  <div class="container mx-auto py-8">
-    <h1 class="text-3xl font-bold mb-6">Service Requests Management</h1>
-
-    <AdminRequestDashboard
-      :requests="requests"
-      :loading="loading"
-      :pagination="pagination"
-      :stats="stats"
-      @select="navigateTo(`/admin/requests/${$event}`)"
-      @filter="handleFilter"
-      @update="handleUpdate"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 const {
   requests,
@@ -54,3 +38,19 @@ definePageMeta({
   middleware: ['auth', 'admin']
 })
 </script>
+
+<template>
+  <div class="container mx-auto py-8">
+    <h1 class="text-3xl font-bold mb-6">Service Requests Management</h1>
+
+    <AdminRequestDashboard
+      :requests="requests"
+      :loading="loading"
+      :pagination="pagination"
+      :stats="stats"
+      @select="navigateTo(`/admin/requests/${$event}`)"
+      @filter="handleFilter"
+      @update="handleUpdate"
+    />
+  </div>
+</template>

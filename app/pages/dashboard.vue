@@ -1,11 +1,4 @@
 <script setup lang="ts">
-const { locale } = useI18n()
-const userStore = useUserStore()
-const { currentUser } = storeToRefs(userStore)
-
-// Authentication is handled by the global auth middleware
-// No need for additional redirect logic here
-
 // Fake data for ApexPro dashboard
 const dashboardData = ref({
   overview: {
@@ -64,7 +57,7 @@ const dashboardData = ref({
 })
 
 // Chart data for visualizations
-const ordersChartData = computed(() => ({
+const _ordersChartData = computed(() => ({
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
   datasets: [
     {
@@ -77,7 +70,7 @@ const ordersChartData = computed(() => ({
   ]
 }))
 
-const slaChartData = computed(() => ({
+const _slaChartData = computed(() => ({
   labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
   datasets: [
     {
@@ -93,11 +86,11 @@ const slaChartData = computed(() => ({
 // Status colors for activity items
 const getStatusColor = (status: string): 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral' => {
   const colors: Record<string, 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'> = {
-    completed: 'success',
-    paid: 'primary',
+    'completed': 'success',
+    'paid': 'primary',
     'in-progress': 'info',
-    scheduled: 'warning',
-    overdue: 'error'
+    'scheduled': 'warning',
+    'overdue': 'error'
   }
   return colors[status] || 'neutral'
 }
@@ -331,7 +324,7 @@ useSeoMeta({
             </NuxtLink>
           </div>
         </template>
-        
+
         <RecentServiceRequestsWidget />
       </UCard>
 

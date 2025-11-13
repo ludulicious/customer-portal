@@ -1,3 +1,60 @@
+<script setup lang="ts">
+const props = defineProps<{
+  requests: ServiceRequestWithRelations[]
+  loading: boolean
+  pagination: any
+}>()
+
+const emit = defineEmits<{
+  create: []
+  select: [id: string]
+  filter: [filters: ServiceRequestFilters]
+}>()
+
+const currentPage = ref(1)
+const filters = reactive({
+  status: undefined,
+  priority: undefined,
+  search: ''
+})
+
+watch(filters, () => {
+  emit('filter', filters)
+})
+
+watch(currentPage, (page) => {
+  emit('filter', { ...filters, page })
+})
+
+const statusOptions = [
+  { label: 'Open', value: 'OPEN' },
+  { label: 'In Progress', value: 'IN_PROGRESS' },
+  { label: 'Resolved', value: 'RESOLVED' },
+  { label: 'Closed', value: 'CLOSED' }
+]
+
+const priorityOptions = [
+  { label: 'Low', value: 'LOW' },
+  { label: 'Medium', value: 'MEDIUM' },
+  { label: 'High', value: 'HIGH' },
+  { label: 'Urgent', value: 'URGENT' }
+]
+
+const getPriorityColor = (priority: ServiceRequestPriority) => {
+  switch (priority) {
+    case 'LOW': return 'green'
+    case 'MEDIUM': return 'blue'
+    case 'HIGH': return 'orange'
+    case 'URGENT': return 'red'
+    default: return 'gray'
+  }
+}
+
+const formatDate = (date: Date) => {
+  return new Date(date).toLocaleDateString()
+}
+</script>
+
 <template>
   <div class="space-y-4">
     <div class="flex justify-between items-center">
@@ -73,61 +130,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-const props = defineProps<{
-  requests: ServiceRequestWithRelations[]
-  loading: boolean
-  pagination: any
-}>()
-
-const emit = defineEmits<{
-  create: []
-  select: [id: string]
-  filter: [filters: ServiceRequestFilters]
-}>()
-
-const currentPage = ref(1)
-const filters = reactive({
-  status: undefined,
-  priority: undefined,
-  search: ''
-})
-
-watch(filters, () => {
-  emit('filter', filters)
-})
-
-watch(currentPage, (page) => {
-  emit('filter', { ...filters, page })
-})
-
-const statusOptions = [
-  { label: 'Open', value: 'OPEN' },
-  { label: 'In Progress', value: 'IN_PROGRESS' },
-  { label: 'Resolved', value: 'RESOLVED' },
-  { label: 'Closed', value: 'CLOSED' }
-]
-
-const priorityOptions = [
-  { label: 'Low', value: 'LOW' },
-  { label: 'Medium', value: 'MEDIUM' },
-  { label: 'High', value: 'HIGH' },
-  { label: 'Urgent', value: 'URGENT' }
-]
-
-const getPriorityColor = (priority: ServiceRequestPriority) => {
-  switch (priority) {
-    case 'LOW': return 'green'
-    case 'MEDIUM': return 'blue'
-    case 'HIGH': return 'orange'
-    case 'URGENT': return 'red'
-    default: return 'gray'
-  }
-}
-
-const formatDate = (date: Date) => {
-  return new Date(date).toLocaleDateString()
-}
-</script>
-

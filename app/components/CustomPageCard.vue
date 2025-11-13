@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = withDefaults(defineProps<{
-  title: string
+  title?: string
   description?: string
   success?: string
   error?: string

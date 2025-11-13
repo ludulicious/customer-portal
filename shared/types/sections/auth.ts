@@ -62,4 +62,3 @@ export interface ListMembersResponse {
   data?: OrganizationMemberWithUser[]
   total?: number
 }
-
