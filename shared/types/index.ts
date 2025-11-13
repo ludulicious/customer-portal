@@ -43,3 +43,9 @@ export type {
   SetUserPasswordRequest,
   UpdateUserRequest
 } from './sections/api'
+
+export type {
+  FilterOperator,
+  Filter,
+  QueryInput
+} from './sections/queryBuilder'

@@ -1,7 +1,7 @@
 import type {
   QueryInput,
   FilterOperator as FilterOperatorType,
-} from '~~/shared/types/sections/queryBuilder'
+} from '#types'
 import { z } from 'zod'
 
 // Schema for FilterOperator - now using z.enum with actual values
