@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n()
 const userStore = useUserStore()
-const { currentUser } = storeToRefs(userStore)
+const { currentUser, activeOrganizationId } = storeToRefs(userStore)
 const toast = useToast()
 
 // Form state
@@ -106,7 +106,13 @@ const handleReset = () => {
   }
 }
 
+const { authClient } = await import('~/utils/auth-client')
 const organizations = authClient.useListOrganizations()
+
+// Check if an organization is active
+const isActiveOrganization = (organizationId: string) => {
+  return activeOrganizationId.value === organizationId
+}
 </script>
 
 <template>
@@ -141,7 +147,7 @@ const organizations = authClient.useListOrganizations()
             </div>
             <div class="flex-1 w-full">
               <UInput v-model="form.image" type="url" :placeholder="$t('profile.fields.profilePicturePlaceholder')"
-                icon="i-lucide-image" />
+                icon="i-lucide-image" class="w-full" />
             </div>
           </div>
 
@@ -173,12 +179,20 @@ const organizations = authClient.useListOrganizations()
         <div v-if="organizations.isPending">Loading...</div>
         <div v-else-if="organizations.data === null">No organizations found.</div>
         <div v-else class="space-y-6">
-          <div v-for="organization in organizations.data" :key="organization.id">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ organization.name }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ organization.slug }}</p>
-            <p class="text-xs text-gray-500 mt-1">
-              {{ $t('common.createdAt') }}: {{ new Date(organization.createdAt).toLocaleDateString() }}
-            </p>
+          <div v-for="organization in organizations.data" :key="organization.id" class="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ organization.name }}</h3>
+                <UBadge v-if="isActiveOrganization(organization.id)" color="success" variant="subtle">
+                  {{ $t('profile.badges.active') }}
+                </UBadge>
+                <UBadge v-else color="warning" variant="subtle">{{ currentUser?.activeOrganizationId || 'No active organization' }}</UBadge>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ organization.slug }}</p>
+              <p class="text-xs text-gray-500 mt-1">
+                {{ $t('common.createdAt') }}: {{ new Date(organization.createdAt).toLocaleDateString() }}
+              </p>
+            </div>
           </div>
         </div>
       </UCard>

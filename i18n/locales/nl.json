@@ -301,6 +301,9 @@
     "language": "Taal"
   },
   "profile": {
+    "badges": {
+      "active": "Actief"
+    },
     "description": "Beheer uw persoonlijke informatie en profielinstellingen",
     "fields": {
       "email": "E-mail",

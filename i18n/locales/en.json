@@ -303,6 +303,9 @@
     "portfolio": "Portfolio"
   },
   "profile": {
+    "badges": {
+      "active": "Active"
+    },
     "description": "Manage your personal information and profile settings",
     "fields": {
       "email": "Email",

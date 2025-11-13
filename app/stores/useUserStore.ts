@@ -16,6 +16,7 @@ export const useUserStore = defineStore('user', () => {
   const isLoading = ref(false)
   const currentUser = ref<SessionUser | null>(null)
   const currentOrganization = ref<OrganizationMemberWithUser | null>(null)
+  const activeOrganizationId = ref<string | null>(null)
   const hasFetchedPermissions = ref(false)
 
   const colorMode = useColorMode() // Use the colorMode composable
@@ -95,8 +96,20 @@ export const useUserStore = defineStore('user', () => {
     permissions.value = {}
     role.value = null
     currentUser.value = null
+    activeOrganizationId.value = null
     hasFetchedPermissions.value = false
     // No longer need to reset lastSessionCheckTime
+  }
+
+  const setActiveOrganizationId = async (organizationId: string) => {
+    activeOrganizationId.value = organizationId
+    const { data, error } = await authClient.organization.setActive({ organizationId })
+    if (error) {
+      console.error('Error setting active organization:', error)
+    }
+    if (data) {
+      console.log('Active organization set:', data)
+    }
   }
 
   const setUser = (user: SessionUser | null) => {
@@ -107,6 +120,15 @@ export const useUserStore = defineStore('user', () => {
         role.value = null
         hasFetchedPermissions.value = false
         // No longer need to reset lastSessionCheckTime
+      }
+      if (!user.activeOrganizationId) {
+        const organizations = authClient.useListOrganizations()
+        if (organizations.value.data && organizations.value.data.length > 0 && organizations.value.data[0]) {
+          setActiveOrganizationId(organizations.value.data[0].id)
+          user.activeOrganizationId = organizations.value.data[0].id
+        } else {
+          console.error('No organizations found for user:', user.id)
+        }
       }
       currentUser.value = user
     } else {
@@ -130,9 +152,11 @@ export const useUserStore = defineStore('user', () => {
     loggedInUsingEmail,
     theme,
     currentOrganization,
+    activeOrganizationId,
     fetchUserPermissions,
     hasPermission,
     clearUserData,
     setUser,
+    setActiveOrganizationId,
   }
 })

@@ -24,6 +24,7 @@ export type InvitationStatus = 'pending' | 'accepted' | 'rejected'
  */
 export interface SessionUser extends User {
   providerId?: string | null
+  activeOrganizationId?: string | null
 }
 
 /**
