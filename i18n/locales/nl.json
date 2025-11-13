@@ -33,6 +33,88 @@
     "verification": {
       "pending": "In behandeling",
       "verified": "Geverifieerd"
+    },
+    "userManagement": {
+      "ban": {
+        "title": "Gebruiker Blokkeren",
+        "description": "Blokkeer deze gebruiker om toegang te krijgen tot de applicatie",
+        "reason": "Blokkeringsreden",
+        "reasonPlaceholder": "Voer reden voor blokkering in (optioneel)",
+        "expiresIn": "Blokkering Verloopt Over",
+        "expiresInDays": "Dagen",
+        "expiresInHours": "Uren",
+        "expiresInMinutes": "Minuten",
+        "never": "Nooit",
+        "confirm": "Gebruiker Blokkeren",
+        "success": "Gebruiker succesvol geblokkeerd",
+        "error": "Gebruiker blokkeren mislukt"
+      },
+      "unban": {
+        "title": "Gebruiker Deblokkeren",
+        "description": "Verwijder de blokkering van deze gebruiker",
+        "confirm": "Gebruiker Deblokkeren",
+        "success": "Gebruiker succesvol gedeblokkeerd",
+        "error": "Gebruiker deblokkeren mislukt"
+      },
+      "impersonate": {
+        "title": "Gebruiker Impersoneren",
+        "description": "Je wordt ingelogd als deze gebruiker. Alle acties worden uitgevoerd namens hen.",
+        "warning": "Waarschuwing: Het impersoneren van een gebruiker geeft je volledige toegang tot hun account.",
+        "confirm": "Impersoneren",
+        "success": "Impersonatie succesvol gestart",
+        "error": "Impersonatie starten mislukt",
+        "stop": "Stop Impersoneren",
+        "stopSuccess": "Impersonatie succesvol gestopt",
+        "stopError": "Impersonatie stoppen mislukt",
+        "indicator": "Je impersoneert momenteel een gebruiker"
+      },
+      "sessions": {
+        "title": "Gebruikerssessies",
+        "description": "Beheer actieve sessies voor deze gebruiker",
+        "noSessions": "Geen actieve sessies",
+        "revoke": "Sessie Intrekken",
+        "revokeAll": "Alle Sessies Intrekken",
+        "revokeSuccess": "Sessie succesvol ingetrokken",
+        "revokeAllSuccess": "Alle sessies succesvol ingetrokken",
+        "revokeError": "Sessie intrekken mislukt",
+        "ipAddress": "IP-adres",
+        "userAgent": "User Agent",
+        "createdAt": "Aangemaakt",
+        "expiresAt": "Verloopt",
+        "active": "Actief",
+        "expired": "Verlopen"
+      },
+      "password": {
+        "title": "Wachtwoord Wijzigen",
+        "description": "Stel een nieuw wachtwoord in voor deze gebruiker",
+        "newPassword": "Nieuw Wachtwoord",
+        "newPasswordPlaceholder": "Voer nieuw wachtwoord in",
+        "confirm": "Wachtwoord Wijzigen",
+        "success": "Wachtwoord succesvol gewijzigd",
+        "error": "Wachtwoord wijzigen mislukt"
+      },
+      "update": {
+        "title": "Gebruiker Bijwerken",
+        "description": "Gebruikersinformatie bijwerken",
+        "name": "Naam",
+        "image": "Profielfoto URL",
+        "imagePlaceholder": "https://voorbeeld.nl/avatar.jpg",
+        "confirm": "Gebruiker Bijwerken",
+        "success": "Gebruiker succesvol bijgewerkt",
+        "error": "Gebruiker bijwerken mislukt"
+      },
+      "actions": {
+        "ban": "Gebruiker Blokkeren",
+        "unban": "Gebruiker Deblokkeren",
+        "impersonate": "Impersoneren",
+        "sessions": "Sessies Bekijken",
+        "changePassword": "Wachtwoord Wijzigen",
+        "update": "Gebruiker Bijwerken"
+      },
+      "status": {
+        "banned": "Geblokkeerd",
+        "notBanned": "Actief"
+      }
     }
   },
   "common": {

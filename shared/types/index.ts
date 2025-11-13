@@ -31,5 +31,15 @@ export type {
   AdminUsersResponse,
   UpdateUserRoleRequest,
   UpdateUserRoleResponse,
-  OrganizationInvitationsResponse
+  OrganizationInvitationsResponse,
+  BanUserRequest,
+  UnbanUserRequest,
+  ImpersonateUserRequest,
+  ImpersonateUserResponse,
+  UserSession,
+  ListUserSessionsResponse,
+  RevokeUserSessionRequest,
+  RevokeUserSessionsRequest,
+  SetUserPasswordRequest,
+  UpdateUserRequest
 } from './sections/api'

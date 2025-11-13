@@ -33,6 +33,88 @@
     "verification": {
       "pending": "Pending",
       "verified": "Verified"
+    },
+    "userManagement": {
+      "ban": {
+        "title": "Ban User",
+        "description": "Ban this user from accessing the application",
+        "reason": "Ban Reason",
+        "reasonPlaceholder": "Enter reason for ban (optional)",
+        "expiresIn": "Ban Expires In",
+        "expiresInDays": "Days",
+        "expiresInHours": "Hours",
+        "expiresInMinutes": "Minutes",
+        "never": "Never",
+        "confirm": "Ban User",
+        "success": "User banned successfully",
+        "error": "Failed to ban user"
+      },
+      "unban": {
+        "title": "Unban User",
+        "description": "Remove the ban from this user",
+        "confirm": "Unban User",
+        "success": "User unbanned successfully",
+        "error": "Failed to unban user"
+      },
+      "impersonate": {
+        "title": "Impersonate User",
+        "description": "You will be logged in as this user. All actions will be performed on their behalf.",
+        "warning": "Warning: Impersonating a user gives you full access to their account.",
+        "confirm": "Impersonate",
+        "success": "Impersonation started successfully",
+        "error": "Failed to start impersonation",
+        "stop": "Stop Impersonating",
+        "stopSuccess": "Stopped impersonating successfully",
+        "stopError": "Failed to stop impersonation",
+        "indicator": "You are currently impersonating a user"
+      },
+      "sessions": {
+        "title": "User Sessions",
+        "description": "Manage active sessions for this user",
+        "noSessions": "No active sessions",
+        "revoke": "Revoke Session",
+        "revokeAll": "Revoke All Sessions",
+        "revokeSuccess": "Session revoked successfully",
+        "revokeAllSuccess": "All sessions revoked successfully",
+        "revokeError": "Failed to revoke session",
+        "ipAddress": "IP Address",
+        "userAgent": "User Agent",
+        "createdAt": "Created",
+        "expiresAt": "Expires",
+        "active": "Active",
+        "expired": "Expired"
+      },
+      "password": {
+        "title": "Change Password",
+        "description": "Set a new password for this user",
+        "newPassword": "New Password",
+        "newPasswordPlaceholder": "Enter new password",
+        "confirm": "Change Password",
+        "success": "Password changed successfully",
+        "error": "Failed to change password"
+      },
+      "update": {
+        "title": "Update User",
+        "description": "Update user information",
+        "name": "Name",
+        "image": "Profile Image URL",
+        "imagePlaceholder": "https://example.com/avatar.jpg",
+        "confirm": "Update User",
+        "success": "User updated successfully",
+        "error": "Failed to update user"
+      },
+      "actions": {
+        "ban": "Ban User",
+        "unban": "Unban User",
+        "impersonate": "Impersonate",
+        "sessions": "View Sessions",
+        "changePassword": "Change Password",
+        "update": "Update User"
+      },
+      "status": {
+        "banned": "Banned",
+        "notBanned": "Active"
+      }
     }
   },
   "common": {

@@ -48,7 +48,6 @@ provide('navigation', navigation)
 <template>
   <UApp>
     <NuxtLoadingIndicator />
-
     <NuxtLayout>
       <NuxtPage :transition="{
         name: 'main-fade',
