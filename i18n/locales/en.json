@@ -28,6 +28,7 @@
       "notAvailable": "N/A",
       "refresh": "Refresh",
       "role": "Role",
+      "searchPlaceholder": "Search by name or email...",
       "title": "All Users",
       "verified": "Verified"
     },

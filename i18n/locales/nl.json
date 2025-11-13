@@ -28,6 +28,7 @@
       "notAvailable": "N.v.t.",
       "refresh": "Vernieuwen",
       "role": "Rol",
+      "searchPlaceholder": "Zoeken op naam of e-mail...",
       "title": "Alle Gebruikers",
       "verified": "Geverifieerd"
     },

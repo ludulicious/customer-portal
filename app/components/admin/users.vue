@@ -17,6 +17,7 @@ if (!isAdmin.value) {
 const loading = ref(true)
 const error = ref('')
 const users = ref<AdminUserResponse[]>([])
+const searchQuery = ref('')
 const editingUserId = ref<string | null>(null)
 const editingRole = ref<UserRole>('user')
 const updating = ref(false)
@@ -112,7 +113,13 @@ await userStore.fetchCurrentSession()
 const loadUsers = async () => {
   try {
     loading.value = true
-    users.value = await $fetch<AdminUsersResponse>('/api/admin/users')
+    const params: Record<string, string> = {}
+    if (searchQuery.value.trim()) {
+      params.search = searchQuery.value.trim()
+    }
+    users.value = await $fetch<AdminUsersResponse>('/api/admin/users', {
+      query: params
+    })
   } catch (err) {
     const apiError = err as ApiError
     error.value = apiError.message || t('admin.errors.failedToLoadUsers')
@@ -120,6 +127,37 @@ const loadUsers = async () => {
     loading.value = false
   }
 }
+
+// Debounced search function
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+const handleSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    loadUsers()
+  }, 300) // 300ms debounce
+}
+
+// Watch for search query changes to handle clearing
+watch(searchQuery, (newValue) => {
+  if (!newValue || newValue.trim() === '') {
+    // Clear search immediately when input is cleared
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+    loadUsers()
+  } else {
+    handleSearch()
+  }
+})
+
+// Cleanup timeout on unmount
+onUnmounted(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+})
 
 await loadUsers()
 
@@ -621,6 +659,16 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
           </UButton>
         </div>
       </template>
+
+      <div class="mb-4">
+        <UInput
+          v-model="searchQuery"
+          :placeholder="t('admin.table.searchPlaceholder')"
+          icon="i-lucide-search"
+          :loading="loading"
+          class="w-full max-w-md"
+        />
+      </div>
 
       <UAlert v-if="error" color="error" variant="soft" :title="error" />
 

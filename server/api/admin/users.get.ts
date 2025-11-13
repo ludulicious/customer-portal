@@ -2,6 +2,7 @@ import { defineEventHandler, createError } from 'h3'
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { user as userTable } from '~~/server/db/schema/auth-schema'
+import { or, ilike } from 'drizzle-orm'
 import type { SessionUser, AdminUsersResponse } from '~~/shared/types'
 
 export default defineEventHandler(async (event): Promise<AdminUsersResponse> => {
@@ -16,8 +17,12 @@ export default defineEventHandler(async (event): Promise<AdminUsersResponse> => 
     throw createError({ statusCode: 403, message: 'Admin access required' })
   }
 
-  // Get all users
-  const users = await db
+  // Get search query parameter
+  const query = getQuery(event)
+  const search = query.search as string | undefined
+
+  // Build base query
+  const baseQuery = db
     .select({
       id: userTable.id,
       name: userTable.name,
@@ -28,7 +33,23 @@ export default defineEventHandler(async (event): Promise<AdminUsersResponse> => 
       banned: userTable.banned
     })
     .from(userTable)
-    .orderBy(userTable.createdAt)
+
+  // Add search filter if provided
+  if (search && search.trim()) {
+    const searchPattern = `%${search.trim()}%`
+    const users = await baseQuery
+      .where(
+        or(
+          ilike(userTable.name, searchPattern),
+          ilike(userTable.email, searchPattern)
+        )
+      )
+      .orderBy(userTable.createdAt)
+    return users as AdminUsersResponse
+  }
+
+  // Get all users ordered by creation date
+  const users = await baseQuery.orderBy(userTable.createdAt)
 
   return users as AdminUsersResponse
 })
