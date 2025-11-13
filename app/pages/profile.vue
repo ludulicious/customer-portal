@@ -1,11 +1,34 @@
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
 const { t } = useI18n()
 const userStore = useUserStore()
 const { currentUser, activeOrganizationId } = storeToRefs(userStore)
 const toast = useToast()
 
+// Zod schema for profile form validation
+const schema = z.object({
+  name: z.string()
+    .trim()
+    .min(1, t('profile.validation.nameRequired'))
+    .max(255, t('profile.validation.nameMaxLength')),
+  image: z.union([
+    z.string().url(t('profile.validation.imageInvalidUrl')),
+    z.literal('').transform(() => null),
+    z.null()
+  ]).optional()
+}).refine(
+  (data) => data.name !== undefined || data.image !== undefined,
+  {
+    message: t('profile.validation.atLeastOneField')
+  }
+)
+
+type Schema = z.output<typeof schema>
+
 // Form state
-const form = ref({
+const form = reactive<Partial<Schema>>({
   name: '',
   image: ''
 })
@@ -16,19 +39,17 @@ const isDirty = ref(false)
 // Initialize form with current user data
 watchEffect(() => {
   if (currentUser.value) {
-    form.value = {
-      name: currentUser.value.name || '',
-      image: currentUser.value.image || ''
-    }
+    form.name = currentUser.value.name || ''
+    form.image = currentUser.value.image || ''
     isDirty.value = false
   }
 })
 
 // Watch for form changes
-watch(form, () => {
+watch(() => [form.name, form.image], () => {
   if (currentUser.value) {
-    const nameChanged = form.value.name !== (currentUser.value.name || '')
-    const imageChanged = form.value.image !== (currentUser.value.image || '')
+    const nameChanged = form.name !== (currentUser.value.name || '')
+    const imageChanged = form.image !== (currentUser.value.image || '')
     isDirty.value = nameChanged || imageChanged
   }
 }, { deep: true })
@@ -39,7 +60,7 @@ useSeoMeta({
   description: t('profile.description')
 })
 
-const handleSubmit = async () => {
+const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
   if (!currentUser.value) return
 
   isLoading.value = true
@@ -56,8 +77,8 @@ const handleSubmit = async () => {
     }>('/api/profile', {
       method: 'PATCH',
       body: {
-        name: form.value.name.trim(),
-        image: form.value.image.trim() || null
+        name: event.data.name?.trim(),
+        image: event.data.image === null || event.data.image === '' ? null : event.data.image
       }
     })
 
@@ -98,10 +119,8 @@ const handleSubmit = async () => {
 
 const handleReset = () => {
   if (currentUser.value) {
-    form.value = {
-      name: currentUser.value.name || '',
-      image: currentUser.value.image || ''
-    }
+    form.name = currentUser.value.name || ''
+    form.image = currentUser.value.image || ''
     isDirty.value = false
   }
 }
@@ -137,7 +156,7 @@ const isActiveOrganization = (organizationId: string) => {
           </div>
         </template>
 
-        <UForm :state="form" class="space-y-6" @submit="handleSubmit">
+        <UForm :state="form" :schema="schema" class="space-y-6" @submit="handleSubmit">
           <!-- Profile Picture Section -->
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <div class="shrink-0">
@@ -146,16 +165,35 @@ const isActiveOrganization = (organizationId: string) => {
                 size="xl" class="ring-2 ring-gray-200 dark:ring-gray-700" />
             </div>
             <div class="flex-1 w-full">
-              <UInput v-model="form.image" type="url" :placeholder="$t('profile.fields.profilePicturePlaceholder')"
-                icon="i-lucide-image" class="w-full" />
+              <UFormField
+                :label="$t('profile.fields.profilePicture')"
+                :description="$t('profile.fields.profilePictureDescription')"
+                name="image"
+              >
+                <UInput v-model="form.image" type="url" :placeholder="$t('profile.fields.profilePicturePlaceholder')"
+                  icon="i-lucide-image" class="w-full" />
+              </UFormField>
             </div>
           </div>
 
-          <UInput v-model="form.name" type="text" :placeholder="$t('profile.fields.namePlaceholder')"
-            icon="i-lucide-user" class="w-full" required />
+          <UFormField
+            :label="$t('profile.fields.name')"
+            :description="$t('profile.fields.nameDescription')"
+            name="name"
+            required
+          >
+            <UInput v-model="form.name" type="text" :placeholder="$t('profile.fields.namePlaceholder')"
+              icon="i-lucide-user" class="w-full" required />
+          </UFormField>
 
-          <UInput :model-value="currentUser?.email || ''" type="email" disabled icon="i-lucide-mail"
-            class="w-full mt-4" />
+          <UFormField
+            :label="$t('profile.fields.email')"
+            :description="$t('profile.fields.emailDescription')"
+            name="email"
+          >
+            <UInput :model-value="currentUser?.email || ''" type="email" disabled icon="i-lucide-mail"
+              class="w-full" />
+          </UFormField>
 
           <!-- Form Actions -->
           <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

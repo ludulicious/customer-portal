@@ -327,7 +327,13 @@
       "organizations": "My organizations",
       "profileInfo": "Profile Information"
     },
-    "title": "Profile Settings"
+    "title": "Profile Settings",
+    "validation": {
+      "atLeastOneField": "At least one field (name or image) must be provided",
+      "imageInvalidUrl": "Image must be a valid URL",
+      "nameMaxLength": "Name must be less than 255 characters",
+      "nameRequired": "Name is required"
+    }
   },
   "signup": {
     "description": "Already have an account?",
