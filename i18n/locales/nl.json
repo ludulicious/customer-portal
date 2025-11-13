@@ -9,7 +9,8 @@
     "errors": {
       "accessRequired": "Beheerders toegang vereist",
       "failedToLoadUsers": "Gebruikers laden mislukt",
-      "failedToUpdateRole": "Gebruikersrol bijwerken mislukt"
+      "failedToUpdateRole": "Gebruikersrol bijwerken mislukt",
+      "cannotChangeOwnRole": "Je kunt je eigen rol niet wijzigen"
     },
     "organization": {
       "title": "Organisatie details"
@@ -47,7 +48,8 @@
         "never": "Nooit",
         "confirm": "Gebruiker Blokkeren",
         "success": "Gebruiker succesvol geblokkeerd",
-        "error": "Gebruiker blokkeren mislukt"
+        "error": "Gebruiker blokkeren mislukt",
+        "cannotBanAdmin": "Admin gebruikers kunnen niet worden geblokkeerd"
       },
       "unban": {
         "title": "Gebruiker Deblokkeren",
@@ -77,6 +79,8 @@
         "revokeSuccess": "Sessie succesvol ingetrokken",
         "revokeAllSuccess": "Alle sessies succesvol ingetrokken",
         "revokeError": "Sessie intrekken mislukt",
+        "cannotRevokeCurrentSession": "Je kunt je huidige sessie niet intrekken",
+        "currentSession": "Huidige Sessie",
         "ipAddress": "IP-adres",
         "userAgent": "User Agent",
         "createdAt": "Aangemaakt",

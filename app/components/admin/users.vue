@@ -5,7 +5,7 @@ import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, Upda
 import { authClient } from '~/utils/auth-client'
 
 const userStore = useUserStore()
-const { isAdmin } = storeToRefs(userStore)
+const { isAdmin, currentUser } = storeToRefs(userStore)
 const { t, locale } = useI18n()
 const toast = useToast()
 
@@ -106,6 +106,59 @@ const revokingSession = ref<string | null>(null)
 const { data: currentSession } = await authClient.useSession(useFetch)
 const isImpersonating = computed(() => !!currentSession.value?.session?.impersonatedBy)
 
+// Get current session data using getSession()
+// The session data is directly in data, not nested under data.session
+interface CurrentSessionData {
+  id?: string
+  token?: string
+  expiresAt?: Date
+  createdAt?: Date
+  updatedAt?: Date
+  ipAddress?: string
+  userAgent?: string
+  userId?: string
+}
+const currentSessionData = ref<CurrentSessionData | null>(null)
+
+// Fetch current session data
+const fetchCurrentSession = async () => {
+  try {
+    const sessionData = await authClient.getSession()
+    // Session data is directly in data, extract session properties
+    if (sessionData?.data) {
+      const data = sessionData.data as Record<string, unknown>
+      currentSessionData.value = {
+        id: data.id as string | undefined,
+        token: data.token as string | undefined,
+        expiresAt: data.expiresAt as Date | undefined,
+        createdAt: data.createdAt as Date | undefined,
+        updatedAt: data.updatedAt as Date | undefined,
+        ipAddress: data.ipAddress as string | undefined,
+        userAgent: data.userAgent as string | undefined,
+        userId: data.userId as string | undefined
+      }
+    } else {
+      currentSessionData.value = null
+    }
+  } catch (err) {
+    console.error('Failed to get current session:', err)
+    currentSessionData.value = null
+  }
+}
+
+// Get current session ID and token from getSession() result
+// Session data is directly in data, not nested under data.session
+const currentSessionId = computed(() => {
+  return currentSessionData.value?.id || currentSession.value?.session?.id || null
+})
+
+const currentSessionToken = computed(() => {
+  return currentSessionData.value?.token || currentSession.value?.session?.token || null
+})
+
+// Fetch session data when component loads
+await fetchCurrentSession()
+
 const loadUsers = async () => {
   try {
     loading.value = true
@@ -121,6 +174,16 @@ const loadUsers = async () => {
 await loadUsers()
 
 const startEditRole = (user: AdminUserResponse) => {
+  // Prevent editing current user's role
+  if (currentUser.value && currentUser.value.id === user.id) {
+    toast.add({
+      title: t('common.error'),
+      description: t('admin.errors.cannotChangeOwnRole'),
+      color: 'error'
+    })
+    return
+  }
+
   editingUserId.value = user.id
   editingRole.value = (user.role || 'user') as UserRole
 }
@@ -130,6 +193,17 @@ const cancelEdit = () => {
 }
 
 const updateUserRole = async (userId: string) => {
+  // Prevent changing current user's role (safety check)
+  if (currentUser.value && currentUser.value.id === userId) {
+    toast.add({
+      title: t('common.error'),
+      description: t('admin.errors.cannotChangeOwnRole'),
+      color: 'error'
+    })
+    editingUserId.value = null
+    return
+  }
+
   try {
     updating.value = true
     await $fetch<UpdateUserRoleResponse>(`/api/admin/users/${userId}/role`, {
@@ -158,6 +232,16 @@ const updateUserRole = async (userId: string) => {
 
 // Ban user
 const openBanModal = (user: AdminUserResponse) => {
+  // Prevent banning admin users
+  if (user.role === 'admin') {
+    toast.add({
+      title: t('common.error'),
+      description: t('admin.userManagement.ban.cannotBanAdmin'),
+      color: 'error'
+    })
+    return
+  }
+
   selectedUser.value = user
   banForm.reason = user.banReason || ''
   banForm.expiresInDays = ''
@@ -168,6 +252,17 @@ const openBanModal = (user: AdminUserResponse) => {
 
 const handleBanSubmit = async (event: FormSubmitEvent<z.output<typeof banSchema.value>>) => {
   if (!selectedUser.value) return
+
+  // Prevent banning admin users (safety check)
+  if (selectedUser.value.role === 'admin') {
+    toast.add({
+      title: t('common.error'),
+      description: t('admin.userManagement.ban.cannotBanAdmin'),
+      color: 'error'
+    })
+    showBanModal.value = false
+    return
+  }
 
   try {
     let banExpiresIn: number | undefined
@@ -301,6 +396,8 @@ const stopImpersonating = async () => {
 const openSessionsModal = async (user: AdminUserResponse) => {
   selectedUser.value = user
   showSessionsModal.value = true
+  // Refresh current session data before loading sessions
+  await fetchCurrentSession()
   await loadUserSessions()
 }
 
@@ -318,6 +415,9 @@ const loadUserSessions = async () => {
     }
 
     sessions.value = (data?.sessions || data || []) as UserSession[]
+
+    // Refresh current session data when loading sessions to ensure we have the latest token
+    await fetchCurrentSession()
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions'
     toast.add({
@@ -331,6 +431,19 @@ const loadUserSessions = async () => {
 }
 
 const revokeSession = async (sessionToken: string) => {
+  // Find the session being revoked
+  const sessionToRevoke = sessions.value.find(s => s.token === sessionToken)
+
+  // Prevent revoking current session
+  if (sessionToRevoke && isCurrentSession(sessionToRevoke)) {
+    toast.add({
+      title: t('common.error'),
+      description: t('admin.userManagement.sessions.cannotRevokeCurrentSession'),
+      color: 'error'
+    })
+    return
+  }
+
   try {
     revokingSession.value = sessionToken
     const { error: revokeError } = await authClient.admin.revokeUserSession({
@@ -361,6 +474,16 @@ const revokeSession = async (sessionToken: string) => {
 
 const revokeAllSessions = async () => {
   if (!selectedUser.value) return
+
+  // Prevent revoking all sessions if it includes the current session
+  if (currentUser.value && currentUser.value.id === selectedUser.value.id && currentSessionToken.value) {
+    toast.add({
+      title: t('common.error'),
+      description: t('admin.userManagement.sessions.cannotRevokeCurrentSession'),
+      color: 'error'
+    })
+    return
+  }
 
   try {
     revokingSession.value = 'all'
@@ -473,6 +596,28 @@ const isSessionExpired = (expiresAt: Date | string) => {
   return new Date(expiresAt) < new Date()
 }
 
+const isCurrentSession = (session: UserSession): boolean => {
+  // Only check if we're viewing the current user's sessions
+  if (!currentUser.value || !selectedUser.value) return false
+  if (currentUser.value.id !== selectedUser.value.id) return false
+
+  // Get session ID and token from getSession() result
+  const sessionId = currentSessionId.value
+  const token = currentSessionToken.value
+
+  // Check if session ID matches (most reliable)
+  if (sessionId && session.id === sessionId) {
+    return true
+  }
+
+  // Check if session token matches
+  if (token && session.token === token) {
+    return true
+  }
+
+  return false
+}
+
 const roles = computed<SelectItem[]>(() => [
   {
     label: t('admin.roles.user'),
@@ -557,7 +702,13 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
             <UBadge :color="row.original.role === 'admin' ? 'primary' : 'neutral'" class="justify-center w-20" variant="soft">
               {{ row.original.role === 'admin' ? t('admin.roles.admin') : t('admin.roles.user') }}
             </UBadge>
-            <UButton icon="i-lucide-pencil" size="xs" variant="ghost" @click="startEditRole(row.original)" />
+            <UButton
+              v-if="!currentUser || currentUser.id !== row.original.id"
+              icon="i-lucide-pencil"
+              size="xs"
+              variant="ghost"
+              @click="startEditRole(row.original)"
+            />
           </div>
         </template>
 
@@ -580,13 +731,24 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
         </template>
 
         <template #actions-cell="{ row }">
-          <UDropdownMenu :items="[[
-            { label: row.original.banned ? t('admin.userManagement.actions.unban') : t('admin.userManagement.actions.ban'), icon: 'i-lucide-ban', onSelect: () => row.original.banned ? openUnbanModal(row.original) : openBanModal(row.original) },
-            { label: t('admin.userManagement.actions.impersonate'), icon: 'i-lucide-user-cog', onSelect: () => openImpersonateModal(row.original) },
-            { label: t('admin.userManagement.actions.sessions'), icon: 'i-lucide-monitor', onSelect: () => openSessionsModal(row.original) },
-            { label: t('admin.userManagement.actions.changePassword'), icon: 'i-lucide-key', onSelect: () => openPasswordModal(row.original) },
-            { label: t('admin.userManagement.actions.update'), icon: 'i-lucide-edit', onSelect: () => openUpdateModal(row.original) }
-          ]]" :content="{ align: 'end' }">
+          <UDropdownMenu :items="[(() => {
+            const items = []
+            // Only show ban/unban option for non-admin users
+            if (row.original.role !== 'admin') {
+              items.push({
+                label: row.original.banned ? t('admin.userManagement.actions.unban') : t('admin.userManagement.actions.ban'),
+                icon: 'i-lucide-ban',
+                onSelect: () => row.original.banned ? openUnbanModal(row.original) : openBanModal(row.original)
+              })
+            }
+            items.push(
+              { label: t('admin.userManagement.actions.impersonate'), icon: 'i-lucide-user-cog', onSelect: () => openImpersonateModal(row.original) },
+              { label: t('admin.userManagement.actions.sessions'), icon: 'i-lucide-monitor', onSelect: () => openSessionsModal(row.original) },
+              { label: t('admin.userManagement.actions.changePassword'), icon: 'i-lucide-key', onSelect: () => openPasswordModal(row.original) },
+              { label: t('admin.userManagement.actions.update'), icon: 'i-lucide-edit', onSelect: () => openUpdateModal(row.original) }
+            )
+            return items
+          })()]" :content="{ align: 'end' }">
             <UButton variant="ghost" size="sm" icon="i-lucide-more-vertical" />
           </UDropdownMenu>
         </template>
@@ -705,6 +867,7 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
         <div class="flex items-center justify-between w-full">
           <h3 class="text-lg font-semibold">{{ t('admin.userManagement.sessions.title') }}</h3>
           <UButton
+            v-if="currentUser && selectedUser && currentUser.id !== selectedUser.id"
             color="error"
             variant="outline"
             size="sm"
@@ -750,8 +913,13 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
                   <div><strong>{{ t('admin.userManagement.sessions.expiresAt') }}:</strong> {{ new Date(session.expiresAt).toLocaleString(locale) }}</div>
                 </div>
               </div>
+              <template v-if="isCurrentSession(session)">
+                <UBadge color="primary" variant="soft" size="sm">
+                  {{ t('admin.userManagement.sessions.currentSession') }}
+                </UBadge>
+              </template>
               <UButton
-                v-if="!isSessionExpired(session.expiresAt)"
+                v-else-if="!isSessionExpired(session.expiresAt)"
                 color="error"
                 variant="outline"
                 size="sm"

@@ -9,7 +9,8 @@
     "errors": {
       "accessRequired": "Admin access required",
       "failedToLoadUsers": "Failed to load users",
-      "failedToUpdateRole": "Failed to update user role"
+      "failedToUpdateRole": "Failed to update user role",
+      "cannotChangeOwnRole": "You cannot change your own role"
     },
     "organization": {
       "title": "Organization Details"
@@ -47,7 +48,8 @@
         "never": "Never",
         "confirm": "Ban User",
         "success": "User banned successfully",
-        "error": "Failed to ban user"
+        "error": "Failed to ban user",
+        "cannotBanAdmin": "Admin users cannot be banned"
       },
       "unban": {
         "title": "Unban User",
@@ -77,6 +79,8 @@
         "revokeSuccess": "Session revoked successfully",
         "revokeAllSuccess": "All sessions revoked successfully",
         "revokeError": "Failed to revoke session",
+        "cannotRevokeCurrentSession": "You cannot revoke your current session",
+        "currentSession": "Current Session",
         "ipAddress": "IP Address",
         "userAgent": "User Agent",
         "createdAt": "Created",
