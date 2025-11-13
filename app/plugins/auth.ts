@@ -1,17 +1,16 @@
 import { authClient } from '~/utils/auth-client'
-import { useUserStore } from '~/stores/user'
 
 export default defineNuxtPlugin({
   name: 'auth',
   async setup() {
     const userStore = useUserStore()
-
+    // const organizationStore = useOrganization()
     try {
       const sessionData = await authClient.getSession()
       console.log('Initial session data:', sessionData)
 
       if (sessionData?.data?.user) {
-        console.log('Setting user from initial session:', sessionData.data.user)
+        console.log('Setting user from initial session:', sessionData.data)
         userStore.setUser(sessionData.data.user as SessionUser)
         await userStore.fetchUserPermissions()
       } else {

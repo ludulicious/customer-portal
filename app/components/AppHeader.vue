@@ -9,21 +9,9 @@ const { t, locale, setLocale } = useI18n()
 // User store
 const userStore = useUserStore()
 const { currentUser, userInitials, isAuthenticated } = storeToRefs(userStore)
-const { isOrganizationAdmin } = useOrganizationHelpers()
 
 // Reactive states for menu items
 const isOrgAdmin = ref(false)
-
-// Check organization admin status
-onMounted(async () => {
-  if (isAuthenticated.value) {
-    try {
-      isOrgAdmin.value = await isOrganizationAdmin()
-    } catch (error) {
-      console.error('Failed to check organization admin status:', error)
-    }
-  }
-})
 
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => {

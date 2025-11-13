@@ -73,7 +73,7 @@ onMounted(() => {
               Created: {{ new Date(org.createdAt).toLocaleDateString() }}
             </p>
           </div>
-          <UButton :to="`/organization/${org.id}`" variant="outline" size="sm">
+          <UButton :to="`/admin/organizations/${org.slug}`" variant="outline" size="sm">
             View
           </UButton>
         </div>

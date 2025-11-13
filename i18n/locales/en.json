@@ -11,6 +11,9 @@
       "failedToLoadUsers": "Failed to load users",
       "failedToUpdateRole": "Failed to update user role"
     },
+    "organization": {
+      "title": "Organization Details"
+    },
     "roles": {
       "admin": "admin",
       "user": "user"

@@ -1,6 +1,6 @@
 import { authClient } from '~/utils/auth-client'
 
-export const useOrganizationHelpers = () => {
+export const useOrganization = () => {
   // Get current user's organization
   const getCurrentOrganization = async () => {
     const { data: member } = await authClient.organization.getActiveMember()
@@ -25,10 +25,36 @@ export const useOrganizationHelpers = () => {
     return data
   }
 
+  const createOrganization = async (data: { name: string, slug: string }) => {
+    return await authClient.organization.create(data)
+  }
+
+  const getActiveMember = async () => {
+    return await authClient.organization.getActiveMember()
+  }
+
+  const listMembers = async (organizationId: string) => {
+    return await authClient.organization.listMembers({
+      query: { organizationId }
+    })
+  }
+
+  const inviteMember = async (email: string, organizationId: string, role: MemberRole = 'member') => {
+    return await authClient.organization.inviteMember({
+      email,
+      organizationId,
+      role
+    })
+  }
+
   return {
     getCurrentOrganization,
     isOrganizationOwner,
     isOrganizationAdmin,
-    getUserOrganizations
+    getUserOrganizations,
+    createOrganization,
+    getActiveMember,
+    listMembers,
+    inviteMember
   }
 }

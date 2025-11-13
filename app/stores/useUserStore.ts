@@ -15,6 +15,7 @@ export const useUserStore = defineStore('user', () => {
   const role = ref<string | null>(null)
   const isLoading = ref(false)
   const currentUser = ref<SessionUser | null>(null)
+  const currentOrganization = ref<OrganizationMemberWithUser | null>(null)
   const hasFetchedPermissions = ref(false)
 
   const colorMode = useColorMode() // Use the colorMode composable
@@ -57,7 +58,7 @@ export const useUserStore = defineStore('user', () => {
     return user.providerId === 'credential'
   })
 
-  async function fetchUserPermissions() {
+  const fetchUserPermissions = async () => {
     // If there is no current user, or permissions have already been fetched, do nothing.
     if (!currentUser.value || hasFetchedPermissions.value) {
       if (!currentUser.value) {
@@ -89,7 +90,7 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  function clearUserData() {
+  const clearUserData = () => {
     console.log('Clearing user data and permissions fetch status.')
     permissions.value = {}
     role.value = null
@@ -98,7 +99,7 @@ export const useUserStore = defineStore('user', () => {
     // No longer need to reset lastSessionCheckTime
   }
 
-  function setUser(user: SessionUser | null) {
+  const setUser = (user: SessionUser | null) => {
     if (user) {
       if (!currentUser.value || currentUser.value.id !== user.id) {
         console.log('setUser: User changed or new user. Resetting permission status.')
@@ -128,6 +129,7 @@ export const useUserStore = defineStore('user', () => {
     userInitials,
     loggedInUsingEmail,
     theme,
+    currentOrganization,
     fetchUserPermissions,
     hasPermission,
     clearUserData,

@@ -11,6 +11,9 @@
       "failedToLoadUsers": "Gebruikers laden mislukt",
       "failedToUpdateRole": "Gebruikersrol bijwerken mislukt"
     },
+    "organization": {
+      "title": "Organisatie details"
+    },
     "roles": {
       "admin": "beheerder",
       "user": "gebruiker"
