@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { SessionUser } from '~~/shared/types'
+import { authClient } from '~/utils/auth-client'
 
 interface UserPermissions {
   [key: string]: boolean
@@ -10,6 +11,17 @@ interface PermissionsResponse {
   role: string
 }
 
+interface CurrentSessionData {
+  id?: string
+  token?: string
+  expiresAt?: Date
+  createdAt?: Date
+  updatedAt?: Date
+  ipAddress?: string
+  userAgent?: string
+  userId?: string
+}
+
 export const useUserStore = defineStore('user', () => {
   const permissions = ref<UserPermissions>({})
   const role = ref<string | null>(null)
@@ -18,6 +30,11 @@ export const useUserStore = defineStore('user', () => {
   const currentOrganization = ref<OrganizationMemberWithUser | null>(null)
   const activeOrganizationId = ref<string | null>(null)
   const hasFetchedPermissions = ref(false)
+
+  // Current session data
+  const currentSessionData = ref<CurrentSessionData | null>(null)
+  const currentSessionId = ref<string | null>(null)
+  const currentSessionToken = ref<string | null>(null)
 
   const colorMode = useColorMode() // Use the colorMode composable
   const theme = ref(colorMode.preference)
@@ -98,6 +115,9 @@ export const useUserStore = defineStore('user', () => {
     currentUser.value = null
     activeOrganizationId.value = null
     hasFetchedPermissions.value = false
+    currentSessionData.value = null
+    currentSessionId.value = null
+    currentSessionToken.value = null
     // No longer need to reset lastSessionCheckTime
   }
 
@@ -141,6 +161,39 @@ export const useUserStore = defineStore('user', () => {
     return currentUser.value !== null
   })
 
+  // Fetch current session data using getSession()
+  const fetchCurrentSession = async () => {
+    try {
+      const sessionData = await authClient.getSession()
+      // Session data is directly in data, extract session properties
+      if (sessionData?.data) {
+        const data = sessionData.data as Record<string, unknown>
+        currentSessionData.value = {
+          id: data.id as string | undefined,
+          token: data.token as string | undefined,
+          expiresAt: data.expiresAt as Date | undefined,
+          createdAt: data.createdAt as Date | undefined,
+          updatedAt: data.updatedAt as Date | undefined,
+          ipAddress: data.ipAddress as string | undefined,
+          userAgent: data.userAgent as string | undefined,
+          userId: data.userId as string | undefined
+        }
+        // Update session ID and token refs
+        currentSessionId.value = data.id as string | null || null
+        currentSessionToken.value = data.token as string | null || null
+      } else {
+        currentSessionData.value = null
+        currentSessionId.value = null
+        currentSessionToken.value = null
+      }
+    } catch {
+      // Silently fail - session data will be null
+      currentSessionData.value = null
+      currentSessionId.value = null
+      currentSessionToken.value = null
+    }
+  }
+
   return {
     permissions,
     role,
@@ -153,10 +206,13 @@ export const useUserStore = defineStore('user', () => {
     theme,
     currentOrganization,
     activeOrganizationId,
+    currentSessionId,
+    currentSessionToken,
     fetchUserPermissions,
     hasPermission,
     clearUserData,
     setUser,
     setActiveOrganizationId,
+    fetchCurrentSession,
   }
 })

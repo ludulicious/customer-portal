@@ -5,7 +5,7 @@ import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, Upda
 import { authClient } from '~/utils/auth-client'
 
 const userStore = useUserStore()
-const { isAdmin, currentUser } = storeToRefs(userStore)
+const { isAdmin, currentUser, currentSessionId, currentSessionToken } = storeToRefs(userStore)
 const { t, locale } = useI18n()
 const toast = useToast()
 
@@ -106,58 +106,8 @@ const revokingSession = ref<string | null>(null)
 const { data: currentSession } = await authClient.useSession(useFetch)
 const isImpersonating = computed(() => !!currentSession.value?.session?.impersonatedBy)
 
-// Get current session data using getSession()
-// The session data is directly in data, not nested under data.session
-interface CurrentSessionData {
-  id?: string
-  token?: string
-  expiresAt?: Date
-  createdAt?: Date
-  updatedAt?: Date
-  ipAddress?: string
-  userAgent?: string
-  userId?: string
-}
-const currentSessionData = ref<CurrentSessionData | null>(null)
-
-// Fetch current session data
-const fetchCurrentSession = async () => {
-  try {
-    const sessionData = await authClient.getSession()
-    // Session data is directly in data, extract session properties
-    if (sessionData?.data) {
-      const data = sessionData.data as Record<string, unknown>
-      currentSessionData.value = {
-        id: data.id as string | undefined,
-        token: data.token as string | undefined,
-        expiresAt: data.expiresAt as Date | undefined,
-        createdAt: data.createdAt as Date | undefined,
-        updatedAt: data.updatedAt as Date | undefined,
-        ipAddress: data.ipAddress as string | undefined,
-        userAgent: data.userAgent as string | undefined,
-        userId: data.userId as string | undefined
-      }
-    } else {
-      currentSessionData.value = null
-    }
-  } catch (err) {
-    console.error('Failed to get current session:', err)
-    currentSessionData.value = null
-  }
-}
-
-// Get current session ID and token from getSession() result
-// Session data is directly in data, not nested under data.session
-const currentSessionId = computed(() => {
-  return currentSessionData.value?.id || currentSession.value?.session?.id || null
-})
-
-const currentSessionToken = computed(() => {
-  return currentSessionData.value?.token || currentSession.value?.session?.token || null
-})
-
 // Fetch session data when component loads
-await fetchCurrentSession()
+await userStore.fetchCurrentSession()
 
 const loadUsers = async () => {
   try {
@@ -397,7 +347,7 @@ const openSessionsModal = async (user: AdminUserResponse) => {
   selectedUser.value = user
   showSessionsModal.value = true
   // Refresh current session data before loading sessions
-  await fetchCurrentSession()
+  await userStore.fetchCurrentSession()
   await loadUserSessions()
 }
 
@@ -417,7 +367,7 @@ const loadUserSessions = async () => {
     sessions.value = (data?.sessions || data || []) as UserSession[]
 
     // Refresh current session data when loading sessions to ensure we have the latest token
-    await fetchCurrentSession()
+    await userStore.fetchCurrentSession()
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions'
     toast.add({
@@ -862,10 +812,14 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
     </UModal>
 
     <!-- Sessions Modal -->
-    <UModal v-model:open="showSessionsModal" :ui="{ content: 'max-w-4xl', footer: 'justify-end' }">
+    <UModal
+      v-model:open="showSessionsModal"
+      :title="t('admin.userManagement.sessions.title')"
+      :description="t('admin.userManagement.sessions.description')"
+      :ui="{ content: 'max-w-4xl', footer: 'justify-end' }"
+    >
       <template #header>
         <div class="flex items-center justify-between w-full">
-          <h3 class="text-lg font-semibold">{{ t('admin.userManagement.sessions.title') }}</h3>
           <UButton
             v-if="currentUser && selectedUser && currentUser.id !== selectedUser.id"
             color="error"
@@ -881,10 +835,6 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
 
       <template #body>
         <div class="space-y-4">
-          <p class="text-sm text-gray-600 dark:text-gray-400">
-            {{ t('admin.userManagement.sessions.description') }}
-          </p>
-
           <div v-if="loadingSessions" class="text-center py-8">
             <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
             <p class="text-gray-600 dark:text-gray-400 mt-2">{{ t('common.loading') }}</p>
