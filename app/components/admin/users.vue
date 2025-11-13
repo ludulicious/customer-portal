@@ -35,19 +35,19 @@ const selectedUser = ref<AdminUserResponse | null>(null)
 // Ban form schema
 const banSchema = computed(() => z.object({
   reason: z.string().optional(),
-  expiresInDays: z.string().transform((val) => {
+  expiresInDays: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((val) => {
     if (val === '' || val === null || val === undefined) return undefined
-    const num = parseInt(val, 10)
+    const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
     return isNaN(num) ? undefined : num
   }).optional(),
-  expiresInHours: z.string().transform((val) => {
+  expiresInHours: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((val) => {
     if (val === '' || val === null || val === undefined) return undefined
-    const num = parseInt(val, 10)
+    const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
     return isNaN(num) ? undefined : num
   }).optional(),
-  expiresInMinutes: z.string().transform((val) => {
+  expiresInMinutes: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform((val) => {
     if (val === '' || val === null || val === undefined) return undefined
-    const num = parseInt(val, 10)
+    const num = typeof val === 'string' ? parseInt(val, 10) : Number(val)
     return isNaN(num) ? undefined : num
   }).optional()
 }))

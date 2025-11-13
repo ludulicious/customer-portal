@@ -8,12 +8,12 @@ hero:
   links:
     - label: Inloggen
       icon: i-lucide-log-in
-      to: /nl/login
+      to: /login
       size: xl
       color: primary
     - label: Aanmelden
       icon: i-lucide-user-plus
-      to: /nl/signup
+      to: /signup
       size: xl
       color: neutral
       variant: subtle
@@ -70,10 +70,10 @@ cta:
   description: Log in om uw diensten te beheren of maak een account aan bij ApexPro.
   links:
     - label: Aanmelden
-      to: '/nl/signup'
+      to: '/signup'
       color: primary
       icon: i-lucide-user-plus
     - label: Inloggen
-      to: '/nl/login'
+      to: '/login'
       variant: subtle
       icon: i-lucide-log-in

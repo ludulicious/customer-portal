@@ -30,6 +30,7 @@ export const useUserStore = defineStore('user', () => {
   const currentOrganization = ref<OrganizationMemberWithUser | null>(null)
   const activeOrganizationId = ref<string | null>(null)
   const hasFetchedPermissions = ref(false)
+  const isSettingActiveOrganization = ref(false)
 
   // Current session data
   const currentSessionData = ref<CurrentSessionData | null>(null)
@@ -115,6 +116,7 @@ export const useUserStore = defineStore('user', () => {
     currentUser.value = null
     activeOrganizationId.value = null
     hasFetchedPermissions.value = false
+    isSettingActiveOrganization.value = false
     currentSessionData.value = null
     currentSessionId.value = null
     currentSessionToken.value = null
@@ -122,17 +124,36 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const setActiveOrganizationId = async (organizationId: string) => {
-    activeOrganizationId.value = organizationId
-    const { data, error } = await authClient.organization.setActive({ organizationId })
-    if (error) {
-      console.error('Error setting active organization:', error)
+    // Prevent re-entrant calls
+    if (isSettingActiveOrganization.value) {
+      console.log('setActiveOrganizationId: Already setting organization, skipping.')
+      return
     }
-    if (data) {
-      console.log('Active organization set:', data)
+
+    // Skip if already set to the same value
+    if (activeOrganizationId.value === organizationId) {
+      console.log('setActiveOrganizationId: Already set to this organization, skipping.')
+      return
+    }
+
+    isSettingActiveOrganization.value = true
+    try {
+      activeOrganizationId.value = organizationId
+      const { data, error } = await authClient.organization.setActive({ organizationId })
+      if (error) {
+        console.error('Error setting active organization:', error)
+        // Revert on error
+        activeOrganizationId.value = null
+      }
+      if (data) {
+        console.log('Active organization set:', data)
+      }
+    } finally {
+      isSettingActiveOrganization.value = false
     }
   }
 
-  const setUser = (user: SessionUser | null) => {
+  const setUser = async (user: SessionUser | null) => {
     if (user) {
       if (!currentUser.value || currentUser.value.id !== user.id) {
         // console.log('setUser: User changed or new user. Resetting permission status.')
@@ -141,15 +162,33 @@ export const useUserStore = defineStore('user', () => {
         hasFetchedPermissions.value = false
         // No longer need to reset lastSessionCheckTime
       }
-      if (!user.activeOrganizationId) {
-        const organizations = authClient.useListOrganizations()
-        if (organizations.value.data && organizations.value.data.length > 0 && organizations.value.data[0]) {
-          setActiveOrganizationId(organizations.value.data[0].id)
-          user.activeOrganizationId = organizations.value.data[0].id
-        } else {
-          console.error('No organizations found for user:', user.id)
+
+      // Only set active organization if:
+      // 1. User doesn't have activeOrganizationId
+      // 2. We're not already in the process of setting it
+      // 3. activeOrganizationId.value is not already set
+      if (!user.activeOrganizationId && !isSettingActiveOrganization.value && !activeOrganizationId.value) {
+        // Use async method to fetch organizations, as useListOrganizations might not have data yet
+        try {
+          const { data: organizations } = await authClient.organization.list()
+          if (organizations && organizations.length > 0 && organizations[0]) {
+            const firstOrgId = organizations[0].id
+            // Only set if different from current value
+            if (activeOrganizationId.value !== firstOrgId) {
+              await setActiveOrganizationId(firstOrgId)
+              user.activeOrganizationId = firstOrgId
+            }
+          } else {
+            console.warn('No organizations found for user:', user.id, '- organizations may still be loading')
+          }
+        } catch (error) {
+          console.error('Error fetching organizations for user:', user.id, error)
         }
+      } else if (user.activeOrganizationId && user.activeOrganizationId !== activeOrganizationId.value) {
+        // Sync activeOrganizationId from user object if it's different
+        activeOrganizationId.value = user.activeOrganizationId
       }
+
       currentUser.value = user
     } else {
       // console.log('setUser: Setting user to null. Clearing all user data.')

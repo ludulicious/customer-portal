@@ -11,7 +11,7 @@ export default defineNuxtPlugin({
 
       if (sessionData?.data?.user) {
         console.log('Setting user from initial session:', sessionData.data)
-        userStore.setUser(sessionData.data.user as SessionUser)
+        await userStore.setUser(sessionData.data.user as SessionUser)
         await userStore.fetchCurrentSession()
         await userStore.fetchUserPermissions()
       } else {
@@ -27,7 +27,7 @@ export default defineNuxtPlugin({
       () => session.value?.user,
       async (newUser) => {
         console.log('newUser', newUser)
-        userStore.setUser(newUser as SessionUser)
+        await userStore.setUser(newUser as SessionUser)
         if (newUser) {
           await userStore.fetchCurrentSession()
           await userStore.fetchUserPermissions()
@@ -44,7 +44,7 @@ export default defineNuxtPlugin({
       async (newSession) => {
         if (newSession?.user) {
           console.log('Session updated, user:', newSession.user)
-          userStore.setUser(newSession.user as SessionUser)
+          await userStore.setUser(newSession.user as SessionUser)
           await userStore.fetchCurrentSession()
           await userStore.fetchUserPermissions()
         }

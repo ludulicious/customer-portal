@@ -84,7 +84,7 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
 
     if (response.success && response.user) {
       // Update the user store with new data
-      userStore.setUser({
+      await userStore.setUser({
         ...currentUser.value,
         name: response.user.name,
         image: response.user.image || undefined
