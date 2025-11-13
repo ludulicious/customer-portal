@@ -72,6 +72,38 @@ export const BaseQuerySchema = z.object({
 export type FieldResolver = (fieldPath: string) => AnyColumn | SQLWrapper | undefined
 
 /**
+ * Creates a default field resolver from a Drizzle table object.
+ * This automatically maps field names to table columns.
+ *
+ * @param table - The Drizzle table object (e.g., userTable)
+ * @returns A FieldResolver function that resolves field names to columns
+ *
+ * @example
+ * ```ts
+ * const fieldResolver = createFieldResolver(userTable)
+ * const { where } = buildDrizzleQuery(queryInput, fieldResolver)
+ * ```
+ */
+export function createFieldResolver(table: unknown): FieldResolver {
+  return (fieldPath: string): AnyColumn | SQLWrapper | undefined => {
+    // Type assertion: Drizzle tables have column properties accessible by string keys
+    const tableRecord = table as Record<string, unknown>
+    const column = tableRecord[fieldPath]
+
+    // Type guard to ensure it's a valid column (has column-like properties)
+    if (
+      column
+      && typeof column === 'object'
+      && column !== null
+      && ('name' in column || 'getSQL' in column || 'table' in column)
+    ) {
+      return column as AnyColumn | SQLWrapper
+    }
+    return undefined
+  }
+}
+
+/**
  * Creates a Drizzle SQL condition from a filter.
  * For nested fields (e.g., "relation.field"), you'll need to handle joins separately.
  * This function supports flat fields only.
@@ -162,13 +194,20 @@ export interface DrizzleQueryResult {
  * Builds Drizzle ORM query conditions from a QueryInput object.
  *
  * @param queryInput - The QueryInput object containing dynamic filters, sorting, and pagination.
- * @param fieldResolver - Function to resolve field paths to Drizzle column references.
- *                       Example: (field) => userTable[field] or a more sophisticated resolver.
+ * @param tableOrResolver - Either a Drizzle table object (e.g., userTable) or a FieldResolver function.
+ *                         If a table is provided, a field resolver will be automatically created.
  * @param baseWhere - Optional base where condition to combine with filters (using AND).
  * @returns An object with `where`, `orderBy`, `limit`, and `offset` suitable for Drizzle queries.
  *
  * @example
  * ```ts
+ * // Using a table (simpler)
+ * const { where, orderBy, limit, offset } = buildDrizzleQuery(
+ *   { filters: [{ field: 'email', operator: 'contains', value: 'example' }] },
+ *   userTable
+ * )
+ *
+ * // Using a custom field resolver (more control)
  * const { where, orderBy, limit, offset } = buildDrizzleQuery(
  *   { filters: [{ field: 'email', operator: 'contains', value: 'example' }] },
  *   (field) => userTable[field]
@@ -184,9 +223,13 @@ export interface DrizzleQueryResult {
  */
 export function buildDrizzleQuery(
   queryInput: QueryInput,
-  fieldResolver: FieldResolver,
+  tableOrResolver: unknown | FieldResolver,
   baseWhere?: SQL,
 ): DrizzleQueryResult {
+  // Determine if tableOrResolver is a function (FieldResolver) or a table object
+  const fieldResolver: FieldResolver = typeof tableOrResolver === 'function'
+    ? (tableOrResolver as FieldResolver)
+    : createFieldResolver(tableOrResolver)
   // 1. Build where conditions from filters
   const filterConditions: SQL[] = []
 
@@ -236,16 +279,4 @@ export function buildDrizzleQuery(
     limit,
     offset,
   }
-}
-
-/**
- * Legacy function name for backward compatibility.
- * @deprecated Use buildDrizzleQuery instead
- */
-export function buildPrismaQueryArgs(
-  queryInput: QueryInput,
-  fieldResolver: FieldResolver,
-  baseWhere?: SQL,
-): DrizzleQueryResult {
-  return buildDrizzleQuery(queryInput, fieldResolver, baseWhere)
 }

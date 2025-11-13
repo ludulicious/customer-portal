@@ -3,7 +3,6 @@ import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { user as userTable } from '~~/server/db/schema/auth-schema'
 import { buildDrizzleQuery, BaseQuerySchema } from '~~/server/utils/query-builder'
-import type { AnyColumn, SQLWrapper } from 'drizzle-orm'
 import type { SessionUser, AdminUsersResponse, QueryInput } from '~~/shared/types'
 
 /**
@@ -39,27 +38,9 @@ export default defineEventHandler(async (event): Promise<AdminUsersResponse> => 
   const queryParams = getQuery(event)
   const queryInput = BaseQuerySchema.parse(queryParams) as QueryInput
 
-  // Create a field resolver for the user table
-  const fieldResolver = (fieldPath: string): AnyColumn | SQLWrapper | undefined => {
-    // Map field names to table columns
-    const fieldMap: Record<string, AnyColumn | SQLWrapper> = {
-      id: userTable.id,
-      name: userTable.name,
-      email: userTable.email,
-      role: userTable.role,
-      emailVerified: userTable.emailVerified,
-      createdAt: userTable.createdAt,
-      updatedAt: userTable.updatedAt,
-      banned: userTable.banned,
-      banReason: userTable.banReason,
-      banExpires: userTable.banExpires,
-      image: userTable.image,
-    }
-    return fieldMap[fieldPath]
-  }
-
   // Build Drizzle query conditions using the query builder
-  const { where, orderBy, limit, offset } = buildDrizzleQuery(queryInput, fieldResolver)
+  // Pass the table directly - buildDrizzleQuery will create the resolver automatically
+  const { where, orderBy, limit, offset } = buildDrizzleQuery(queryInput, userTable)
 
   // Build the query with all conditions applied
   const baseSelect = db
