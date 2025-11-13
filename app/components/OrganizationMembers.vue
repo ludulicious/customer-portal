@@ -1,10 +1,13 @@
-<script setup lang="ts">
+<template>
+  <div>
+    <h1>Organization Members</h1>
+  </div>
+</template>
+<!-- <script setup lang="ts">
 import { authClient } from '~/utils/auth-client'
-import { useCurrentOrganization } from '~/composables/useCurrentOrganization'
 import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, MemberRole, ApiError } from '#types'
 
 const showInviteModal = defineModel<boolean>('showInviteModal', { required: false })
-const { organizationId } = useCurrentOrganization()
 const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const loading = ref(true)
@@ -168,7 +171,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Invitations List -->
     <div v-if="invitations.length > 0" class="mt-6">
       <h4 class="text-lg font-semibold mb-4">Pending Invitations</h4>
       <div class="space-y-2">
@@ -191,7 +193,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Invite Modal -->
     <UModal v-model="showInviteModal" @close="showInviteModal = false">
       <UCard>
         <template #header>
@@ -296,4 +297,4 @@ onMounted(() => {
   gap: 0.5rem;
   align-items: center;
 }
-</style>
+</style> -->

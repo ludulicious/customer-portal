@@ -1,4 +1,9 @@
-<script setup lang="ts">
+<template>
+  <div>
+    <h1>Create Organization</h1>
+  </div>
+</template>
+<!-- <script setup lang="ts">
 const { createOrganization } = useCurrentOrganization()
 const router = useRouter()
 
@@ -101,4 +106,4 @@ const handleSubmit = async () => {
       </UCard>
     </UContainer>
   </div>
-</template>
+</template> -->
