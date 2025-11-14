@@ -17,7 +17,7 @@ useSeoMeta({
 })
 
 // State management
-const currentStep = ref(2) // 1: email entry, 2: OTP + password
+const currentStep = ref(1) // 1: email entry, 2: OTP + password
 const email = ref('')
 const otpCode = ref('')
 const newPassword = ref('')
@@ -156,10 +156,6 @@ const resetPassword = async (payload: FormSubmitEvent<{ otp: string, newPassword
     })
 
     if (resetResult.data?.success) {
-      success.value = t('forgotPassword.messages.passwordReset')
-
-      // Redirect to login after a short delay
-      await new Promise(resolve => setTimeout(resolve, 2000))
       router.push('/dashboard')
     } else {
       console.error(resetResult.error)
