@@ -7,6 +7,12 @@ const { isAdmin, currentUser } = storeToRefs(userStore)
 const { t, locale } = useI18n()
 const toast = useToast()
 
+// Detect mobile breakpoint
+const breakpoints = useBreakpoints({
+  mobile: 768
+})
+const isMobile = breakpoints.smaller('mobile')
+
 // Redirect if not admin
 if (!isAdmin.value) {
   throw createError({ statusCode: 403, message: t('admin.errors.accessRequired') })
@@ -27,6 +33,7 @@ const showImpersonateModal = ref(false)
 const showSessionsModal = ref(false)
 const showPasswordModal = ref(false)
 const showUpdateModal = ref(false)
+const showEditRoleModal = ref(false)
 
 // Selected user for operations
 const selectedUser = ref<AdminUserResponse | null>(null)
@@ -93,6 +100,15 @@ const startEditRole = (user: AdminUserResponse) => {
     return
   }
 
+  // On mobile, open modal instead of inline editing
+  if (isMobile.value) {
+    selectedUser.value = user
+    editingRole.value = (user.role || 'user') as UserRole
+    showEditRoleModal.value = true
+    return
+  }
+
+  // On desktop, use inline editing
   editingUserId.value = user.id
   editingRole.value = (user.role || 'user') as UserRole
 }
@@ -110,6 +126,7 @@ const updateUserRole = async (userId: string) => {
       color: 'error'
     })
     editingUserId.value = null
+    showEditRoleModal.value = false
     return
   }
 
@@ -121,9 +138,10 @@ const updateUserRole = async (userId: string) => {
     })
     await loadUsers()
     editingUserId.value = null
+    showEditRoleModal.value = false
     toast.add({
       title: t('common.success'),
-      description: t('admin.errors.failedToUpdateRole'),
+      description: t('admin.userManagement.updateRole.success'),
       color: 'success'
     })
   } catch (err) {
@@ -208,15 +226,26 @@ const roles = computed<SelectItem[]>(() => [
   }
 ])
 
-const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
-  { accessorKey: 'name', header: t('admin.table.name') },
-  { accessorKey: 'email', header: t('admin.table.email') },
-  { accessorKey: 'role', header: t('admin.table.role') },
-  { accessorKey: 'banned', header: t('admin.userManagement.status.banned') },
-  { accessorKey: 'emailVerified', header: t('admin.table.verified') },
-  { accessorKey: 'createdAt', header: t('admin.table.created') },
-  { accessorKey: 'actions', header: t('admin.table.actions') }
-])
+const columns = computed<TableColumn<AdminUserResponse>[]>(() => {
+  // On mobile, only show Name, Role, and Actions
+  if (isMobile.value) {
+    return [
+      { accessorKey: 'name', header: t('admin.table.name') },
+      { accessorKey: 'role', header: t('admin.table.role') },
+      { accessorKey: 'actions', header: '' }
+    ]
+  }
+  // On desktop, show all columns
+  return [
+    { accessorKey: 'name', header: t('admin.table.name') },
+    { accessorKey: 'email', header: t('admin.table.email') },
+    { accessorKey: 'role', header: t('admin.table.role') },
+    { accessorKey: 'banned', header: t('admin.userManagement.status.banned') },
+    { accessorKey: 'emailVerified', header: t('admin.table.verified') },
+    { accessorKey: 'createdAt', header: t('admin.table.created') },
+    { accessorKey: 'actions', header: t('admin.table.actions') }
+  ]
+})
 
 </script>
 
@@ -259,7 +288,8 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
         </template>
 
         <template #role-cell="{ row }">
-          <div v-if="editingUserId === row.original.id" class="flex items-center gap-2">
+          <!-- Desktop: Inline editing -->
+          <div v-if="!isMobile && editingUserId === row.original.id" class="flex items-center gap-2">
             <USelect v-model="editingRole" :items="roles" size="sm" class="w-32" />
             <UButton size="xs" :loading="updating" @click="updateUserRole(row.original.id)">
               {{ t('common.save') }}
@@ -268,9 +298,10 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
               {{ t('common.cancel') }}
             </UButton>
           </div>
+          <!-- Mobile & Desktop: Display badge with edit button -->
           <div v-else class="flex items-center gap-2">
             <UBadge :color="row.original.role === 'admin' ? 'primary' : 'neutral'" class="justify-center w-20" variant="soft">
-              {{ row.original.role === 'admin' ? t('admin.roles.admin') : t('admin.roles.user') }}
+              {{ t(`admin.roles.${row.original.role}`) }}
             </UBadge>
             <UButton
               v-if="!currentUser || currentUser.id !== row.original.id"
@@ -369,5 +400,29 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
       :user="selectedUser"
       @success="handleUpdateSuccess"
     />
+
+    <!-- Edit Role Modal (Mobile) -->
+    <UModal v-model:open="showEditRoleModal" :title="t('admin.table.role')" :ui="{ footer: 'justify-end' }">
+      <template #body>
+        <div class="space-y-4">
+          <p v-if="selectedUser" class="text-sm text-gray-600 dark:text-gray-400">
+            {{ t('common.edit') }} {{ t('admin.table.role') }} for {{ selectedUser.name || selectedUser.email }}
+          </p>
+
+          <UFormField name="role" :label="t('admin.table.role')">
+            <USelect v-model="editingRole" :items="roles" class="w-full" />
+          </UFormField>
+
+          <div class="flex gap-4 justify-end pt-4">
+            <UButton type="button" variant="outline" :disabled="updating" @click="showEditRoleModal = false">
+              {{ t('common.cancel') }}
+            </UButton>
+            <UButton type="button" :loading="updating" @click="selectedUser && updateUserRole(selectedUser.id)">
+              {{ t('common.save') }}
+            </UButton>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

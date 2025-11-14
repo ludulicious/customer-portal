@@ -37,6 +37,13 @@
       "verified": "Verified"
     },
     "userManagement": {
+      "updateRole": {
+        "title": "Update Role",
+        "description": "Update the role for this user",
+        "confirm": "Update Role",
+        "success": "Role updated successfully",
+        "error": "Failed to update role"
+      },
       "ban": {
         "title": "Ban User",
         "description": "Ban this user from accessing the application",

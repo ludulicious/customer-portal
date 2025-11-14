@@ -37,6 +37,13 @@
       "verified": "Geverifieerd"
     },
     "userManagement": {
+      "updateRole": {
+        "title": "Rol Wijzigen",
+        "description": "Wijzig de rol voor deze gebruiker",
+        "confirm": "Rol Wijzigen",
+        "success": "Rol succesvol gewijzigd",
+        "error": "Rol wijzigen mislukt"
+      },
       "ban": {
         "title": "Gebruiker Blokkeren",
         "description": "Blokkeer deze gebruiker om toegang te krijgen tot de applicatie",
