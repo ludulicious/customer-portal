@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { SelectItem, TableColumn } from '@nuxt/ui'
 import type { AdminUsersResponse, AdminUserResponse, UpdateUserRoleRequest, UpdateUserRoleResponse, ApiError, UserRole } from '#types'
-import { authClient } from '~/utils/auth-client'
 
 const userStore = useUserStore()
 const { isAdmin, currentUser } = storeToRefs(userStore)
@@ -31,13 +30,6 @@ const showUpdateModal = ref(false)
 
 // Selected user for operations
 const selectedUser = ref<AdminUserResponse | null>(null)
-
-// Impersonation state
-const { data: currentSession } = await authClient.useSession(useFetch)
-const isImpersonating = computed(() => !!currentSession.value?.session?.impersonatedBy)
-
-// Fetch session data when component loads
-await userStore.fetchCurrentSession()
 
 const loadUsers = async () => {
   try {
@@ -183,26 +175,6 @@ const openImpersonateModal = (user: AdminUserResponse) => {
   showImpersonateModal.value = true
 }
 
-const stopImpersonating = async () => {
-  try {
-    await authClient.admin.stopImpersonating()
-    toast.add({
-      title: t('common.success'),
-      description: t('admin.userManagement.impersonate.stopSuccess'),
-      color: 'success'
-    })
-    await loadUsers()
-    await navigateTo('/admin/users')
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.impersonate.stopError')
-    toast.add({
-      title: t('common.error'),
-      description: errorMessage,
-      color: 'error'
-    })
-  }
-}
-
 // Sessions
 const openSessionsModal = (user: AdminUserResponse) => {
   selectedUser.value = user
@@ -250,25 +222,6 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => [
 
 <template>
   <div>
-    <!-- Impersonation Banner -->
-    <UAlert
-      v-if="isImpersonating"
-      color="warning"
-      variant="soft"
-      :title="t('admin.userManagement.impersonate.indicator')"
-      class="mb-4"
-    >
-      <template #actions>
-        <UButton
-          color="warning"
-          variant="solid"
-          @click="stopImpersonating"
-        >
-          {{ t('admin.userManagement.impersonate.stop') }}
-        </UButton>
-      </template>
-    </UAlert>
-
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">

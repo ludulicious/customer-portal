@@ -34,8 +34,8 @@ const impersonateUser = async () => {
     })
     open.value = false
     emit('success')
-    // Reload page to reflect impersonation state
-    await navigateTo('/dashboard')
+    // Reload dashboard page
+    window.location.href = '/dashboard'
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.impersonate.error')
     toast.add({

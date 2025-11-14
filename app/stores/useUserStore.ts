@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { SessionUser } from '~~/shared/types'
+import type { AuthSession, AuthUser, AuthSessionResponse } from '~/utils/auth-client'
 import { authClient } from '~/utils/auth-client'
 
 interface UserPermissions {
@@ -11,31 +11,15 @@ interface PermissionsResponse {
   role: string
 }
 
-interface CurrentSessionData {
-  id?: string
-  token?: string
-  expiresAt?: Date
-  createdAt?: Date
-  updatedAt?: Date
-  ipAddress?: string
-  userAgent?: string
-  userId?: string
-}
-
 export const useUserStore = defineStore('user', () => {
   const permissions = ref<UserPermissions>({})
   const role = ref<string | null>(null)
   const isLoading = ref(false)
-  const currentUser = ref<SessionUser | null>(null)
   const currentOrganization = ref<OrganizationMemberWithUser | null>(null)
-  const activeOrganizationId = ref<string | null>(null)
-  const hasFetchedPermissions = ref(false)
-  const isSettingActiveOrganization = ref(false)
 
-  // Current session data
-  const currentSessionData = ref<CurrentSessionData | null>(null)
-  const currentSessionId = ref<string | null>(null)
-  const currentSessionToken = ref<string | null>(null)
+  const hasFetchedPermissions = ref(false)
+  const currentSession = ref<AuthSession | null>(null)
+  const currentUser = ref<AuthUser | null>(null)
 
   const colorMode = useColorMode() // Use the colorMode composable
   const theme = ref(colorMode.preference)
@@ -69,6 +53,10 @@ export const useUserStore = defineStore('user', () => {
       ).toUpperCase()
     }
     return ''
+  })
+
+  const activeOrganizationId = computed(() => {
+    return currentSession.value?.activeOrganizationId
   })
 
   const loggedInUsingEmail = computed(() => {
@@ -113,131 +101,50 @@ export const useUserStore = defineStore('user', () => {
     console.log('Clearing user data and permissions fetch status.')
     permissions.value = {}
     role.value = null
-    currentUser.value = null
-    activeOrganizationId.value = null
     hasFetchedPermissions.value = false
-    isSettingActiveOrganization.value = false
-    currentSessionData.value = null
-    currentSessionId.value = null
-    currentSessionToken.value = null
-    // No longer need to reset lastSessionCheckTime
+    currentSession.value = null
   }
 
   const setActiveOrganizationId = async (organizationId: string) => {
-    // Prevent re-entrant calls
-    if (isSettingActiveOrganization.value) {
-      console.log('setActiveOrganizationId: Already setting organization, skipping.')
-      return
-    }
-
-    // Skip if already set to the same value
-    if (activeOrganizationId.value === organizationId) {
-      console.log('setActiveOrganizationId: Already set to this organization, skipping.')
-      return
-    }
-
-    isSettingActiveOrganization.value = true
     try {
-      activeOrganizationId.value = organizationId
       const { data, error } = await authClient.organization.setActive({ organizationId })
       if (error) {
         console.error('Error setting active organization:', error)
-        // Revert on error
-        activeOrganizationId.value = null
       }
       if (data) {
         console.log('Active organization set:', data)
+        const session = await authClient.getSession() as unknown as AuthSessionResponse
+        setSession(session)
       }
-    } finally {
-      isSettingActiveOrganization.value = false
+    } catch (error) {
+      console.error('Error setting active organization:', error)
     }
   }
 
-  const setUser = async (user: SessionUser | null) => {
-    if (user) {
-      if (!currentUser.value || currentUser.value.id !== user.id) {
-        // console.log('setUser: User changed or new user. Resetting permission status.')
-        permissions.value = {}
-        role.value = null
-        hasFetchedPermissions.value = false
-        // No longer need to reset lastSessionCheckTime
+  const setSession = async (data: AuthSessionResponse | null) => {
+    if (data) {
+      const { user, ...session } = data
+      currentSession.value = session
+      currentUser.value = data.user as AuthUser
+      if (currentUser.value) {
+        await fetchUserPermissions()
       }
-
-      // Only set active organization if:
-      // 1. User doesn't have activeOrganizationId
-      // 2. We're not already in the process of setting it
-      // 3. activeOrganizationId.value is not already set
-      if (!user.activeOrganizationId && !isSettingActiveOrganization.value && !activeOrganizationId.value) {
-        // Use async method to fetch organizations, as useListOrganizations might not have data yet
-        try {
-          const { data: organizations } = await authClient.organization.list()
-          if (organizations && organizations.length > 0 && organizations[0]) {
-            const firstOrgId = organizations[0].id
-            // Only set if different from current value
-            if (activeOrganizationId.value !== firstOrgId) {
-              await setActiveOrganizationId(firstOrgId)
-              user.activeOrganizationId = firstOrgId
-            }
-          } else {
-            console.warn('No organizations found for user:', user.id, '- organizations may still be loading')
-          }
-        } catch (error) {
-          console.error('Error fetching organizations for user:', user.id, error)
-        }
-      } else if (user.activeOrganizationId && user.activeOrganizationId !== activeOrganizationId.value) {
-        // Sync activeOrganizationId from user object if it's different
-        activeOrganizationId.value = user.activeOrganizationId
-      }
-
-      currentUser.value = user
-    } else {
-      // console.log('setUser: Setting user to null. Clearing all user data.')
-      clearUserData()
     }
   }
-
   const isAuthenticated = computed(() => {
     return currentUser.value !== null
   })
 
-  // Fetch current session data using getSession()
-  const fetchCurrentSession = async () => {
-    try {
-      const sessionData = await authClient.getSession()
-      // Session data is directly in data, extract session properties
-      if (sessionData?.data) {
-        const data = sessionData.data as Record<string, unknown>
-        currentSessionData.value = {
-          id: data.id as string | undefined,
-          token: data.token as string | undefined,
-          expiresAt: data.expiresAt as Date | undefined,
-          createdAt: data.createdAt as Date | undefined,
-          updatedAt: data.updatedAt as Date | undefined,
-          ipAddress: data.ipAddress as string | undefined,
-          userAgent: data.userAgent as string | undefined,
-          userId: data.userId as string | undefined
-        }
-        // Update session ID and token refs
-        currentSessionId.value = data.id as string | null || null
-        currentSessionToken.value = data.token as string | null || null
-      } else {
-        currentSessionData.value = null
-        currentSessionId.value = null
-        currentSessionToken.value = null
-      }
-    } catch {
-      // Silently fail - session data will be null
-      currentSessionData.value = null
-      currentSessionId.value = null
-      currentSessionToken.value = null
-    }
+  const setCurrentUser = (data: AuthUser | null) => {
+    currentUser.value = data
   }
-
+  // Fetch current session data using getSession()
   return {
     permissions,
     role,
     isAuthenticated,
     isLoading,
+    currentSession,
     currentUser,
     isAdmin,
     userInitials,
@@ -245,13 +152,11 @@ export const useUserStore = defineStore('user', () => {
     theme,
     currentOrganization,
     activeOrganizationId,
-    currentSessionId,
-    currentSessionToken,
     fetchUserPermissions,
     hasPermission,
     clearUserData,
-    setUser,
+    setSession,
     setActiveOrganizationId,
-    fetchCurrentSession,
+    setCurrentUser
   }
 })

@@ -3,8 +3,7 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 const { t } = useI18n()
-const userStore = useUserStore()
-const { currentUser, activeOrganizationId } = storeToRefs(userStore)
+const { currentUser, activeOrganizationId, setCurrentUser } = useUserStore()
 const toast = useToast()
 
 // Zod schema for profile form validation
@@ -38,18 +37,18 @@ const isDirty = ref(false)
 
 // Initialize form with current user data
 watchEffect(() => {
-  if (currentUser.value) {
-    form.name = currentUser.value.name || ''
-    form.image = currentUser.value.image || ''
+  if (currentUser) {
+    form.name = currentUser.name || ''
+    form.image = currentUser.image || ''
     isDirty.value = false
   }
 })
 
 // Watch for form changes
 watch(() => [form.name, form.image], () => {
-  if (currentUser.value) {
-    const nameChanged = form.name !== (currentUser.value.name || '')
-    const imageChanged = form.image !== (currentUser.value.image || '')
+  if (currentUser) {
+    const nameChanged = form.name !== (currentUser.name || '')
+    const imageChanged = form.image !== (currentUser.image || '')
     isDirty.value = nameChanged || imageChanged
   }
 }, { deep: true })
@@ -61,7 +60,7 @@ useSeoMeta({
 })
 
 const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
-  if (!currentUser.value) return
+  if (!currentUser) return
 
   isLoading.value = true
   try {
@@ -84,15 +83,11 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
 
     if (response.success && response.user) {
       // Update the user store with new data
-      await userStore.setUser({
-        ...currentUser.value,
+      setCurrentUser({
+        ...currentUser,
         name: response.user.name,
         image: response.user.image || undefined
       })
-
-      // Refresh session to get updated user data
-      const { authClient } = await import('~/utils/auth-client')
-      await authClient.getSession()
 
       toast.add({
         title: t('profile.messages.success'),
@@ -118,9 +113,9 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
 }
 
 const handleReset = () => {
-  if (currentUser.value) {
-    form.name = currentUser.value.name || ''
-    form.image = currentUser.value.image || ''
+  if (currentUser) {
+    form.name = currentUser.name || ''
+    form.image = currentUser.image || ''
     isDirty.value = false
   }
 }
@@ -130,7 +125,8 @@ const organizations = authClient.useListOrganizations()
 
 // Check if an organization is active
 const isActiveOrganization = (organizationId: string) => {
-  return activeOrganizationId.value === organizationId
+  if (!activeOrganizationId) return false
+  return activeOrganizationId === organizationId
 }
 </script>
 
@@ -224,7 +220,7 @@ const isActiveOrganization = (organizationId: string) => {
                 <UBadge v-if="isActiveOrganization(organization.id)" color="success" variant="subtle">
                   {{ $t('profile.badges.active') }}
                 </UBadge>
-                <UBadge v-else color="warning" variant="subtle">{{ currentUser?.activeOrganizationId || 'No active organization' }}</UBadge>
+                <UBadge v-else color="warning" variant="subtle">{{ 'No active organization' }}</UBadge>
               </div>
               <p class="text-sm text-gray-600 dark:text-gray-400">{{ organization.slug }}</p>
               <p class="text-xs text-gray-500 mt-1">

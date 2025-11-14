@@ -5,13 +5,15 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 
 const route = useRoute()
 const { t, locale, setLocale } = useI18n()
+const toast = useToast()
 
 // User store
 const userStore = useUserStore()
-const { currentUser, userInitials, isAuthenticated } = storeToRefs(userStore)
+const { currentUser, userInitials, isAuthenticated, currentSession } = storeToRefs(userStore)
 
 // Reactive states for menu items
 const isOrgAdmin = ref(false)
+const showOrgSwitcherModal = ref(false)
 
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => {
@@ -31,6 +33,13 @@ const userMenuItems = computed(() => {
         label: 'Profile',
         icon: 'i-lucide-user',
         to: '/profile'
+      },
+      {
+        label: 'Switch Organization',
+        icon: 'i-lucide-building-2',
+        onSelect: () => {
+          showOrgSwitcherModal.value = true
+        }
       }
     ]
   ] as DropdownMenuItem[]
@@ -167,9 +176,60 @@ watch(currentLocale, (newLocale) => {
   // No URL change needed with no_prefix strategy
 })
 
+// Impersonation state
+const isImpersonating = computed(() => !!currentSession.value?.impersonatedBy)
+
+// Stop impersonating function
+const stopImpersonating = async () => {
+  try {
+    await authClient.admin.stopImpersonating()
+    toast.add({
+      title: t('common.success'),
+      description: t('admin.userManagement.impersonate.stopSuccess'),
+      color: 'success'
+    })
+    // Reload dashboard page
+    window.location.href = '/dashboard'
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.impersonate.stopError')
+    toast.add({
+      title: t('common.error'),
+      description: errorMessage,
+      color: 'error'
+    })
+  }
+}
+
 </script>
 
 <template>
+  <!-- Impersonation Banner -->
+  <div v-if="isImpersonating" class="sticky top-0 z-50">
+    <UAlert
+      color="warning"
+      variant="soft"
+      orientation="horizontal"
+      :title="t('admin.userManagement.impersonate.indicator')"
+      :ui="{
+        root: 'rounded-none py-2 px-4',
+        wrapper: 'flex-1',
+        title: 'text-sm font-medium',
+        actions: 'ml-auto'
+      }"
+    >
+      <template #actions>
+        <UButton
+          color="warning"
+          variant="solid"
+          size="sm"
+          @click="stopImpersonating"
+        >
+          {{ t('admin.userManagement.impersonate.stop') }}
+        </UButton>
+      </template>
+    </UAlert>
+  </div>
+
   <UHeader>
     <template #left>
       <NuxtLink to="/">
@@ -194,9 +254,19 @@ watch(currentLocale, (newLocale) => {
 
       <!-- User Avatar Dropdown (only show when user is logged in) -->
       <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
-        <UAvatar :src="currentUser.image" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
+        <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
           size="sm" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
       </UDropdownMenu>
+
+      <!-- Organization Switcher Modal -->
+      <UModal v-model:open="showOrgSwitcherModal" title="Switch Organization" :ui="{ footer: 'justify-end' }">
+        <template #body>
+          <OrganizationSwitcher :show-create-button="true" @switched="showOrgSwitcherModal = false" />
+        </template>
+        <template #footer="{ close }">
+          <UButton label="Close" color="neutral" variant="outline" @click="close" />
+        </template>
+      </UModal>
     </template>
 
     <template #body>
@@ -216,7 +286,7 @@ watch(currentLocale, (newLocale) => {
       <!-- User Avatar Dropdown for Mobile (only show when user is logged in) -->
       <div v-if="currentUser" class="mb-6">
         <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-48' }">
-          <UAvatar :src="currentUser.image" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
+          <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
             size="md" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
         </UDropdownMenu>
       </div>

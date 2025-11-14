@@ -19,6 +19,15 @@ export const authClient = createAuthClient({
   ],
 })
 
+export type AuthSession = typeof authClient.$Infer.Session.session
+export type AuthUser = typeof authClient.$Infer.Session.user & { providerId?: string }
+export type AuthSessionResponse = typeof authClient.$Infer.Session.session & { user: User }
+export type AuthActiveOganization = typeof authClient.$Infer.ActiveOrganization
+export type AuthMember = typeof authClient.$Infer.Member
+export type AuthOrganization = typeof authClient.$Infer.Organization
+export type AuthInvitation = typeof authClient.$Infer.Invitation
+export type AuthTeam = typeof authClient.$Infer.Team
+
 export const {
   signIn,
   signOut,

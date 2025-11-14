@@ -1,34 +1,74 @@
-<script setup>
+<script setup lang="ts">
 import { authClient } from '~/utils/auth-client'
+import type { SelectItem } from '@nuxt/ui'
 
-const organizations = ref([])
-const selectedOrg = ref('')
-const loading = ref(true)
-const error = ref('')
-
-const loadOrganizations = async () => {
-  try {
-    loading.value = true
-    const { data, error: orgError } = await authClient.organization.list()
-    if (orgError) throw orgError
-    organizations.value = data || []
-  } catch (err) {
-    error.value = err.message || 'Failed to load organizations'
-  } finally {
-    loading.value = false
-  }
+interface Props {
+  /** Whether to show in compact/header mode without card wrapper */
+  compact?: boolean
+  /** Whether to show the create button */
+  showCreateButton?: boolean
 }
 
-const switchOrganization = async (event) => {
-  const orgId = event.target.value
-  if (!orgId) return
+withDefaults(defineProps<Props>(), {
+  compact: false,
+  showCreateButton: true,
+})
+
+const emit = defineEmits<{
+  switched: []
+}>()
+
+const toast = useToast()
+const { t } = useI18n()
+const userStore = useUserStore()
+const { activeOrganizationId } = storeToRefs(userStore)
+const selectedOrg = ref('')
+const error = ref('')
+const organizations = authClient.useListOrganizations()
+
+// Sync selectedOrg with activeOrganizationId from store
+watch(activeOrganizationId, (newOrgId) => {
+  if (newOrgId && newOrgId !== selectedOrg.value) {
+    selectedOrg.value = newOrgId
+  }
+}, { immediate: true })
+
+// Also watch for when organizations load and set initial value
+watch(() => organizations.value.data, (orgs) => {
+  if (orgs && activeOrganizationId.value && !selectedOrg.value) {
+    selectedOrg.value = activeOrganizationId.value
+  }
+}, { immediate: true })
+
+// Check if user has any organizations
+const hasOrgs = computed(() => {
+  return organizations.value.data && organizations.value.data.length > 0
+})
+
+const selectItems = computed<SelectItem[]>(() => {
+  if (!organizations.value.data) return []
+  return organizations.value.data.map(org => ({
+    label: org.name,
+    value: org.id,
+  }))
+})
+
+const switchOrganization = async (value: unknown) => {
+  if (!value || typeof value !== 'string') return
 
   try {
-    await authClient.organization.switch({ organizationId: orgId })
-    // Refresh the page or emit event to update parent components
-    await navigateTo('/dashboard')
-  } catch (err) {
-    error.value = err.message || 'Failed to switch organization'
+    // Update the store's activeOrganizationId (this also calls authClient.organization.setActive)
+    await userStore.setActiveOrganizationId(value)
+    emit('switched')
+    navigateTo('/dashboard')
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to switch organization'
+    error.value = errorMessage
+    toast.add({
+      title: t('common.error'),
+      description: errorMessage,
+      color: 'error'
+    })
   }
 }
 
@@ -36,61 +76,79 @@ const createNewOrg = () => {
   // Navigate to organization creation page or show modal
   navigateTo('/organizations/create')
 }
-
-onMounted(() => {
-  loadOrganizations()
-})
 </script>
 
 <template>
-  <div class="organization-switcher">
-    <div v-if="loading" class="loading">Loading organizations...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="switcher">
-      <label for="org-select">Organization:</label>
-      <select
-        id="org-select"
-        v-model="selectedOrg"
-        class="org-select"
-        @change="switchOrganization"
-      >
-        <option value="">Select Organization</option>
-        <option v-for="org in organizations" :key="org.id" :value="org.id">
-          {{ org.name }}
-        </option>
-      </select>
-      <button class="create-btn" @click="createNewOrg">
-        Create New Organization
-      </button>
+  <div :class="compact ? '' : 'organization-switcher-wrapper'">
+    <!-- Full version (for modal or standalone use) -->
+    <div v-if="!compact">
+      <div v-if="organizations.isPending || organizations.isRefetching" class="space-y-2">
+        <USkeleton class="h-10 w-full" />
+        <USkeleton v-if="showCreateButton" class="h-10 w-full" />
+      </div>
+      <div v-else-if="organizations.error" class="space-y-4">
+        <UAlert
+          color="error"
+          variant="soft"
+          :title="t('common.error')"
+          :description="organizations.error?.message || 'Failed to load organizations'"
+          icon="i-lucide-alert-circle"
+        />
+      </div>
+      <div v-else class="flex flex-col gap-4">
+        <UFormField label="Select Organization" name="organization">
+          <USelect
+            id="org-select"
+            v-model="selectedOrg"
+            :items="selectItems"
+            placeholder="Select Organization"
+            value-key="value"
+            class="w-full"
+            @update:model-value="switchOrganization"
+          />
+        </UFormField>
+        <UButton
+          v-if="showCreateButton"
+          color="primary"
+          variant="solid"
+          block
+          icon="i-lucide-plus"
+          @click="createNewOrg"
+        >
+          Create New Organization
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Compact version for header -->
+    <div v-else>
+      <div v-if="organizations.isPending || organizations.isRefetching">
+        <USkeleton class="h-9 w-48" />
+      </div>
+      <div v-else-if="organizations.error" class="hidden">
+        <!-- Silently fail in compact mode -->
+      </div>
+      <div v-else-if="hasOrgs" class="flex items-center gap-2">
+        <USelect
+          id="org-select-header"
+          v-model="selectedOrg"
+          :items="selectItems"
+          placeholder="Organization"
+          value-key="value"
+          size="sm"
+          class="min-w-[160px]"
+          @update:model-value="switchOrganization"
+        />
+        <UButton
+          v-if="showCreateButton"
+          color="primary"
+          variant="ghost"
+          size="sm"
+          icon="i-lucide-plus"
+          :ui="{ base: 'p-1.5' }"
+          @click="createNewOrg"
+        />
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.organization-switcher {
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background: white;
-}
-
-.org-select {
-  margin: 0 0.5rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-}
-
-.create-btn {
-  padding: 0.25rem 0.5rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
-.create-btn:hover {
-  background: #2563eb;
-}
-</style>
