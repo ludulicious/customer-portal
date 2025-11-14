@@ -15,7 +15,7 @@ const open = defineModel<boolean>('open', { default: false })
 const { t, locale } = useI18n()
 const toast = useToast()
 const userStore = useUserStore()
-const { currentUser, currentSessionId, currentSessionToken } = storeToRefs(userStore)
+const { currentUser, currentSession } = storeToRefs(userStore)
 
 const loadingSessions = ref(false)
 const sessions = ref<UserSession[]>([])
@@ -35,9 +35,6 @@ const loadUserSessions = async () => {
     }
 
     sessions.value = (data?.sessions || data || []) as UserSession[]
-
-    // Refresh current session data when loading sessions to ensure we have the latest token
-    await userStore.fetchCurrentSession()
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : 'Failed to load sessions'
     toast.add({
@@ -57,13 +54,10 @@ const isSessionExpired = (expiresAt: Date | string) => {
 }
 
 const isCurrentSession = (session: UserSession): boolean => {
-  // Only check if we're viewing the current user's sessions
-  if (!currentUser.value || !props.user) return false
-  if (currentUser.value.id !== props.user.id) return false
-
+  if (!currentSession.value) return false
   // Get session ID and token from getSession() result
-  const sessionId = currentSessionId.value
-  const token = currentSessionToken.value
+  const sessionId = currentSession.value.id
+  const token = currentSession.value?.token
 
   // Check if session ID matches (most reliable)
   if (sessionId && session.id === sessionId) {
@@ -126,7 +120,7 @@ const revokeAllSessions = async () => {
   if (!props.user) return
 
   // Prevent revoking all sessions if it includes the current session
-  if (currentUser.value && currentUser.value.id === props.user.id && currentSessionToken.value) {
+  if (currentUser.value && currentUser.value.id === props.user.id && currentSession.value?.token) {
     toast.add({
       title: t('common.error'),
       description: t('admin.userManagement.sessions.cannotRevokeCurrentSession'),
