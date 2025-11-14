@@ -34,8 +34,8 @@ const formatDate = (date: Date) => {
 
 <template>
   <div class="space-y-2">
-    <div v-if="loading">
-      <USpinner />
+    <div v-if="loading" class="text-center py-8">
+      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
 
     <div v-else-if="requests.length === 0">

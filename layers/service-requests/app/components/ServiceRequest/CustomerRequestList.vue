@@ -85,7 +85,7 @@ const formatDate = (date: Date) => {
     
     <!-- List -->
     <div v-if="loading" class="text-center py-8">
-      <USpinner />
+      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
     
     <div v-else-if="requests.length === 0" class="text-center py-8 text-gray-500">

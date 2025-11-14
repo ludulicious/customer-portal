@@ -17,7 +17,7 @@ useSeoMeta({
 })
 
 // State management
-const currentStep = ref(1) // 1: email entry, 2: OTP + password
+const currentStep = ref(2) // 1: email entry, 2: OTP + password
 const email = ref('')
 const otpCode = ref('')
 const newPassword = ref('')
@@ -197,10 +197,10 @@ watch(otpCode, async (newValue) => {
     <!-- Step 1: Email Entry -->
     <div v-if="currentStep === 1">
       <UForm :schema="emailSchema" :state="{ email }" class="space-y-4" @submit="sendVerificationCode">
-        <UFormGroup :label="t('forgotPassword.fields.email')" name="email" required>
+        <UFormField :label="t('forgotPassword.fields.email')" name="email" required>
           <UInput v-model="email" class="mb-4 w-full" type="email"
             :placeholder="t('forgotPassword.fields.emailPlaceholder')" :disabled="isLoading" size="lg" />
-        </UFormGroup>
+        </UFormField>
 
         <UButton :loading="isLoading" :disabled="!email || isLoading" color="primary" size="lg" block type="submit">
           {{ t('forgotPassword.buttons.sendCode') }}
@@ -213,23 +213,25 @@ watch(otpCode, async (newValue) => {
       <UForm :schema="resetSchema" :state="{ otp: otpCode, newPassword, confirmPassword }" class="space-y-4"
         @submit="resetPassword">
         <!-- OTP Input -->
-        <UFormGroup :label="t('forgotPassword.fields.otp')" name="otp" required>
-          <input id="otp" v-model="otpCode" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-center text-2xl font-mono tracking-widest"
-            :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput">
-        </UFormGroup>
+        <div class="flex flex-col items-center w-full">
+          <UFormField name="otp" required class="w-full flex flex-col items-center" :label="t('forgotPassword.fields.otp')">
+            <UInput id="otp" v-model="otpCode" size="xl" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+              class="w-32 text-center"
+              :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput" />
+          </UFormField>
+        </div>
         <USeparator />
         <!-- New Password -->
-        <UFormGroup :label="t('forgotPassword.fields.newPassword')" name="newPassword" required>
-          <UInput v-model="newPassword" class="mb-4 w-full" type="password"
-            :placeholder="t('forgotPassword.fields.newPasswordPlaceholder')" :disabled="isLoading" size="lg" />
-        </UFormGroup>
+        <UFormField :label="t('forgotPassword.fields.newPassword')" name="newPassword" required>
+          <UInput v-model="newPassword" type="password"
+            :placeholder="t('forgotPassword.fields.newPasswordPlaceholder')" :disabled="isLoading" class="w-full" />
+        </UFormField>
 
         <!-- Confirm Password -->
-        <UFormGroup :label="t('forgotPassword.fields.confirmPassword')" name="confirmPassword" required>
-          <UInput v-model="confirmPassword" class="mb-4 w-full" type="password"
-            :placeholder="t('forgotPassword.fields.confirmPasswordPlaceholder')" :disabled="isLoading" size="lg" />
-        </UFormGroup>
+        <UFormField :label="t('forgotPassword.fields.confirmPassword')" name="confirmPassword" required>
+          <UInput v-model="confirmPassword" type="password"
+              :placeholder="t('forgotPassword.fields.confirmPasswordPlaceholder')" :disabled="isLoading" class="w-full" />
+        </UFormField>
 
         <UButton :loading="isLoading" :disabled="otpCode.length !== 6 || !newPassword || !confirmPassword || isLoading"
           color="primary" size="lg" block type="submit">

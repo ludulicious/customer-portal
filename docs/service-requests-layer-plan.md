@@ -1123,7 +1123,7 @@ Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestLis
     
     <!-- List -->
     <div v-if="loading" class="text-center py-8">
-      <USpinner />
+      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
     
     <div v-else-if="requests.length === 0" class="text-center py-8 text-gray-500">
@@ -1550,7 +1550,7 @@ Create `layers/service-requests/app/pages/requests/[id].vue`:
 <template>
   <div class="container mx-auto py-8 max-w-4xl">
     <div v-if="loading" class="text-center py-8">
-      <USpinner />
+      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
     
     <div v-else-if="!request" class="text-center py-8">
@@ -1736,8 +1736,8 @@ Create `layers/service-requests/app/pages/admin/requests/[id].vue`:
 ```vue
 <template>
   <div class="container mx-auto py-8 max-w-4xl">
-    <div v-if="loading">
-      <USpinner />
+    <div v-if="loading" class="text-center py-8">
+      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
     
     <div v-else-if="request" class="space-y-6">
@@ -2095,8 +2095,8 @@ Create `app/components/RecentServiceRequestsWidget.vue`:
 ```vue
 <template>
   <div class="space-y-2">
-    <div v-if="loading">
-      <USpinner />
+    <div v-if="loading" class="text-center py-8">
+      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
     </div>
     
     <div v-else-if="requests.length === 0">

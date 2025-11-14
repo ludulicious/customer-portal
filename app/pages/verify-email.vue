@@ -13,7 +13,7 @@ const resendCooldown = ref(0)
 let cooldownTimer: NodeJS.Timeout | null = null
 const emailRef = ref<{ input: HTMLInputElement } | null>(null)
 onMounted(async () => {
-  emailRef.value?.input.focus()
+  emailRef.value?.input?.focus()
 
   // Only auto-send OTP for login verification, not signup verification
   // Signup verification already sends an OTP during the signup process
@@ -203,13 +203,21 @@ definePageMeta({
 <template>
   <CustomPageCard :title="$t('verify.title')" :description="$t('verify.subtitle', { email })" :success="success"
     :error="error">
-    <div>
-      <label for="otp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        {{ $t('verify.enterCode') }}
-      </label>
-      <UInput id="otp" ref="emailRef" v-model="otpCode" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
-        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-center text-2xl font-mono tracking-widest"
-        :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading" @input="handleOtpInput" />
+    <!-- OTP Input -->
+    <div class="flex flex-col items-center w-full">
+      <UFormField name="otp" required class="w-full flex flex-col items-center" :label="t('verify.enterCode')">
+        <UInput id="otp" v-model="otpCode" size="xl" type="text" maxlength="6" inputmode="numeric" pattern="[0-9]*"
+          class="w-32 text-center" :placeholder="$t('verify.codePlaceholder')" :disabled="isLoading"
+          @input="handleOtpInput" />
+      </UFormField>
+    </div>
+
+    <!-- Resend Code -->
+    <div class="text-center">
+      <UButton :disabled="resendCooldown > 0 || isLoading" variant="ghost" size="sm" @click="resendCode">
+        {{ resendCooldown > 0 ? t('verify.resendIn', { seconds: resendCooldown })
+          : t('verify.resendCode') }}
+      </UButton>
     </div>
   </CustomPageCard>
 </template>
