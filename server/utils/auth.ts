@@ -140,7 +140,7 @@ export const auth = betterAuth({
           subject,
           params: {
             greeting: 'Hello,',
-            body_text: `Your verification code is: ${otp}`,
+            body_text: `Your verification code is: <code>${otp}</code>`,
             action_url: '#', // Not used for OTP
             action_text: 'Verification Code',
             footer_text: 'This code will expire soon. If you did not request this, please ignore this email.'
