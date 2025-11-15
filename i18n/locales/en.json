@@ -63,7 +63,19 @@
           "emailPlaceholder": "Enter the email address of the owner",
           "sendButton": "Send Invitation",
           "sendSuccess": "Invitation sent successfully",
-          "cancel": "Cancel"
+          "cancel": "Cancel",
+          "confirmResend": {
+            "title": "Resend Invitation",
+            "message": "Are you sure you want to resend the invitation to {email} as {role}?",
+            "confirm": "Resend"
+          },
+          "confirmDelete": {
+            "title": "Delete Invitation",
+            "message": "Are you sure you want to delete this invitation? This action cannot be undone.",
+            "confirm": "Delete"
+          },
+          "resendSuccess": "Invitation resent successfully",
+          "deleteSuccess": "Invitation deleted successfully"
         },
         "errors": {
           "loadFailed": "Failed to load organization",
@@ -201,6 +213,7 @@
   "common": {
     "cancel": "Cancel",
     "close": "Close",
+    "confirm": "Confirm",
     "createdAt": "Created at",
     "delete": "Delete",
     "edit": "Edit",
@@ -210,7 +223,7 @@
     "readMore": "Read more",
     "reset": "Reset",
     "save": "Save",
-    "success": "Success!",
+    "success": "Success",
     "view": "View"
   },
   "contact": {
@@ -490,7 +503,19 @@
         "roleAdmin": "Admin",
         "sendButton": "Send Invitation",
         "sendSuccess": "Invitation sent successfully",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "confirmResend": {
+          "title": "Resend Invitation",
+          "message": "Are you sure you want to resend the invitation to {email} as {role}?",
+          "confirm": "Resend"
+        },
+        "confirmDelete": {
+          "title": "Delete Invitation",
+          "message": "Are you sure you want to delete this invitation? This action cannot be undone.",
+          "confirm": "Delete"
+        },
+        "resendSuccess": "Invitation resent successfully",
+        "deleteSuccess": "Invitation deleted successfully"
       },
       "errors": {
         "noActiveOrganization": "No active organization found",

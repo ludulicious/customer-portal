@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError } from '#types'
 import { useOrganization } from '~/composables/useOrganization'
+import OrganizationInviteMemberModal from '~/components/organization/InviteMemberModal.vue'
+import ConfirmationModal from '~/components/common/ConfirmationModal.vue'
 
 definePageMeta({
   layout: 'default'
 })
 
 const { t } = useI18n()
+const toast = useToast()
 const { getActiveMember, listMembers, inviteMember, isOrganizationOwner, listInvitations, resendInvitation, cancelInvitation } = useOrganization()
 
 const loading = ref(true)
@@ -15,6 +18,10 @@ const organizationId = ref<string | null>(null)
 const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const showInviteModal = ref(false)
+const showResendModal = ref(false)
+const showDeleteModal = ref(false)
+const selectedInvitation = ref<{ id: string; email: string; role: string } | null>(null)
+const deleteInvitationId = ref<string | null>(null)
 const isOwner = ref(false)
 
 // Load organization and data
@@ -92,39 +99,71 @@ const handleInviteSuccess = async () => {
   await loadInvitations()
 }
 
-// Resend invitation
-const handleResendInvitation = async (invitationId: string, email: string, role: string) => {
-  if (!organizationId.value) return
+// Open resend confirmation modal
+const openResendModal = (invitationId: string, email: string, role: string) => {
+  selectedInvitation.value = { id: invitationId, email, role }
+  showResendModal.value = true
+}
+
+// Resend invitation (called after confirmation)
+const handleResendInvitation = async () => {
+  if (!organizationId.value || !selectedInvitation.value) return
 
   try {
-    const result = await resendInvitation(invitationId, organizationId.value, email, role as any)
+    const result = await resendInvitation(selectedInvitation.value.id, organizationId.value, selectedInvitation.value.email, selectedInvitation.value.role as any)
     if (result.error) {
       throw new Error(result.error.message || t('organization.members.errors.resendFailed'))
     }
     await loadInvitations()
+    toast.add({
+      title: t('common.success'),
+      description: t('organization.members.invitations.resendSuccess'),
+      color: 'success'
+    })
   } catch (err) {
     const apiError = err as ApiError
     error.value = apiError.message || t('organization.members.errors.resendFailed')
+    toast.add({
+      title: t('common.error'),
+      description: apiError.message || t('organization.members.errors.resendFailed'),
+      color: 'error'
+    })
+  } finally {
+    selectedInvitation.value = null
   }
 }
 
-// Delete invitation
-const handleDeleteInvitation = async (invitationId: string) => {
-  if (!organizationId.value) return
+// Open delete confirmation modal
+const openDeleteModal = (invitationId: string) => {
+  deleteInvitationId.value = invitationId
+  showDeleteModal.value = true
+}
 
-  if (!confirm(t('organization.members.confirm.cancelInvitation'))) {
-    return
-  }
+// Delete invitation (called after confirmation)
+const handleDeleteInvitation = async () => {
+  if (!organizationId.value || !deleteInvitationId.value) return
 
   try {
-    const result = await cancelInvitation(invitationId)
+    const result = await cancelInvitation(deleteInvitationId.value)
     if (result.error) {
       throw new Error(result.error.message || t('organization.members.errors.cancelFailed'))
     }
     await loadInvitations()
+    toast.add({
+      title: t('common.success'),
+      description: t('organization.members.invitations.deleteSuccess'),
+      color: 'success'
+    })
   } catch (err) {
     const apiError = err as ApiError
     error.value = apiError.message || t('organization.members.errors.cancelFailed')
+    toast.add({
+      title: t('common.error'),
+      description: apiError.message || t('organization.members.errors.cancelFailed'),
+      color: 'error'
+    })
+  } finally {
+    deleteInvitationId.value = null
   }
 }
 
@@ -228,7 +267,7 @@ onMounted(() => {
                         icon="i-lucide-send"
                         variant="ghost"
                         size="sm"
-                        @click="handleResendInvitation(invitation.id, invitation.email, invitation.role || 'member')"
+                        @click="openResendModal(invitation.id, invitation.email, invitation.role || 'member')"
                       >
                         {{ t('organization.members.invitations.resend') }}
                       </UButton>
@@ -237,7 +276,7 @@ onMounted(() => {
                         variant="ghost"
                         size="sm"
                         color="error"
-                        @click="handleDeleteInvitation(invitation.id)"
+                        @click="openDeleteModal(invitation.id)"
                       >
                         {{ t('organization.members.invitations.delete') }}
                       </UButton>
@@ -256,6 +295,29 @@ onMounted(() => {
         v-model:open="showInviteModal"
         :organization-id="organizationId"
         @success="handleInviteSuccess"
+      />
+
+      <!-- Resend Invitation Confirmation Modal -->
+      <ConfirmationModal
+        v-if="showResendModal && selectedInvitation"
+        v-model:open="showResendModal"
+        title="organization.members.invitations.confirmResend.title"
+        message="organization.members.invitations.confirmResend.message"
+        :message-params="{ email: selectedInvitation.email, role: selectedInvitation.role }"
+        confirm-text="organization.members.invitations.confirmResend.confirm"
+        confirm-color="primary"
+        @confirm="handleResendInvitation"
+      />
+
+      <!-- Delete Invitation Confirmation Modal -->
+      <ConfirmationModal
+        v-if="showDeleteModal"
+        v-model:open="showDeleteModal"
+        title="organization.members.invitations.confirmDelete.title"
+        message="organization.members.invitations.confirmDelete.message"
+        confirm-text="organization.members.invitations.confirmDelete.confirm"
+        confirm-color="error"
+        @confirm="handleDeleteInvitation"
       />
     </UContainer>
   </div>

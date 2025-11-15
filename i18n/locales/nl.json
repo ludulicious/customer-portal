@@ -63,7 +63,19 @@
           "emailPlaceholder": "Voor het e-mailadres van de eigenaar in",
           "sendButton": "Uitnodiging Verzenden",
           "sendSuccess": "Uitnodiging succesvol verzonden",
-          "cancel": "Annuleren"
+          "cancel": "Annuleren",
+          "confirmResend": {
+            "title": "Uitnodiging Opnieuw Verzenden",
+            "message": "Weet je zeker dat je de uitnodiging naar {email} als {role} wilt opnieuw verzenden?",
+            "confirm": "Opnieuw Verzenden"
+          },
+          "confirmDelete": {
+            "title": "Uitnodiging Verwijderen",
+            "message": "Weet je zeker dat je deze uitnodiging wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+            "confirm": "Verwijderen"
+          },
+          "resendSuccess": "Uitnodiging succesvol opnieuw verzonden",
+          "deleteSuccess": "Uitnodiging succesvol verwijderd"
         },
         "errors": {
           "loadFailed": "Organisatie laden mislukt",
@@ -209,6 +221,7 @@
     "loading": "Laden...",
     "readMore": "Lees meer",
     "reset": "Resetten",
+    "confirm": "Bevestigen",
     "save": "Opslaan",
     "success": "Succesvol!",
     "view": "Bekijken"
@@ -488,7 +501,19 @@
         "roleAdmin": "Beheerder",
         "sendButton": "Uitnodiging Verzenden",
         "sendSuccess": "Uitnodiging succesvol verzonden",
-        "cancel": "Annuleren"
+        "cancel": "Annuleren",
+        "confirmResend": {
+          "title": "Uitnodiging Opnieuw Verzenden",
+          "message": "Weet je zeker dat je de uitnodiging naar {email} als {role} wilt opnieuw verzenden?",
+          "confirm": "Opnieuw Verzenden"
+        },
+        "confirmDelete": {
+          "title": "Uitnodiging Verwijderen",
+          "message": "Weet je zeker dat je deze uitnodiging wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+          "confirm": "Verwijderen"
+        },
+        "resendSuccess": "Uitnodiging succesvol opnieuw verzonden",
+        "deleteSuccess": "Uitnodiging succesvol verwijderd"
       },
       "errors": {
         "noActiveOrganization": "Geen actieve organisatie gevonden",

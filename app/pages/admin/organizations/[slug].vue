@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError } from '#types'
-import { useOrganization } from '~/composables/useOrganization'
+import AdminInviteOwnerModal from '~/components/admin/InviteOwnerModal.vue'
+import ConfirmationModal from '~/components/common/ConfirmationModal.vue'
 
 definePageMeta({
   layout: 'default'
@@ -15,6 +16,7 @@ if (!isAdmin.value) {
 }
 
 const { t } = useI18n()
+const toast = useToast()
 const route = useRoute()
 const slug = route.params.slug as string
 
@@ -24,6 +26,10 @@ const organization = ref<Organization | null>(null)
 const members = ref<OrganizationMemberWithUser[]>([])
 const invitations = ref<OrganizationInvitationsResponse>([])
 const showInviteModal = ref(false)
+const showResendModal = ref(false)
+const showDeleteModal = ref(false)
+const selectedInvitation = ref<{ id: string, email: string, role: string } | null>(null)
+const deleteInvitationId = ref<string | null>(null)
 
 // Load organization details
 const loadOrganization = async () => {
@@ -79,37 +85,69 @@ const handleInviteSuccess = async () => {
   await loadInvitations()
 }
 
-// Resend invitation
-const handleResendInvitation = async (invitationId: string, _email: string, _role: string) => {
-  if (!organization.value) return
+// Open resend confirmation modal
+const openResendModal = (invitationId: string, email: string, role: string) => {
+  selectedInvitation.value = { id: invitationId, email, role }
+  showResendModal.value = true
+}
+
+// Resend invitation (called after confirmation)
+const handleResendInvitation = async () => {
+  if (!organization.value || !selectedInvitation.value) return
 
   try {
-    await $fetch(`/api/admin/organizations/${organization.value.id}/invitations/${invitationId}/resend`, {
+    await $fetch(`/api/admin/organizations/${organization.value.id}/invitations/${selectedInvitation.value.id}/resend`, {
       method: 'POST'
     })
     await loadInvitations()
+    toast.add({
+      title: t('common.success'),
+      description: t('admin.organization.detail.invitations.resendSuccess'),
+      color: 'success'
+    })
   } catch (err) {
     const apiError = err as ApiError
     error.value = apiError.message || t('admin.organization.detail.errors.resendFailed')
+    toast.add({
+      title: t('common.error'),
+      description: apiError.message || t('admin.organization.detail.errors.resendFailed'),
+      color: 'error'
+    })
+  } finally {
+    selectedInvitation.value = null
   }
 }
 
-// Delete invitation
-const handleDeleteInvitation = async (invitationId: string) => {
-  if (!organization.value) return
+// Open delete confirmation modal
+const openDeleteModal = (invitationId: string) => {
+  deleteInvitationId.value = invitationId
+  showDeleteModal.value = true
+}
 
-  if (!confirm(t('admin.organization.detail.confirm.cancelInvitation'))) {
-    return
-  }
+// Delete invitation (called after confirmation)
+const handleDeleteInvitation = async () => {
+  if (!organization.value || !deleteInvitationId.value) return
 
   try {
-    await $fetch(`/api/admin/organizations/${organization.value.id}/invitations/${invitationId}/delete`, {
+    await $fetch(`/api/admin/organizations/${organization.value.id}/invitations/${deleteInvitationId.value}/delete`, {
       method: 'POST'
     })
     await loadInvitations()
+    toast.add({
+      title: t('common.success'),
+      description: t('admin.organization.detail.invitations.deleteSuccess'),
+      color: 'success'
+    })
   } catch (err) {
     const apiError = err as ApiError
     error.value = apiError.message || t('admin.organization.detail.errors.cancelFailed')
+    toast.add({
+      title: t('common.error'),
+      description: apiError.message || t('admin.organization.detail.errors.cancelFailed'),
+      color: 'error'
+    })
+  } finally {
+    deleteInvitationId.value = null
   }
 }
 
@@ -248,7 +286,7 @@ onMounted(() => {
                         icon="i-lucide-send"
                         variant="ghost"
                         size="sm"
-                        @click="handleResendInvitation(invitation.id, invitation.email, invitation.role || 'member')"
+                        @click="openResendModal(invitation.id, invitation.email, invitation.role || 'member')"
                       >
                         {{ t('admin.organization.detail.invitations.resend') }}
                       </UButton>
@@ -257,7 +295,7 @@ onMounted(() => {
                             variant="ghost"
                             size="sm"
                             color="error"
-                            @click="handleDeleteInvitation(invitation.id)"
+                            @click="openDeleteModal(invitation.id)"
                           >
                             {{ t('admin.organization.detail.invitations.delete') }}
                           </UButton>
@@ -276,6 +314,29 @@ onMounted(() => {
         v-model:open="showInviteModal"
         :organization-id="organization.id"
         @success="handleInviteSuccess"
+      />
+
+      <!-- Resend Invitation Confirmation Modal -->
+      <ConfirmationModal
+        v-if="showResendModal && selectedInvitation"
+        v-model:open="showResendModal"
+        title="admin.organization.detail.invitations.confirmResend.title"
+        message="admin.organization.detail.invitations.confirmResend.message"
+        :message-params="{ email: selectedInvitation.email, role: selectedInvitation.role }"
+        confirm-text="admin.organization.detail.invitations.confirmResend.confirm"
+        confirm-color="primary"
+        @confirm="handleResendInvitation"
+      />
+
+      <!-- Delete Invitation Confirmation Modal -->
+      <ConfirmationModal
+        v-if="showDeleteModal"
+        v-model:open="showDeleteModal"
+        title="admin.organization.detail.invitations.confirmDelete.title"
+        message="admin.organization.detail.invitations.confirmDelete.message"
+        confirm-text="admin.organization.detail.invitations.confirmDelete.confirm"
+        confirm-color="error"
+        @confirm="handleDeleteInvitation"
       />
     </UContainer>
   </div>
