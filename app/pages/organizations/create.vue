@@ -1,6 +1,24 @@
+<script setup lang="ts">
+definePageMeta({
+  layout: 'default'
+})
+
+// Redirect non-admins - only admins can create organizations
+const userStore = useUserStore()
+const { isAdmin } = storeToRefs(userStore)
+
+if (!isAdmin.value) {
+  throw createError({ statusCode: 403, message: 'Only admins can create organizations. Please contact an administrator.' })
+}
+
+// Redirect to admin create page
+const router = useRouter()
+router.replace('/admin/organizations/create')
+</script>
+
 <template>
   <div>
-    <h1>Create Organization</h1>
+    <h1>Redirecting...</h1>
   </div>
 </template>
 <!-- <script setup lang="ts">

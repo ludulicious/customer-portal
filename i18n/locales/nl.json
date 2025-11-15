@@ -13,7 +13,76 @@
       "cannotChangeOwnRole": "Je kunt je eigen rol niet wijzigen"
     },
     "organization": {
-      "title": "Organisatie details"
+      "title": "Organisatie details",
+      "create": {
+        "title": "Organisatie Aanmaken",
+        "back": "Terug",
+        "name": "Organisatienaam",
+        "namePlaceholder": "Voer organisatienaam in",
+        "slug": "Organisatie Slug",
+        "slugPlaceholder": "organisatie-slug",
+        "slugHint": "URL-vriendelijke identifier voor je organisatie",
+        "createButton": "Organisatie Aanmaken",
+        "cancel": "Annuleren",
+        "errors": {
+          "createFailed": "Organisatie aanmaken mislukt"
+        },
+        "validation": {
+          "nameRequired": "Organisatienaam is verplicht",
+          "slugRequired": "Organisatie slug is verplicht",
+          "slugInvalid": "Slug mag alleen kleine letters, cijfers en streepjes bevatten"
+        }
+      },
+      "detail": {
+        "back": "Terug naar Organisaties",
+        "loading": "Organisatie laden...",
+        "title": "Organisatie Details",
+        "name": "Naam:",
+        "slug": "Slug:",
+        "created": "Aangemaakt:",
+        "members": {
+          "title": "Leden",
+          "empty": "Nog geen leden",
+          "email": "E-mail",
+          "name": "Naam",
+          "role": "Rol"
+        },
+        "invitations": {
+          "title": "Uitnodigingen",
+          "empty": "Geen openstaande uitnodigingen",
+          "email": "E-mail",
+          "role": "Rol",
+          "status": "Status",
+          "expires": "Verloopt",
+          "actions": "Acties",
+          "resend": "Opnieuw Verzenden",
+          "delete": "Verwijderen",
+          "inviteOwner": "Eigenaar Uitnodigen",
+          "modalTitle": "Organisatie Eigenaar Uitnodigen",
+          "emailLabel": "E-mailadres",
+          "emailPlaceholder": "Voor het e-mailadres van de eigenaar in",
+          "sendButton": "Uitnodiging Verzenden",
+          "sendSuccess": "Uitnodiging succesvol verzonden",
+          "cancel": "Annuleren"
+        },
+        "errors": {
+          "loadFailed": "Organisatie laden mislukt",
+          "sendInvitationFailed": "Uitnodiging verzenden mislukt",
+          "resendFailed": "Uitnodiging opnieuw verzenden mislukt",
+          "cancelFailed": "Uitnodiging annuleren mislukt"
+        },
+        "confirm": {
+          "cancelInvitation": "Weet je zeker dat je deze uitnodiging wilt annuleren?"
+        }
+      },
+      "list": {
+        "title": "Alle Organisaties",
+        "createButton": "Organisatie Aanmaken",
+        "refresh": "Vernieuwen",
+        "loading": "Organisaties laden...",
+        "empty": "Geen organisaties gevonden",
+        "view": "Bekijken"
+      }
     },
     "roles": {
       "admin": "beheerder",
@@ -394,6 +463,50 @@
     "dashboard": "Dashboard",
     "language": "Taal"
   },
+  "organization": {
+    "members": {
+      "loading": "Organisatiegegevens laden...",
+      "title": "Leden",
+      "empty": "Nog geen leden",
+      "email": "E-mail",
+      "name": "Naam",
+      "role": "Rol",
+      "invitations": {
+        "title": "Uitnodigingen",
+        "empty": "Geen openstaande uitnodigingen",
+        "status": "Status",
+        "expires": "Verloopt",
+        "actions": "Acties",
+        "resend": "Opnieuw Verzenden",
+        "delete": "Verwijderen",
+        "inviteButton": "Lid Uitnodigen",
+        "modalTitle": "Lid Uitnodigen",
+        "emailLabel": "E-mailadres",
+        "emailPlaceholder": "Voer het e-mailadres van het lid in",
+        "roleLabel": "Rol",
+        "roleMember": "Lid",
+        "roleAdmin": "Beheerder",
+        "sendButton": "Uitnodiging Verzenden",
+        "sendSuccess": "Uitnodiging succesvol verzonden",
+        "cancel": "Annuleren"
+      },
+      "errors": {
+        "noActiveOrganization": "Geen actieve organisatie gevonden",
+        "onlyOwnerCanManage": "Alleen organisatie-eigenaren kunnen leden beheren",
+        "loadFailed": "Organisatiegegevens laden mislukt",
+        "sendInvitationFailed": "Uitnodiging verzenden mislukt",
+        "resendFailed": "Uitnodiging opnieuw verzenden mislukt",
+        "cancelFailed": "Uitnodiging annuleren mislukt"
+      },
+      "confirm": {
+        "cancelInvitation": "Weet je zeker dat je deze uitnodiging wilt annuleren?"
+      },
+      "validation": {
+        "emailInvalid": "Ongeldig e-mailadres",
+        "roleRequired": "Rol is verplicht"
+      }
+    }
+  },
   "profile": {
     "badges": {
       "active": "Actief"
@@ -429,6 +542,10 @@
   },
   "signup": {
     "description": "Heb je al een account?",
+    "invitation": {
+      "title": "Je bent uitgenodigd om lid te worden van {organizationName}",
+      "description": "Je wordt toegevoegd als {role} na het aanmaken van je account."
+    },
     "errors": {
       "errorTitle": "Fout",
       "unknownError": "Er is een onbekende fout opgetreden tijdens het aanmelden."

@@ -13,7 +13,76 @@
       "cannotChangeOwnRole": "You cannot change your own role"
     },
     "organization": {
-      "title": "Organization Details"
+      "title": "Organization Details",
+      "create": {
+        "title": "Create Organization",
+        "back": "Back",
+        "name": "Organization Name",
+        "namePlaceholder": "Enter organization name",
+        "slug": "Organization Slug",
+        "slugPlaceholder": "organization-slug",
+        "slugHint": "URL-friendly identifier for your organization",
+        "createButton": "Create Organization",
+        "cancel": "Cancel",
+        "errors": {
+          "createFailed": "Failed to create organization"
+        },
+        "validation": {
+          "nameRequired": "Organization name is required",
+          "slugRequired": "Organization slug is required",
+          "slugInvalid": "Slug can only contain lowercase letters, numbers, and hyphens"
+        }
+      },
+      "detail": {
+        "back": "Back to Organizations",
+        "loading": "Loading organization...",
+        "title": "Organization Details",
+        "name": "Name:",
+        "slug": "Slug:",
+        "created": "Created:",
+        "members": {
+          "title": "Members",
+          "empty": "No members yet",
+          "email": "Email",
+          "name": "Name",
+          "role": "Role"
+        },
+        "invitations": {
+          "title": "Invitations",
+          "empty": "No pending invitations",
+          "email": "Email",
+          "role": "Role",
+          "status": "Status",
+          "expires": "Expires",
+          "actions": "Actions",
+          "resend": "Resend",
+          "delete": "Delete",
+          "inviteOwner": "Invite Owner",
+          "modalTitle": "Invite Organization Owner",
+          "emailLabel": "Email Address",
+          "emailPlaceholder": "Enter the email address of the owner",
+          "sendButton": "Send Invitation",
+          "sendSuccess": "Invitation sent successfully",
+          "cancel": "Cancel"
+        },
+        "errors": {
+          "loadFailed": "Failed to load organization",
+          "sendInvitationFailed": "Failed to send invitation",
+          "resendFailed": "Failed to resend invitation",
+          "cancelFailed": "Failed to cancel invitation"
+        },
+        "confirm": {
+          "cancelInvitation": "Are you sure you want to cancel this invitation?"
+        }
+      },
+      "list": {
+        "title": "All Organizations",
+        "createButton": "Create Organization",
+        "refresh": "Refresh",
+        "loading": "Loading organizations...",
+        "empty": "No organizations found",
+        "view": "View"
+      }
     },
     "roles": {
       "admin": "admin",
@@ -396,6 +465,50 @@
     "organization": "Organization",
     "portfolio": "Portfolio"
   },
+  "organization": {
+    "members": {
+      "loading": "Loading organization data...",
+      "title": "Members",
+      "empty": "No members yet",
+      "email": "Email",
+      "name": "Name",
+      "role": "Role",
+      "invitations": {
+        "title": "Invitations",
+        "empty": "No pending invitations",
+        "status": "Status",
+        "expires": "Expires",
+        "actions": "Actions",
+        "resend": "Resend",
+        "delete": "Delete",
+        "inviteButton": "Invite Member",
+        "modalTitle": "Invite Member",
+        "emailLabel": "Email Address",
+        "emailPlaceholder": "Enter the email address of the member",
+        "roleLabel": "Role",
+        "roleMember": "Member",
+        "roleAdmin": "Admin",
+        "sendButton": "Send Invitation",
+        "sendSuccess": "Invitation sent successfully",
+        "cancel": "Cancel"
+      },
+      "errors": {
+        "noActiveOrganization": "No active organization found",
+        "onlyOwnerCanManage": "Only organization owners can manage members",
+        "loadFailed": "Failed to load organization data",
+        "sendInvitationFailed": "Failed to send invitation",
+        "resendFailed": "Failed to resend invitation",
+        "cancelFailed": "Failed to cancel invitation"
+      },
+      "confirm": {
+        "cancelInvitation": "Are you sure you want to cancel this invitation?"
+      },
+      "validation": {
+        "emailInvalid": "Invalid email address",
+        "roleRequired": "Role is required"
+      }
+    }
+  },
   "profile": {
     "badges": {
       "active": "Active"
@@ -431,6 +544,10 @@
   },
   "signup": {
     "description": "Already have an account?",
+    "invitation": {
+      "title": "You've been invited to join {organizationName}",
+      "description": "You'll be added as a {role} after creating your account."
+    },
     "errors": {
       "errorTitle": "Error",
       "unknownError": "An unknown error occurred during signup."

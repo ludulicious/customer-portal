@@ -12,8 +12,20 @@ const success = ref('')
 const resendCooldown = ref(0)
 let cooldownTimer: NodeJS.Timeout | null = null
 const emailRef = ref<{ input: HTMLInputElement } | null>(null)
+const invitationId = ref<string | null>(null)
+const acceptingInvitation = ref(false)
 onMounted(async () => {
   emailRef.value?.input?.focus()
+
+  // Check for invitation ID in query params or localStorage
+  const invIdFromQuery = route.query.invitationId as string | undefined
+  const invIdFromStorage = process.client ? localStorage.getItem('pendingInvitationId') : null
+  if (invIdFromQuery || invIdFromStorage) {
+    invitationId.value = invIdFromQuery || invIdFromStorage || null
+    if (process.client && invIdFromQuery) {
+      localStorage.setItem('pendingInvitationId', invIdFromQuery)
+    }
+  }
 
   // Only auto-send OTP for login verification, not signup verification
   // Signup verification already sends an OTP during the signup process
@@ -105,11 +117,17 @@ const verifyCode = async () => {
       success.value = t('verify.success')
       console.log('Verification successful, checking session...')
 
+      // Handle invitation acceptance if present
+      if (invitationId.value) {
+        await acceptPendingInvitation()
+      }
+
       // For signup verification, the user might not be signed in yet
       if (!isLoginVerification) {
         console.log('Signup verification successful, user may need to sign in')
         // Show a message and redirect to login
-        success.value = t('verify.success') + ' Please sign in to continue.'
+        const invitationMessage = invitationId.value ? ' Invitation accepted!' : ''
+        success.value = t('verify.success') + invitationMessage + ' Please sign in to continue.'
         await new Promise(resolve => setTimeout(resolve, 2000))
         const redirectTo = route.query.redirect as string || '/dashboard'
         const loginPath = '/login'
@@ -184,6 +202,34 @@ const resendCode = async () => {
     error.value = errorMessage || t('verify.resendError')
   } finally {
     isLoading.value = false
+  }
+}
+
+// Accept pending invitation
+const acceptPendingInvitation = async () => {
+  if (!invitationId.value) return
+
+  acceptingInvitation.value = true
+  try {
+    console.log('Accepting invitation:', invitationId.value)
+    const result = await authClient.organization.acceptInvitation({
+      invitationId: invitationId.value
+    })
+    
+    if (result.error) {
+      console.error('Failed to accept invitation:', result.error)
+      // Don't show error to user, just log it - they can accept manually later
+    } else {
+      console.log('Invitation accepted successfully')
+      // Clear stored invitation ID
+      if (process.client) {
+        localStorage.removeItem('pendingInvitationId')
+      }
+    }
+  } catch (err) {
+    console.error('Error accepting invitation:', err)
+  } finally {
+    acceptingInvitation.value = false
   }
 }
 

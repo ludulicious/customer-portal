@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
+import { getInvitationEmailContent, getOTPEmailContent } from './email-texts'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { db } from './db'
 import { eq } from 'drizzle-orm'
@@ -58,44 +59,8 @@ export const auth = betterAuth({
             await db.update(userTable).set({ role: 'admin' }).where(eq(userTable.id, createdUser.id))
           }
 
-          // Auto-create organization directly in database
-          const orgName = createdUser.name || createdUser.email?.split('@')[0]
-          if (!orgName) {
-            console.error('Cannot create organization: no name or email available')
-            return
-          }
-
-          const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${createdUser.id.slice(0, 8)}`
-
-          try {
-            // Create organization using the same ID generation method as better-auth
-            const [organization] = await db
-              .insert(organizationTable)
-              .values({
-                id: generateId(),
-                name: `${orgName}'s Organization`,
-                slug: orgSlug,
-                createdAt: new Date()
-              })
-              .returning()
-
-            if (organization) {
-              // Create member with owner role using the same ID generation method as better-auth
-              await db
-                .insert(organizationMemberTable)
-                .values({
-                  id: generateId(),
-                  organizationId: organization.id,
-                  userId: createdUser.id,
-                  role: 'owner',
-                  createdAt: new Date()
-                })
-
-              console.log(`Auto-created organization ${organization.name} for user ${createdUser.email}`)
-            }
-          } catch (error) {
-            console.error(`Failed to auto-create organization for user ${createdUser.email}:`, error)
-          }
+          // Note: Auto-organization creation removed for B2B model
+          // Organizations are now created by admins only, and users join via invitations
         }
       }
     },
@@ -118,33 +83,87 @@ export const auth = betterAuth({
   },
   plugins: [
     organization({
-      allowUserToCreateOrganization: true, // Allow all users to create organizations initially
+      allowUserToCreateOrganization: async (user) => {
+        // Only admins can create organizations
+        // Check if user has admin role
+        const [userRecord] = await db
+          .select({ role: userTable.role })
+          .from(userTable)
+          .where(eq(userTable.id, user.id))
+          .limit(1)
+        return userRecord?.role === 'admin'
+      },
+      sendInvitationEmail: async ({ invitation, organization, inviter }) => {
+        const baseURL = process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3000'
+        const invitationLink = `${baseURL}/signup?invitationId=${invitation.id}`
+
+        const emailContent = getInvitationEmailContent({
+          inviterName: inviter.user.name || '',
+          inviterEmail: inviter.user.email,
+          organizationName: organization.name,
+          role: invitation.role || 'member',
+          invitationLink
+        })
+
+        await sendEmail({
+          to: invitation.email,
+          ...emailContent
+        })
+      },
       organizationHooks: {
-        afterCreateOrganization: async ({ organization, user }) => {
-          // Auto-create organization for new users
-          console.log(`Created organization ${organization.name} for user ${user.email}`)
+        afterCreateOrganization: async ({ organization, member, user }) => {
+          // If the creator is an admin, remove them as a member
+          // Admins should not be members of organizations they create
+          const [userRecord] = await db
+            .select({ role: userTable.role })
+            .from(userTable)
+            .where(eq(userTable.id, user.id))
+            .limit(1)
+
+          if (userRecord?.role === 'admin' && member) {
+            // Remove the admin member from the organization
+            await db
+              .delete(organizationMemberTable)
+              .where(eq(organizationMemberTable.id, member.id))
+            console.log(`Removed admin ${user.email} as member from organization ${organization.name}`)
+          }
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        beforeInviteMember: async ({ organization: _organization, user }: { organization: any, user: any }) => {
+          // Allow admins to invite members even if they're not members themselves
+          const [userRecord] = await db
+            .select({ role: userTable.role })
+            .from(userTable)
+            .where(eq(userTable.id, user.id))
+            .limit(1)
+
+          // If user is admin, allow the invitation to proceed
+          if (userRecord?.role === 'admin') {
+            return { data: { allow: true } }
+          }
+
+          // For non-admins, let Better Auth check membership normally
+          // Return undefined to let default behavior handle it
+          return undefined
+        },
+        afterAcceptInvitation: async ({ invitation: _invitation, member, user, organization }) => {
+          // Ensure the user gets the correct role when accepting invitation
+          // Better Auth handles this automatically, but we log it for debugging
+          console.log(`User ${user.email} accepted invitation to ${organization.name} with role ${member.role}`)
         }
       }
     }),
     emailOTP({
       overrideDefaultEmailVerification: true,
       async sendVerificationOTP({ email, otp, type }) {
-        const subject = type === 'email-verification'
-          ? 'Verify your Apex Pro email address'
-          : type === 'sign-in'
-            ? 'Your Apex Pro sign-in code'
-            : 'Reset your Apex Pro password'
+        const emailContent = getOTPEmailContent({
+          otp,
+          type: type as 'email-verification' | 'sign-in' | 'password-reset'
+        })
 
         await sendEmail({
           to: email,
-          subject,
-          params: {
-            greeting: 'Hello,',
-            body_text: `Your verification code is: <code>${otp}</code>`,
-            action_url: '#', // Not used for OTP
-            action_text: 'Verification Code',
-            footer_text: 'This code will expire soon. If you did not request this, please ignore this email.'
-          }
+          ...emailContent
         })
       }
     }),
@@ -159,7 +178,6 @@ export const auth = betterAuth({
     customSession(async (sessionData) => {
       // Destructure user and session from the input object
       const { user, session } = sessionData
-      console.log('custom session sessionData', sessionData)
       // Fetch the account for the user
       const [account] = await db
         .select({ providerId: accountTable.providerId })

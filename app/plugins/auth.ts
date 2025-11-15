@@ -7,10 +7,7 @@ export default defineNuxtPlugin({
     const userStore = useUserStore()
     // const organizationStore = useOrganization()
     try {
-      console.log('getSession')
       const sessionData = await authClient.getSession()
-
-      console.log('sessionData', sessionData)
       await userStore.setSession(sessionData?.data as unknown as AuthSessionResponse)
     } catch (error) {
       console.log('getSession error:', error)
@@ -23,7 +20,6 @@ export default defineNuxtPlugin({
       () => session.value,
       async (newSession) => {
         const sessionData = newSession as unknown as AuthSessionResponse
-        console.log('sessionData', sessionData)
         await userStore.setSession(sessionData)
       },
       { deep: true }

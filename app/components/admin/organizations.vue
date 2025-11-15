@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AdminOrganizationsResponse, ApiError } from '~~/shared/types'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const { isAdmin } = storeToRefs(userStore)
 
@@ -19,7 +20,7 @@ const loadOrganizations = async () => {
     organizations.value = await $fetch<AdminOrganizationsResponse>('/api/admin/organizations')
   } catch (err) {
     const apiError = err as ApiError
-    error.value = apiError.message || 'Failed to load organizations'
+    error.value = apiError.message || t('admin.errors.failedToLoadUsers')
   } finally {
     loading.value = false
   }
@@ -33,20 +34,36 @@ onMounted(() => {
 <template>
   <UCard>
     <template #header>
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h2 class="text-xl font-semibold">
-          All Organizations
+          {{ t('admin.organization.list.title') }}
         </h2>
-        <UButton icon="i-lucide-refresh-cw" variant="outline" :loading="loading" @click="loadOrganizations">
-          Refresh
-        </UButton>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <UButton
+            icon="i-lucide-plus"
+            color="primary"
+            :to="'/admin/organizations/create'"
+            class="flex-1 sm:flex-none"
+          >
+            {{ t('admin.organization.list.createButton') }}
+          </UButton>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            variant="outline"
+            :loading="loading"
+            @click="loadOrganizations"
+            class="flex-1 sm:flex-none"
+          >
+            {{ t('admin.organization.list.refresh') }}
+          </UButton>
+        </div>
       </div>
     </template>
 
     <div v-if="loading" class="text-center py-8">
       <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
       <p class="text-gray-600 dark:text-gray-400 mt-2">
-        Loading organizations...
+        {{ t('admin.organization.list.loading') }}
       </p>
     </div>
 
@@ -54,7 +71,7 @@ onMounted(() => {
 
     <div v-else-if="organizations.length === 0" class="text-center py-8">
       <p class="text-gray-600 dark:text-gray-400">
-        No organizations found
+        {{ t('admin.organization.list.empty') }}
       </p>
     </div>
 
@@ -67,14 +84,14 @@ onMounted(() => {
               {{ org.name }}
             </h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              Slug: {{ org.slug }}
+              {{ t('admin.organization.detail.slug') }} {{ org.slug }}
             </p>
             <p class="text-xs text-gray-500 mt-1">
-              Created: {{ new Date(org.createdAt).toLocaleDateString() }}
+              {{ t('admin.organization.detail.created') }} {{ new Date(org.createdAt).toLocaleDateString() }}
             </p>
           </div>
           <UButton :to="`/admin/organizations/${org.slug}`" variant="outline" size="sm">
-            View
+            {{ t('admin.organization.list.view') }}
           </UButton>
         </div>
       </div>

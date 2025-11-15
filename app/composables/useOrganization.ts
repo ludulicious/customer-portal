@@ -1,4 +1,5 @@
 import { authClient } from '~/utils/auth-client'
+import type { MemberRole } from '#types'
 
 export const useOrganization = () => {
   // Get current user's organization
@@ -39,11 +40,39 @@ export const useOrganization = () => {
     })
   }
 
-  const inviteMember = async (email: string, organizationId: string, role: MemberRole = 'member') => {
+  const inviteMember = async (email: string, organizationId: string, role: MemberRole = 'member', resend = false) => {
     return await authClient.organization.inviteMember({
       email,
       organizationId,
-      role
+      role,
+      resend
+    })
+  }
+
+  const listInvitations = async (organizationId: string) => {
+    return await authClient.organization.listInvitations({
+      organizationId
+    })
+  }
+
+  const resendInvitation = async (invitationId: string, organizationId: string, email: string, role: MemberRole) => {
+    return await authClient.organization.inviteMember({
+      email,
+      organizationId,
+      role,
+      resend: true
+    })
+  }
+
+  const cancelInvitation = async (invitationId: string) => {
+    return await authClient.organization.cancelInvitation({
+      invitationId
+    })
+  }
+
+  const acceptInvitation = async (invitationId: string) => {
+    return await authClient.organization.acceptInvitation({
+      invitationId
     })
   }
 
@@ -55,6 +84,10 @@ export const useOrganization = () => {
     createOrganization,
     getActiveMember,
     listMembers,
-    inviteMember
+    inviteMember,
+    listInvitations,
+    resendInvitation,
+    cancelInvitation,
+    acceptInvitation
   }
 }

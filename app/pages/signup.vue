@@ -61,12 +61,51 @@ type Schema = {
   password: string
 }
 
+const route = useRoute()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
+const invitationId = ref<string | null>(null)
+const invitationInfo = ref<{ organizationName?: string; role?: string } | null>(null)
+
+// Check for invitation ID in query parameters
+onMounted(() => {
+  const invId = route.query.invitationId as string | undefined
+  if (invId) {
+    invitationId.value = invId
+    // Store in localStorage for use after email verification
+    if (process.client) {
+      localStorage.setItem('pendingInvitationId', invId)
+      // Try to fetch invitation details to show context
+      fetchInvitationDetails(invId)
+    }
+  }
+})
+
+const fetchInvitationDetails = async (id: string) => {
+  try {
+    const { data } = await authClient.organization.getInvitation({ id })
+    if (data) {
+      invitationInfo.value = {
+        organizationName: data.organization?.name,
+        role: data.role
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch invitation details:', err)
+  }
+}
+
 const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
   console.log('Submitted', payload)
   error.value = null
   isLoading.value = true
+  
+  // Store invitation ID if present
+  const invId = route.query.invitationId as string | undefined
+  if (invId && process.client) {
+    localStorage.setItem('pendingInvitationId', invId)
+  }
+  
   try {
     const response = await authClient.signUp.email({
       name: payload.data.name,
@@ -78,8 +117,9 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
       error.value = errorMessage
       toast.add({ title: t('signup.errors.errorTitle'), description: errorMessage, color: 'error' })
     } else {
-      // Redirect to OTP verification page with email parameter
-      navigateTo(`/verify-email?email=${encodeURIComponent(payload.data.email)}`)
+      // Redirect to OTP verification page with email parameter and invitation ID if present
+      const verifyUrl = `/verify-email?email=${encodeURIComponent(payload.data.email)}${invId ? `&invitationId=${encodeURIComponent(invId)}` : ''}`
+      navigateTo(verifyUrl)
     }
   } catch (err) {
     console.error('Email signup failed:', err)
@@ -100,6 +140,16 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
     <div class="flex justify-center mb-8">
       <AppLogo class="w-auto h-8 shrink-0" />
     </div>
+
+    <!-- Invitation Alert -->
+    <UAlert
+      v-if="invitationInfo"
+      color="primary"
+      variant="soft"
+      :title="t('signup.invitation.title', { organizationName: invitationInfo.organizationName })"
+      :description="t('signup.invitation.description', { role: invitationInfo.role || 'member' })"
+      class="mb-4"
+    />
 
     <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')"
       :submit="{ label: t('signup.submitButton') }" @submit="onSubmit">
