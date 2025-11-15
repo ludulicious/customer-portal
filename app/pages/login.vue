@@ -84,6 +84,26 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
           // Typically handled by onError or onSuccess
         },
         onSuccess: async (_ctx) => {
+          // Check for pending invitation and accept it after successful login
+          if (process.client) {
+            const pendingInvitationId = localStorage.getItem('pendingInvitationId')
+            if (pendingInvitationId) {
+              try {
+                const { authClient } = await import('~/utils/auth-client')
+                const result = await authClient.organization.acceptInvitation({
+                  invitationId: pendingInvitationId
+                })
+                if (result.error) {
+                  console.error('Failed to accept invitation after login:', result.error)
+                } else {
+                  console.log('Invitation accepted successfully after login')
+                  localStorage.removeItem('pendingInvitationId')
+                }
+              } catch (err) {
+                console.error('Error accepting invitation after login:', err)
+              }
+            }
+          }
           const redirectTo = route.query.redirect?.toString() || '/dashboard'
           window.location.href = redirectTo
         },

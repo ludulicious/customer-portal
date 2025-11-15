@@ -117,16 +117,16 @@ const verifyCode = async () => {
       success.value = t('verify.success')
       console.log('Verification successful, checking session...')
 
-      // Handle invitation acceptance if present
-      if (invitationId.value) {
-        await acceptPendingInvitation()
-      }
-
       // For signup verification, the user might not be signed in yet
+      // Don't try to accept invitation here - wait until after login
       if (!isLoginVerification) {
         console.log('Signup verification successful, user may need to sign in')
+        // Keep invitation ID in localStorage for acceptance after login
+        if (invitationId.value && process.client) {
+          localStorage.setItem('pendingInvitationId', invitationId.value)
+        }
         // Show a message and redirect to login
-        const invitationMessage = invitationId.value ? ' Invitation accepted!' : ''
+        const invitationMessage = invitationId.value ? ' After signing in, your invitation will be accepted automatically.' : ''
         success.value = t('verify.success') + invitationMessage + ' Please sign in to continue.'
         await new Promise(resolve => setTimeout(resolve, 2000))
         const redirectTo = route.query.redirect as string || '/dashboard'
@@ -147,6 +147,11 @@ const verifyCode = async () => {
         console.log('Session after verification:', sessionCheck)
       } catch (sessionError) {
         console.log('Session check error:', sessionError)
+      }
+
+      // Accept invitation if present (user is now signed in)
+      if (invitationId.value) {
+        await acceptPendingInvitation()
       }
 
       console.log('Redirecting...')

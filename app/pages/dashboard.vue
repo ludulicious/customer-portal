@@ -133,20 +133,10 @@ useSeoMeta({
             </p>
           </div>
           <div class="flex items-center space-x-4">
-            <UButton
-              to="/orders"
-              color="primary"
-              variant="outline"
-              icon="i-lucide-clipboard-list"
-            >
+            <UButton to="/orders" color="primary" variant="outline" icon="i-lucide-clipboard-list">
               {{ $t('dashboard.buttons.viewAllOrders') }}
             </UButton>
-            <UButton
-              to="/invoices"
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-file-text"
-            >
+            <UButton to="/invoices" color="neutral" variant="outline" icon="i-lucide-file-text">
               {{ $t('dashboard.buttons.viewInvoices') }}
             </UButton>
           </div>
@@ -253,8 +243,7 @@ useSeoMeta({
               <div class="flex text-yellow-400">
                 <UIcon v-for="i in 5" :key="i"
                   :name="i <= Math.floor(dashboardData.slaMetrics.customerSatisfaction) ? 'i-lucide-star' : 'i-lucide-star'"
-                  :class="i <= Math.floor(dashboardData.slaMetrics.customerSatisfaction) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'"
-                />
+                  :class="i <= Math.floor(dashboardData.slaMetrics.customerSatisfaction) ? 'text-yellow-400' : 'text-gray-300 dark:text-gray-600'" />
               </div>
             </div>
           </div>
@@ -347,11 +336,8 @@ useSeoMeta({
               <div v-for="activity in dashboardData.recentActivity" :key="activity.id"
                 class="flex items-center space-x-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div class="shrink-0">
-                  <UAvatar
-                    :icon="getStatusIcon(activity.type, activity.status)"
-                    :color="getStatusColor(activity.status)"
-                    size="sm"
-                  />
+                  <UAvatar :icon="getStatusIcon(activity.type, activity.status)"
+                    :color="getStatusColor(activity.status)" size="sm" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
@@ -362,10 +348,7 @@ useSeoMeta({
                   </p>
                 </div>
                 <div class="shrink-0">
-                  <UBadge
-                    :color="getStatusColor(activity.status)"
-                    variant="subtle"
-                  >
+                  <UBadge :color="getStatusColor(activity.status)" variant="subtle">
                     {{ activity.status }}
                   </UBadge>
                 </div>
@@ -410,31 +393,13 @@ useSeoMeta({
               </h4>
             </template>
             <div class="space-y-3">
-              <UButton
-                to="/orders/new"
-                color="primary"
-                variant="outline"
-                block
-                icon="i-lucide-plus"
-              >
+              <UButton to="/orders/new" color="primary" variant="outline" block icon="i-lucide-plus">
                 {{ $t('dashboard.buttons.newOrder') }}
               </UButton>
-              <UButton
-                to="/requests/new"
-                color="neutral"
-                variant="outline"
-                block
-                icon="i-lucide-life-buoy"
-              >
+              <UButton to="/requests/new" color="neutral" variant="outline" block icon="i-lucide-life-buoy">
                 {{ $t('dashboard.buttons.newRequest') }}
               </UButton>
-              <UButton
-                to="/reports"
-                color="neutral"
-                variant="outline"
-                block
-                icon="i-lucide-file-text"
-              >
+              <UButton to="/reports" color="neutral" variant="outline" block icon="i-lucide-file-text">
                 {{ $t('dashboard.buttons.generateReport') }}
               </UButton>
             </div>

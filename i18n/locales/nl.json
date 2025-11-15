@@ -569,7 +569,12 @@
     "description": "Heb je al een account?",
     "invitation": {
       "title": "Je bent uitgenodigd om lid te worden van {organizationName}",
-      "description": "Je wordt toegevoegd als {role} na het aanmaken van je account."
+      "description": "Je wordt toegevoegd als {role} na het aanmaken van je account.",
+      "accepting": "Uitnodiging accepteren als {role}...",
+      "accepted": {
+        "title": "Uitnodiging Geaccepteerd",
+        "description": "Je bent succesvol toegevoegd aan de organisatie."
+      }
     },
     "errors": {
       "errorTitle": "Fout",

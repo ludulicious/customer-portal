@@ -571,7 +571,12 @@
     "description": "Already have an account?",
     "invitation": {
       "title": "You've been invited to join {organizationName}",
-      "description": "You'll be added as a {role} after creating your account."
+      "description": "You'll be added as a {role} after creating your account.",
+      "accepting": "Accepting invitation as {role}...",
+      "accepted": {
+        "title": "Invitation Accepted",
+        "description": "You have been successfully added to the organization."
+      }
     },
     "errors": {
       "errorTitle": "Error",

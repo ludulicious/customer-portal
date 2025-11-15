@@ -9,11 +9,19 @@ const toast = useToast()
 
 // User store
 const userStore = useUserStore()
-const { currentUser, userInitials, isAuthenticated, currentSession } = storeToRefs(userStore)
+const { currentUser, userInitials, isAuthenticated, currentSession, activeOrganizationId } = storeToRefs(userStore)
 
 // Reactive states for menu items
 const isOrgAdmin = ref(false)
 const showOrgSwitcherModal = ref(false)
+
+// Active organization state
+const activeOrganization = ref<{ id: string, name: string } | null>(null)
+const loadingOrganization = ref(false)
+const organizations = authClient.useListOrganizations()
+const hasMultipleOrganizations = computed(() => {
+  return organizations.value.data && organizations.value.data.length > 1
+})
 
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => {
@@ -33,13 +41,6 @@ const userMenuItems = computed(() => {
         label: 'Profile',
         icon: 'i-lucide-user',
         to: '/profile'
-      },
-      {
-        label: 'Switch Organization',
-        icon: 'i-lucide-building-2',
-        onSelect: () => {
-          showOrgSwitcherModal.value = true
-        }
       }
     ]
   ] as DropdownMenuItem[]
@@ -200,6 +201,55 @@ const stopImpersonating = async () => {
   }
 }
 
+// Load active organization details from user's organization list
+const loadActiveOrganization = async () => {
+  const orgId = activeOrganizationId.value
+  if (!orgId || !isAuthenticated.value) {
+    activeOrganization.value = null
+    return
+  }
+
+  try {
+    loadingOrganization.value = true
+    // Use Better Auth's list organizations endpoint which returns all user's organizations
+    const { data: organizations } = await authClient.organization.list()
+    if (organizations) {
+      const activeOrg = organizations.find(org => org.id === orgId)
+      if (activeOrg) {
+        activeOrganization.value = {
+          id: activeOrg.id,
+          name: activeOrg.name
+        }
+      } else {
+        activeOrganization.value = null
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load active organization:', err)
+    activeOrganization.value = null
+  } finally {
+    loadingOrganization.value = false
+  }
+}
+
+// Watch for changes in active organization ID
+watch(activeOrganizationId, (newOrgId) => {
+  if (newOrgId) {
+    loadActiveOrganization()
+  } else {
+    activeOrganization.value = null
+  }
+}, { immediate: true })
+
+// Watch for authentication changes
+watch(isAuthenticated, (authenticated) => {
+  if (authenticated && activeOrganizationId.value) {
+    loadActiveOrganization()
+  } else {
+    activeOrganization.value = null
+  }
+}, { immediate: true })
+
 </script>
 
 <template>
@@ -232,9 +282,56 @@ const stopImpersonating = async () => {
 
   <UHeader>
     <template #left>
-      <NuxtLink to="/">
-        <AppLogo class="w-auto h-6 shrink-0" />
-      </NuxtLink>
+      <div class="flex items-center gap-3">
+        <!-- Logo Icon -->
+        <NuxtLink to="/" class="shrink-0">
+          <div class="relative">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Background circle -->
+              <circle cx="20" cy="20" r="20" fill="#75cbfe" />
+              <!-- Building/facility icon -->
+              <rect x="12" y="15" width="4" height="10" fill="white" rx="1" />
+              <rect x="18" y="12" width="4" height="13" fill="white" rx="1" />
+              <rect x="24" y="18" width="4" height="7" fill="white" rx="1" />
+              <!-- Roof/peak -->
+              <path d="M10 15 L20 8 L30 15 L28 15 L20 10 L12 15 Z" fill="white" />
+              <!-- Door -->
+              <rect x="18" y="20" width="2" height="5" fill="#75cbfe" />
+            </svg>
+          </div>
+        </NuxtLink>
+
+        <!-- ApexPro Title with Organization Name or Facility Services Subtitle -->
+        <div class="flex flex-col">
+          <span class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+            ApexPro
+          </span>
+          <button
+            v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations"
+            type="button"
+            class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1 text-left hover:text-highlighted transition-colors"
+            @click="showOrgSwitcherModal = true"
+          >
+            {{ activeOrganization.name }}
+          </button>
+          <span
+            v-else-if="isAuthenticated && activeOrganization"
+            class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1"
+          >
+            {{ activeOrganization.name }}
+          </span>
+          <span
+            v-else-if="isAuthenticated && loadingOrganization"
+            class="text-sm text-gray-400 leading-tight -mt-1 flex items-center gap-1"
+          >
+            <UIcon name="i-lucide-loader-2" class="w-3 h-3 animate-spin" />
+            Loading...
+          </span>
+          <span v-else class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
+            Facility Services
+          </span>
+        </div>
+      </div>
     </template>
 
     <nav class="hidden lg:flex items-center gap-6">
@@ -249,19 +346,21 @@ const stopImpersonating = async () => {
     </nav>
 
     <template #right>
-      <ULocaleSelect v-model="currentLocale" class="hidden lg:flex" :locales="[en, nl]" />
-      <UColorModeButton />
+      <div class="hidden lg:flex items-center gap-3">
+        <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" />
+        <UColorModeButton />
 
-      <!-- User Avatar Dropdown (only show when user is logged in) -->
-      <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
-        <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
-          size="sm" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
-      </UDropdownMenu>
+        <!-- User Avatar Dropdown (only show when user is logged in) -->
+        <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
+          <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
+            size="sm" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
+        </UDropdownMenu>
+      </div>
 
       <!-- Organization Switcher Modal -->
       <UModal v-model:open="showOrgSwitcherModal" title="Switch Organization" :ui="{ footer: 'justify-end' }">
         <template #body>
-          <OrganizationSwitcher :show-create-button="true" @switched="showOrgSwitcherModal = false" />
+          <OrganizationSwitcher :show-create-button="false" @switched="showOrgSwitcherModal = false" />
         </template>
         <template #footer="{ close }">
           <UButton label="Close" color="neutral" variant="outline" @click="close" />
@@ -282,6 +381,31 @@ const stopImpersonating = async () => {
       </nav>
 
       <USeparator class="my-6" />
+
+      <!-- Active Organization Display for Mobile -->
+      <div v-if="isAuthenticated && (activeOrganization || loadingOrganization)" class="mb-4">
+        <UButton
+          v-if="loadingOrganization"
+          variant="ghost"
+          size="sm"
+          disabled
+          block
+          class="text-muted"
+        >
+          <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+        </UButton>
+        <UButton
+          v-else-if="activeOrganization"
+          variant="ghost"
+          size="sm"
+          icon="i-lucide-building-2"
+          block
+          class="text-muted hover:text-highlighted"
+          @click="showOrgSwitcherModal = true"
+        >
+          {{ activeOrganization.name }}
+        </UButton>
+      </div>
 
       <!-- User Avatar Dropdown for Mobile (only show when user is logged in) -->
       <div v-if="currentUser" class="mb-6">
