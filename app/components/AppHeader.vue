@@ -19,6 +19,16 @@ const hasMultipleOrganizations = computed(() => {
   return myOrganizations.value && myOrganizations.value.length > 1
 })
 
+const hasSingleOrganization = computed(() => {
+  return myOrganizations.value && myOrganizations.value.length === 1
+})
+
+const singleOrganizationSlug = computed(() => {
+  return myOrganizations.value && myOrganizations.value.length === 1 && myOrganizations.value[0]
+    ? myOrganizations.value[0].slug
+    : null
+})
+
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => {
   const menuItems = [
@@ -34,10 +44,24 @@ const userMenuItems = computed(() => {
     ],
     [
       {
-        label: 'Profile',
+        label: t('nav.profile'),
         icon: 'i-lucide-user',
         to: '/profile'
-      }
+      },
+      ...(hasMultipleOrganizations.value
+        ? [{
+            label: t('myOrganizations.title'),
+            icon: 'i-lucide-building-2',
+            to: '/my-organizations'
+          }]
+        : []),
+      ...(hasSingleOrganization.value && singleOrganizationSlug.value
+        ? [{
+            label: t('nav.myOrganization'),
+            icon: 'i-lucide-building-2',
+            to: `/admin/organizations/${singleOrganizationSlug.value}`
+          }]
+        : [])
     ]
   ] as DropdownMenuItem[]
 

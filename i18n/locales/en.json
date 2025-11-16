@@ -35,6 +35,7 @@
       },
       "detail": {
         "back": "Back to Organizations",
+        "backToMyOrganizations": "Back to my organizations",
         "loading": "Loading organization...",
         "title": "Organization Details",
         "name": "Name:",
@@ -441,6 +442,10 @@
     },
     "title": "Ludulicious - Innovative Software Solutions"
   },
+  "myOrganizations": {
+    "title": "My Organizations",
+    "description": "Manage your organizations and switch between them"
+  },
   "login": {
     "description": "Don't have an account?",
     "errors": {
@@ -480,8 +485,10 @@
     "contact": "Contact",
     "dashboard": "Dashboard",
     "language": "Language",
+    "myOrganization": "My Organisation",
     "organization": "Organization",
-    "portfolio": "Portfolio"
+    "portfolio": "Portfolio",
+    "profile": "Profile"
   },
   "organization": {
     "members": {
@@ -543,6 +550,9 @@
     "badges": {
       "active": "Active"
     },
+    "buttons": {
+      "setActive": "Set active"
+    },
     "description": "Manage your personal information and profile settings",
     "fields": {
       "email": "Email",
@@ -556,6 +566,8 @@
     },
     "messages": {
       "error": "Error",
+      "failedToActivateOrganization": "Failed to activate organization",
+      "organizationActivated": "Organization activated successfully",
       "profileUpdated": "Your profile has been updated successfully",
       "success": "Success",
       "updateFailed": "Failed to update profile"

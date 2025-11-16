@@ -8,17 +8,52 @@ definePageMeta({
 })
 
 const userStore = useUserStore()
-const { isAdmin } = storeToRefs(userStore)
-
-// Redirect if not admin
-if (!isAdmin.value) {
-  throw createError({ statusCode: 403, message: 'Admin access required' })
-}
+const { isAdmin, myOrganizations } = storeToRefs(userStore)
+const { hasPermission } = userStore
 
 const { t } = useI18n()
 const toast = useToast()
 const route = useRoute()
 const slug = route.params.slug as string
+
+// Check access: admin OR (member of organization AND has organization.read permission)
+const checkAccess = () => {
+  // If user is admin, allow access
+  if (isAdmin.value) {
+    return true
+  }
+
+  // Check if user is a member of this organization (by slug)
+  const isMember = myOrganizations.value?.some(org => org.slug === slug) ?? false
+
+  // Check if user has organization.read permission
+  const hasReadPermission = hasPermission('organization', 'read')
+
+  // Allow access if user is member AND has permission
+  return isMember && hasReadPermission
+}
+
+// Check access before allowing page to render
+if (!checkAccess()) {
+  throw createError({ statusCode: 403, message: 'Access denied. You must be an admin or a member of this organization with read permissions.' })
+}
+
+// Check if back button should be shown (only when navigating from another page)
+const showBackButton = computed(() => {
+  return !!route.query.from
+})
+
+// Determine back route based on query parameter
+const backRoute = computed(() => {
+  return route.query.from === 'my-organizations' ? '/my-organizations' : '/admin/organizations'
+})
+
+// Determine back button text based on query parameter
+const backButtonText = computed(() => {
+  return route.query.from === 'my-organizations'
+    ? t('admin.organization.detail.backToMyOrganizations')
+    : t('admin.organization.detail.back')
+})
 
 const loading = ref(true)
 const error = ref('')
@@ -30,6 +65,16 @@ const showResendModal = ref(false)
 const showDeleteModal = ref(false)
 const selectedInvitation = ref<{ id: string, email: string, role: string } | null>(null)
 const deleteInvitationId = ref<string | null>(null)
+
+// Type for organization with role
+type OrganizationWithRole = Organization & { role?: string | null }
+
+// Get user's role in this organization
+const userOrganizationRole = computed(() => {
+  if (!myOrganizations.value || !organization.value) return null
+  const org = myOrganizations.value.find(org => org.slug === organization.value?.slug) as OrganizationWithRole | undefined
+  return org?.role || null
+})
 
 // Load organization details
 const loadOrganization = async () => {
@@ -160,14 +205,9 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
     <UContainer>
       <!-- Back Button -->
-      <div class="mb-4">
-        <UButton
-          icon="i-lucide-arrow-left"
-          variant="ghost"
-          size="sm"
-          :to="'/admin/organizations'"
-        >
-          {{ t('admin.organization.detail.back') }}
+      <div v-if="showBackButton" class="mb-4">
+        <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" :to="backRoute">
+          {{ backButtonText }}
         </UButton>
       </div>
 
@@ -183,7 +223,7 @@ onMounted(() => {
       <UAlert v-else-if="error" color="error" variant="soft" :title="error" />
 
       <!-- Organization Details -->
-      <div v-else-if="organization" class="space-y-6">
+      <div v-else-if="organization && hasPermission('organization', 'read')" class="space-y-6">
         <!-- Organization Info Card -->
         <UCard>
           <template #header>
@@ -192,7 +232,14 @@ onMounted(() => {
           <div class="space-y-2">
             <div>
               <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.organization.detail.name') }}</span>
-              <p class="font-semibold">{{ organization.name }}</p>
+              <div class="flex items-center gap-2">
+                <p class="font-semibold">{{ organization.name }}</p>
+                <UBadge v-if="userOrganizationRole"
+                  :color="userOrganizationRole === 'owner' ? 'primary' : userOrganizationRole === 'admin' ? 'info' : 'neutral'"
+                  variant="soft">
+                  {{ String(userOrganizationRole).charAt(0).toUpperCase() + String(userOrganizationRole).slice(1) }}
+                </UBadge>
+              </div>
             </div>
             <div>
               <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.organization.detail.slug') }}</span>
@@ -206,10 +253,12 @@ onMounted(() => {
         </UCard>
 
         <!-- Members Card -->
-        <UCard>
+        <UCard v-if="hasPermission('member', 'list')">
           <template #header>
             <div class="flex items-center justify-between">
-              <h2 class="text-xl font-semibold">{{ t('admin.organization.detail.members.title') }} ({{ members.length }})</h2>
+              <h2 class="text-xl font-semibold">
+                {{ t('admin.organization.detail.members.title') }} ({{ members.length }})
+              </h2>
             </div>
           </template>
           <div v-if="members.length === 0" class="text-center py-4 text-gray-600 dark:text-gray-400">
@@ -219,9 +268,15 @@ onMounted(() => {
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.members.email') }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.members.name') }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.members.role') }}</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{ t('admin.organization.detail.members.email') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{ t('admin.organization.detail.members.name') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{ t('admin.organization.detail.members.role') }}
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -229,9 +284,9 @@ onMounted(() => {
                   <td class="px-4 py-3 text-sm">{{ member.user.email }}</td>
                   <td class="px-4 py-3 text-sm">{{ member.user.name || t('admin.table.notAvailable') }}</td>
                   <td class="px-4 py-3 text-sm">
-                        <UBadge :color="member.role === 'owner' ? 'primary' : 'neutral'">
-                          {{ member.role }}
-                        </UBadge>
+                    <UBadge :color="member.role === 'owner' ? 'primary' : 'neutral'">
+                      {{ member.role }}
+                    </UBadge>
                   </td>
                 </tr>
               </tbody>
@@ -240,17 +295,16 @@ onMounted(() => {
         </UCard>
 
         <!-- Invitations Card -->
-        <UCard>
+        <UCard v-if="hasPermission('invitation', 'list')">
           <template #header>
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <h2 class="text-xl font-semibold">{{ t('admin.organization.detail.invitations.title') }} ({{ invitations.length }})</h2>
-              <UButton
-                icon="i-lucide-user-plus"
-                color="primary"
-                class="w-full sm:w-auto"
-                @click="showInviteModal = true"
-              >
-                {{ t('admin.organization.detail.invitations.inviteOwner') }}
+              <h2 class="text-xl font-semibold">
+                {{ t('admin.organization.detail.invitations.title') }} ({{
+                  invitations.length }})
+              </h2>
+              <UButton v-if="hasPermission('invitation', 'create')" icon="i-lucide-user-plus" color="primary" class="w-full sm:w-auto"
+                @click="showInviteModal = true">
+                {{ t('admin.organization.detail.invitations.inviteMember') }}
               </UButton>
             </div>
           </template>
@@ -261,11 +315,26 @@ onMounted(() => {
             <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead class="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.invitations.email') }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.invitations.role') }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.invitations.status') }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.invitations.expires') }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{{ t('admin.organization.detail.invitations.actions') }}</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{
+                      t('admin.organization.detail.invitations.email') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{
+                      t('admin.organization.detail.invitations.role') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{
+                      t('admin.organization.detail.invitations.status') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{
+                      t('admin.organization.detail.invitations.expires') }}
+                  </th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                    {{
+                      t('admin.organization.detail.invitations.actions') }}
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -275,30 +344,22 @@ onMounted(() => {
                     <UBadge color="primary">{{ invitation.role || 'member' }}</UBadge>
                   </td>
                   <td class="px-4 py-3 text-sm">
-                        <UBadge :color="invitation.status === 'pending' ? 'warning' : 'neutral'">
-                          {{ invitation.status }}
-                        </UBadge>
+                    <UBadge :color="invitation.status === 'pending' ? 'warning' : 'neutral'">
+                      {{ invitation.status }}
+                    </UBadge>
                   </td>
                   <td class="px-4 py-3 text-sm">{{ new Date(invitation.expiresAt).toLocaleDateString() }}</td>
                   <td class="px-4 py-3 text-sm">
                     <div class="flex gap-2">
-                      <UButton
-                        icon="i-lucide-send"
-                        variant="ghost"
+                      <UButton v-if="hasPermission('invitation', 'resend')" icon="i-lucide-send" variant="ghost"
                         size="sm"
-                        @click="openResendModal(invitation.id, invitation.email, invitation.role || 'member')"
-                      >
+                        @click="openResendModal(invitation.id, invitation.email, invitation.role || 'member')">
                         {{ t('admin.organization.detail.invitations.resend') }}
                       </UButton>
-                          <UButton
-                            icon="i-lucide-trash-2"
-                            variant="ghost"
-                            size="sm"
-                            color="error"
-                            @click="openDeleteModal(invitation.id)"
-                          >
-                            {{ t('admin.organization.detail.invitations.delete') }}
-                          </UButton>
+                      <UButton v-if="hasPermission('invitation', 'delete')" icon="i-lucide-trash-2" variant="ghost"
+                        size="sm" color="error" @click="openDeleteModal(invitation.id)">
+                        {{ t('admin.organization.detail.invitations.delete') }}
+                      </UButton>
                     </div>
                   </td>
                 </tr>
@@ -309,35 +370,23 @@ onMounted(() => {
       </div>
 
       <!-- Invite Member Modal -->
-      <AdminInviteMemberModal
-        v-if="showInviteModal && organization"
-        v-model:open="showInviteModal"
-        :organization-id="organization.id"
-        @success="handleInviteSuccess"
-      />
+      <AdminInviteMemberModal v-if="showInviteModal && organization" v-model:open="showInviteModal"
+        :organization-id="organization.id" @success="handleInviteSuccess" />
 
       <!-- Resend Invitation Confirmation Modal -->
-      <ConfirmationModal
-        v-if="showResendModal && selectedInvitation"
-        v-model:open="showResendModal"
+      <ConfirmationModal v-if="showResendModal && selectedInvitation" v-model:open="showResendModal"
         title="admin.organization.detail.invitations.confirmResend.title"
         message="admin.organization.detail.invitations.confirmResend.message"
         :message-params="{ email: selectedInvitation.email, role: selectedInvitation.role }"
-        confirm-text="admin.organization.detail.invitations.confirmResend.confirm"
-        confirm-color="primary"
-        @confirm="handleResendInvitation"
-      />
+        confirm-text="admin.organization.detail.invitations.confirmResend.confirm" confirm-color="primary"
+        @confirm="handleResendInvitation" />
 
       <!-- Delete Invitation Confirmation Modal -->
-      <ConfirmationModal
-        v-if="showDeleteModal"
-        v-model:open="showDeleteModal"
+      <ConfirmationModal v-if="showDeleteModal" v-model:open="showDeleteModal"
         title="admin.organization.detail.invitations.confirmDelete.title"
         message="admin.organization.detail.invitations.confirmDelete.message"
-        confirm-text="admin.organization.detail.invitations.confirmDelete.confirm"
-        confirm-color="error"
-        @confirm="handleDeleteInvitation"
-      />
+        confirm-text="admin.organization.detail.invitations.confirmDelete.confirm" confirm-color="error"
+        @confirm="handleDeleteInvitation" />
     </UContainer>
   </div>
 </template>

@@ -203,8 +203,50 @@ export const useUserStore = defineStore('user', () => {
     return currentUser.value !== null
   })
 
+  // Store roles for each organization
+  const organizationRoles = ref<Record<string, string>>({})
+
+  // Fetch roles for all organizations when organizations are loaded
+  watch(() => organizationsHelper.value.data, async (organizations) => {
+    if (!organizations || !currentUser.value) {
+      organizationRoles.value = {}
+      return
+    }
+
+    // Fetch role for each organization
+    const roles: Record<string, string> = {}
+    for (const org of organizations) {
+      try {
+        // Temporarily set active organization to get the role
+        // Note: We'll use listMembers to find the user's role instead
+        const members = await authClient.organization.listMembers({
+          query: { organizationId: org.id }
+        })
+
+        if (members?.data) {
+          const memberList = Array.isArray(members.data) ? members.data : (members.data as { members?: Array<{ userId: string, role: string | string[] }> })?.members || []
+          const userMember = memberList.find((m) => m.userId === currentUser.value?.id)
+          if (userMember) {
+            const role = Array.isArray(userMember.role) ? userMember.role[0] : userMember.role
+            roles[org.id] = role || 'member'
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching role for organization ${org.id}:`, error)
+      }
+    }
+    organizationRoles.value = roles
+  }, { immediate: true })
+
+  // Enhanced organizations with roles
   const myOrganizations = computed(() => {
-    return organizationsHelper.value.data as Organization[] | null | undefined
+    const orgs = organizationsHelper.value.data as Organization[] | null | undefined
+    if (!orgs) return orgs
+
+    return orgs.map(org => ({
+      ...org,
+      role: organizationRoles.value[org.id] || null
+    }))
   })
 
   const loadingOrganization = computed(() => {

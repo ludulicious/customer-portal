@@ -1,7 +1,7 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
-import { invitation as invitationTable } from '~~/server/db/schema/auth-schema'
+import { invitation as invitationTable, member as memberTable } from '~~/server/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
 import type { SessionUser, OrganizationInvitationsResponse } from '~~/shared/types'
 
@@ -11,15 +11,31 @@ export default defineEventHandler(async (event): Promise<OrganizationInvitations
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  // Check if user is admin
   const user = session.user as SessionUser
-  if (user.role !== 'admin') {
-    throw createError({ statusCode: 403, message: 'Admin access required' })
-  }
-
   const organizationId = getRouterParam(event, 'id')
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'Organization ID is required' })
+  }
+
+  // Check if user is admin - admins have full access
+  if (user.role !== 'admin') {
+    // For non-admin users, check if they are a member of this organization
+    const [member] = await db
+      .select()
+      .from(memberTable)
+      .where(
+        and(
+          eq(memberTable.userId, user.id),
+          eq(memberTable.organizationId, organizationId)
+        )
+      )
+      .limit(1)
+
+    if (!member) {
+      throw createError({ statusCode: 403, message: 'Access denied. You must be an admin or a member of this organization.' })
+    }
+
+    // Members can view invitations even though they don't have invitation.create/cancel permissions
   }
 
   // Get all pending invitations for this organization

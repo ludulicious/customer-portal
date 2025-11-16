@@ -3,7 +3,9 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 const { t } = useI18n()
-const { currentUser, activeOrganizationId, setCurrentUser, myOrganizations } = useUserStore()
+const userStore = useUserStore()
+const { currentUser } = storeToRefs(userStore)
+const { setCurrentUser } = userStore
 const toast = useToast()
 
 // Zod schema for profile form validation
@@ -37,18 +39,18 @@ const isDirty = ref(false)
 
 // Initialize form with current user data
 watchEffect(() => {
-  if (currentUser) {
-    form.name = currentUser.name || ''
-    form.image = currentUser.image || ''
+  if (currentUser.value) {
+    form.name = currentUser.value.name || ''
+    form.image = currentUser.value.image || ''
     isDirty.value = false
   }
 })
 
 // Watch for form changes
 watch(() => [form.name, form.image], () => {
-  if (currentUser) {
-    const nameChanged = form.name !== (currentUser.name || '')
-    const imageChanged = form.image !== (currentUser.image || '')
+  if (currentUser.value) {
+    const nameChanged = form.name !== (currentUser.value.name || '')
+    const imageChanged = form.image !== (currentUser.value.image || '')
     isDirty.value = nameChanged || imageChanged
   }
 }, { deep: true })
@@ -60,7 +62,7 @@ useSeoMeta({
 })
 
 const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
-  if (!currentUser) return
+  if (!currentUser.value) return
 
   isLoading.value = true
   try {
@@ -84,7 +86,7 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
     if (response.success && response.user) {
       // Update the user store with new data
       setCurrentUser({
-        ...currentUser,
+        ...currentUser.value,
         name: response.user.name,
         image: response.user.image || undefined
       })
@@ -113,16 +115,11 @@ const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
 }
 
 const handleReset = () => {
-  if (currentUser) {
-    form.name = currentUser.name || ''
-    form.image = currentUser.image || ''
+  if (currentUser.value) {
+    form.name = currentUser.value.name || ''
+    form.image = currentUser.value.image || ''
     isDirty.value = false
   }
-}
-
-const isActiveOrganization = (organizationId: string) => {
-  if (!activeOrganizationId) return false
-  return activeOrganizationId === organizationId
 }
 </script>
 
@@ -198,33 +195,6 @@ const isActiveOrganization = (organizationId: string) => {
             </UButton>
           </div>
         </UForm>
-      </UCard>
-
-      <UCard>
-        <template #header>
-          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-            {{ $t('profile.sections.organizations') }}
-          </h2>
-        </template>
-        <div v-if="myOrganizations === null || myOrganizations === undefined">Loading...</div>
-        <div v-else-if="myOrganizations.length === 0">No organizations found.</div>
-        <div v-else class="space-y-6">
-          <div v-for="organization in myOrganizations" :key="organization.id" class="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ organization.name }}</h3>
-                <UBadge v-if="isActiveOrganization(organization.id)" color="success" variant="subtle">
-                  {{ $t('profile.badges.active') }}
-                </UBadge>
-                <UBadge v-else color="warning" variant="subtle">{{ 'No active organization' }}</UBadge>
-              </div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{{ organization.slug }}</p>
-              <p class="text-xs text-gray-500 mt-1">
-                {{ $t('common.createdAt') }}: {{ new Date(organization.createdAt).toLocaleDateString() }}
-              </p>
-            </div>
-          </div>
-        </div>
       </UCard>
     </div>
   </div>

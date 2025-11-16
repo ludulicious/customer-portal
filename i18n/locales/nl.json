@@ -35,6 +35,7 @@
       },
       "detail": {
         "back": "Terug naar Organisaties",
+        "backToMyOrganizations": "Terug naar mijn organisaties",
         "loading": "Organisatie laden...",
         "title": "Organisatie Details",
         "name": "Naam:",
@@ -441,6 +442,10 @@
     },
     "title": "Ludulicious - Innovatieve Software Oplossingen"
   },
+  "myOrganizations": {
+    "title": "Mijn Organisaties",
+    "description": "Beheer je organisaties en wissel tussen hen"
+  },
   "login": {
     "description": "Heb je nog geen account?",
     "errors": {
@@ -479,7 +484,11 @@
     "blog": "Blog",
     "contact": "Contact",
     "dashboard": "Dashboard",
-    "language": "Taal"
+    "language": "Taal",
+    "myOrganization": "Mijn Organisatie",
+    "organization": "Organisatie",
+    "portfolio": "Portfolio",
+    "profile": "Profiel"
   },
   "organization": {
     "members": {
@@ -541,6 +550,9 @@
     "badges": {
       "active": "Actief"
     },
+    "buttons": {
+      "setActive": "Activeren"
+    },
     "description": "Beheer je persoonlijke informatie en profielinstellingen",
     "fields": {
       "email": "E-mail",
@@ -554,6 +566,8 @@
     },
     "messages": {
       "error": "Fout",
+      "failedToActivateOrganization": "Organisatie activeren mislukt",
+      "organizationActivated": "Organisatie succesvol geactiveerd",
       "profileUpdated": "Je profiel is succesvol bijgewerkt",
       "success": "Succes",
       "updateFailed": "Profiel bijwerken mislukt"
