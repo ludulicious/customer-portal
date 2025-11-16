@@ -65,29 +65,48 @@ const route = useRoute()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const invitationId = ref<string | null>(null)
-const invitationInfo = ref<{ organizationName?: string; role?: string } | null>(null)
+const invitationInfo = ref<{ organizationName?: string; role?: string; email?: string } | null>(null)
+const acceptingInvitation = ref(false)
+
+// User store for checking authentication
+const userStore = useUserStore()
+const { isAuthenticated, currentUser } = storeToRefs(userStore)
 
 // Check for invitation ID in query parameters
-onMounted(() => {
+onMounted(async () => {
   const invId = route.query.invitationId as string | undefined
   if (invId) {
     invitationId.value = invId
-    // Store in localStorage for use after email verification
-    if (process.client) {
-      localStorage.setItem('pendingInvitationId', invId)
-      // Try to fetch invitation details to show context
-      fetchInvitationDetails(invId)
+
+    // Check if user is already logged in
+    if (isAuthenticated.value && currentUser.value) {
+      // User is logged in, try to accept invitation automatically
+      await handleLoggedInInvitation(invId)
+    } else {
+      // User is not logged in, store for later use
+      if (process.client) {
+        localStorage.setItem('pendingInvitationId', invId)
+        // Try to fetch invitation details to show context
+        fetchInvitationDetails(invId)
+      }
     }
   }
 })
 
 const fetchInvitationDetails = async (id: string) => {
   try {
-    const { data } = await authClient.organization.getInvitation({ id })
+    // Use custom endpoint to bypass inviter membership check
+    const data = await $fetch<{
+      organizationName?: string
+      role?: string
+      email?: string
+    }>(`/api/organizations/get-invitation?id=${encodeURIComponent(id)}`)
+
     if (data) {
       invitationInfo.value = {
-        organizationName: data.organization?.name,
-        role: data.role
+        organizationName: data.organizationName || undefined,
+        role: data.role,
+        email: data.email
       }
     }
   } catch (err) {
@@ -95,17 +114,152 @@ const fetchInvitationDetails = async (id: string) => {
   }
 }
 
+// Handle invitation acceptance for logged-in users
+const handleLoggedInInvitation = async (invId: string) => {
+  acceptingInvitation.value = true
+
+  try {
+    // Fetch invitation details using custom endpoint to bypass inviter membership check
+    let invitationData: {
+      email?: string
+      role?: string
+      organizationName?: string
+      status?: string
+      expiresAt?: Date | string
+    } | null = null
+
+    try {
+      invitationData = await $fetch<{
+        email?: string
+        role?: string
+        organizationName?: string
+        status?: string
+        expiresAt?: Date | string
+      }>(`/api/organizations/get-invitation?id=${encodeURIComponent(invId)}`)
+    } catch (fetchErr: unknown) {
+      const apiError = fetchErr as { data?: { message?: string }; message?: string }
+      const errorMessage = apiError?.data?.message || apiError?.message || t('signup.invitation.loggedIn.error', { error: 'Invitation not found' })
+      error.value = errorMessage
+      toast.add({
+        title: t('common.error'),
+        description: errorMessage,
+        color: 'error'
+      })
+      acceptingInvitation.value = false
+      return
+    }
+
+    if (!invitationData) {
+      const errorMessage = t('signup.invitation.loggedIn.error', { error: 'Invitation not found' })
+      error.value = errorMessage
+      toast.add({
+        title: t('common.error'),
+        description: errorMessage,
+        color: 'error'
+      })
+      acceptingInvitation.value = false
+      return
+    }
+
+    // Check if invitation email matches logged-in user's email
+    const userEmail = currentUser.value?.email?.toLowerCase()
+    const invitationEmail = invitationData.email?.toLowerCase()
+
+    if (userEmail !== invitationEmail) {
+      const errorMessage = t('signup.invitation.loggedIn.emailMismatch')
+      error.value = errorMessage
+      toast.add({
+        title: t('common.error'),
+        description: errorMessage,
+        color: 'error'
+      })
+      acceptingInvitation.value = false
+      return
+    }
+
+    // Show accepting message
+    toast.add({
+      title: t('common.info'),
+      description: t('signup.invitation.loggedIn.accepting'),
+      color: 'info'
+    })
+
+    // Accept the invitation using custom endpoint to bypass inviter membership check
+    // This is necessary because admins who create organizations are removed as members
+    try {
+      const result = await $fetch<{ success: boolean; organization?: { id: string; name: string } }>('/api/organizations/accept-invitation', {
+        method: 'POST',
+        body: { invitationId: invId }
+      })
+
+      if (!result || !result.success) {
+        throw new Error('Failed to accept invitation')
+      }
+
+      // Set the organization as active if user doesn't have an active organization
+      const userStore = useUserStore()
+      if (!userStore.activeOrganizationId && result.organization) {
+        await userStore.setActiveOrganizationId(result.organization.id)
+      }
+    } catch (err: unknown) {
+      const apiError = err as { data?: { message?: string }; message?: string }
+      const errorMessage = apiError?.data?.message || apiError?.message || t('signup.invitation.loggedIn.error', { error: 'Unknown error' })
+      error.value = errorMessage
+      toast.add({
+        title: t('common.error'),
+        description: errorMessage,
+        color: 'error'
+      })
+      acceptingInvitation.value = false
+      return
+    }
+
+    // Success - show success message and redirect
+    const successMessage = t('signup.invitation.loggedIn.success', {
+      organizationName: invitationData.organizationName || 'the organization',
+      role: invitationData.role || 'member'
+    })
+    toast.add({
+      title: t('common.success'),
+      description: successMessage,
+      color: 'success'
+    })
+
+    // Clear any stored invitation ID
+    if (process.client) {
+      localStorage.removeItem('pendingInvitationId')
+    }
+
+    // Redirect to dashboard after short delay
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    await navigateTo('/dashboard')
+  } catch (err) {
+    console.error('Error handling logged-in invitation:', err)
+    const errorMessage = t('signup.invitation.loggedIn.error', {
+      error: err instanceof Error ? err.message : 'Unknown error'
+    })
+    error.value = errorMessage
+    toast.add({
+      title: t('common.error'),
+      description: errorMessage,
+      color: 'error'
+    })
+  } finally {
+    acceptingInvitation.value = false
+  }
+}
+
 const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
   console.log('Submitted', payload)
   error.value = null
   isLoading.value = true
-  
+
   // Store invitation ID if present
   const invId = route.query.invitationId as string | undefined
   if (invId && process.client) {
     localStorage.setItem('pendingInvitationId', invId)
   }
-  
+
   try {
     const response = await authClient.signUp.email({
       name: payload.data.name,
@@ -141,9 +295,22 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
       <AppLogo class="w-auto h-8 shrink-0" />
     </div>
 
+    <!-- Accepting Invitation Alert (for logged-in users) -->
+    <UAlert
+      v-if="acceptingInvitation"
+      color="info"
+      variant="soft"
+      :title="t('signup.invitation.loggedIn.accepting')"
+      class="mb-4"
+    >
+      <template #icon>
+        <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+      </template>
+    </UAlert>
+
     <!-- Invitation Alert -->
     <UAlert
-      v-if="invitationInfo"
+      v-if="invitationInfo && !acceptingInvitation"
       color="primary"
       variant="soft"
       :title="t('signup.invitation.title', { organizationName: invitationInfo.organizationName })"

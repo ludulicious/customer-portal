@@ -574,6 +574,12 @@
       "accepted": {
         "title": "Uitnodiging Geaccepteerd",
         "description": "Je bent succesvol toegevoegd aan de organisatie."
+      },
+      "loggedIn": {
+        "accepting": "Uitnodiging accepteren...",
+        "success": "Succesvol lid geworden van {organizationName} als {role}",
+        "emailMismatch": "Deze uitnodiging is verzonden naar een ander e-mailadres. Log uit en gebruik het e-mailadres waarop de uitnodiging is verzonden.",
+        "error": "Uitnodiging accepteren mislukt: {error}"
       }
     },
     "errors": {

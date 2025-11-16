@@ -576,6 +576,12 @@
       "accepted": {
         "title": "Invitation Accepted",
         "description": "You have been successfully added to the organization."
+      },
+      "loggedIn": {
+        "accepting": "Accepting invitation...",
+        "success": "Successfully joined {organizationName} as {role}",
+        "emailMismatch": "This invitation was sent to a different email address. Please log out and use the email address the invitation was sent to.",
+        "error": "Failed to accept invitation: {error}"
       }
     },
     "errors": {
