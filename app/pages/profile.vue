@@ -3,7 +3,7 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
 const { t } = useI18n()
-const { currentUser, activeOrganizationId, setCurrentUser } = useUserStore()
+const { currentUser, activeOrganizationId, setCurrentUser, myOrganizations } = useUserStore()
 const toast = useToast()
 
 // Zod schema for profile form validation
@@ -120,10 +120,6 @@ const handleReset = () => {
   }
 }
 
-const { authClient } = await import('~/utils/auth-client')
-const organizations = authClient.useListOrganizations()
-
-// Check if an organization is active
 const isActiveOrganization = (organizationId: string) => {
   if (!activeOrganizationId) return false
   return activeOrganizationId === organizationId
@@ -210,10 +206,10 @@ const isActiveOrganization = (organizationId: string) => {
             {{ $t('profile.sections.organizations') }}
           </h2>
         </template>
-        <div v-if="organizations.isPending">Loading...</div>
-        <div v-else-if="organizations.data === null">No organizations found.</div>
+        <div v-if="myOrganizations === null || myOrganizations === undefined">Loading...</div>
+        <div v-else-if="myOrganizations.length === 0">No organizations found.</div>
         <div v-else class="space-y-6">
-          <div v-for="organization in organizations.data" :key="organization.id" class="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+          <div v-for="organization in myOrganizations" :key="organization.id" class="flex items-start justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ organization.name }}</h3>

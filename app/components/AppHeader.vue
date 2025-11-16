@@ -9,18 +9,14 @@ const toast = useToast()
 
 // User store
 const userStore = useUserStore()
-const { currentUser, userInitials, isAuthenticated, currentSession, activeOrganizationId } = storeToRefs(userStore)
+const { currentUser, userInitials, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization } = storeToRefs(userStore)
 
 // Reactive states for menu items
 const isOrgAdmin = ref(false)
 const showOrgSwitcherModal = ref(false)
 
-// Active organization state
-const activeOrganization = ref<{ id: string, name: string } | null>(null)
-const loadingOrganization = ref(false)
-const organizations = authClient.useListOrganizations()
 const hasMultipleOrganizations = computed(() => {
-  return organizations.value.data && organizations.value.data.length > 1
+  return myOrganizations.value && myOrganizations.value.length > 1
 })
 
 // Dropdown menu items for user avatar
@@ -200,55 +196,6 @@ const stopImpersonating = async () => {
     })
   }
 }
-
-// Load active organization details from user's organization list
-const loadActiveOrganization = async () => {
-  const orgId = activeOrganizationId.value
-  if (!orgId || !isAuthenticated.value) {
-    activeOrganization.value = null
-    return
-  }
-
-  try {
-    loadingOrganization.value = true
-    // Use Better Auth's list organizations endpoint which returns all user's organizations
-    const { data: organizations } = await authClient.organization.list()
-    if (organizations) {
-      const activeOrg = organizations.find(org => org.id === orgId)
-      if (activeOrg) {
-        activeOrganization.value = {
-          id: activeOrg.id,
-          name: activeOrg.name
-        }
-      } else {
-        activeOrganization.value = null
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load active organization:', err)
-    activeOrganization.value = null
-  } finally {
-    loadingOrganization.value = false
-  }
-}
-
-// Watch for changes in active organization ID
-watch(activeOrganizationId, (newOrgId) => {
-  if (newOrgId) {
-    loadActiveOrganization()
-  } else {
-    activeOrganization.value = null
-  }
-}, { immediate: true })
-
-// Watch for authentication changes
-watch(isAuthenticated, (authenticated) => {
-  if (authenticated && activeOrganizationId.value) {
-    loadActiveOrganization()
-  } else {
-    activeOrganization.value = null
-  }
-}, { immediate: true })
 
 </script>
 
