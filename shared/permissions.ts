@@ -11,6 +11,24 @@ export const statement = {
     'delete',
     'list',
   ],
+  // Organization-related permissions
+  organization: [
+    'read',
+    'update',
+    'delete',
+  ],
+  member: [
+    'read',
+    'list',
+    'create',
+    'update',
+    'delete',
+    'update-name',
+  ],
+  invitation: [
+    'create',
+    'cancel',
+  ],
 } as const
 
 // Create the access control instance

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import type { AuthSession, AuthUser, AuthSessionResponse } from '~/utils/auth-client'
 import { authClient } from '~/utils/auth-client'
+import type { Organization } from '#types'
 
 interface UserPermissions {
   [key: string]: boolean
@@ -9,18 +10,22 @@ interface UserPermissions {
 interface PermissionsResponse {
   permissions: UserPermissions
   role: string
+  organizationRole: string | null
+  activeOrganization: Organization | null
 }
 
 export const useUserStore = defineStore('user', () => {
   const organizationsHelper = authClient.useListOrganizations()
   const permissions = ref<UserPermissions>({})
   const role = ref<string | null>(null)
+  const organizationRole = ref<string | null>(null)
+  const activeOrganizationFromPermissions = ref<Organization | null>(null)
   const isLoading = ref(false)
   const activeOrganization = computed(() => {
-    return organizationsHelper.value.data?.find(org => org.id === activeOrganizationId.value)
+    // Prefer the one from permissions API if available, otherwise use organizationsHelper
+    return activeOrganizationFromPermissions.value || organizationsHelper.value.data?.find(org => org.id === activeOrganizationId.value)
   })
 
-  const hasFetchedPermissions = ref(false)
   const currentSession = ref<AuthSession | null>(null)
   const currentUser = ref<AuthUser | null>(null)
 
@@ -95,33 +100,27 @@ export const useUserStore = defineStore('user', () => {
 
   const fetchUserPermissions = async () => {
     // If there is no current user, or permissions have already been fetched, do nothing.
-    if (!currentUser.value || hasFetchedPermissions.value) {
-      if (!currentUser.value) {
-        console.log('fetchUserPermissions: No current user, skipping.')
-      } else {
-        console.log('fetchUserPermissions: Permissions already loaded for current user, skipping.')
-      }
+    if (!currentUser.value) {
+      permissions.value = {}
+      role.value = null
       return
     }
 
-    // At this point, we have a currentUser, but no permissions fetched for them yet.
-    isLoading.value = true
     // console.log('Fetching user permissions from API for user:', currentUser.value.id)
     try {
       const data = await $fetch<PermissionsResponse>('/api/auth/permissions')
       if (data) {
         permissions.value = data.permissions
         role.value = data.role
-        hasFetchedPermissions.value = true
+        organizationRole.value = data.organizationRole
+        activeOrganizationFromPermissions.value = data.activeOrganization
       } else {
         console.warn('Permissions API returned no data. Clearing user data as a precaution.')
         clearUserData() // Clear data if API returns nothing, as state is uncertain
       }
     } catch (error) {
       console.error('Error in fetchUserPermissions:', error)
-      clearUserData() // Clear data on any error during permission fetching
-    } finally {
-      isLoading.value = false
+      clearUserData()
     }
   }
 
@@ -129,13 +128,15 @@ export const useUserStore = defineStore('user', () => {
     console.log('Clearing user data and permissions fetch status.')
     permissions.value = {}
     role.value = null
-    hasFetchedPermissions.value = false
+    organizationRole.value = null
+    activeOrganizationFromPermissions.value = null
     currentSession.value = null
     activeOrganizationRoleValue.value = null
   }
 
   const setActiveOrganizationId = async (organizationId: string) => {
     try {
+      isLoading.value = true
       const { data, error } = await authClient.organization.setActive({ organizationId })
       if (error) {
         console.error('Error setting active organization:', error)
@@ -153,6 +154,7 @@ export const useUserStore = defineStore('user', () => {
           if (sessionData && sessionData.activeOrganizationId === organizationId) {
             break
           }
+          console.log('ActiverOganizationId not yet set in Session data, retrying (retries left: ${retries -1})...')
           await new Promise(resolve => setTimeout(resolve, 50))
           retries--
         }
@@ -172,20 +174,31 @@ export const useUserStore = defineStore('user', () => {
     } catch (error) {
       console.error('Error setting active organization:', error)
       throw error
+    } finally {
+      isLoading.value = false
     }
   }
 
   const setSession = async (data: AuthSessionResponse | null) => {
     if (data) {
-      const { user, ...session } = data
-      currentSession.value = session
-      currentUser.value = data.user as AuthUser
+      try {
+        const { user, ...session } = data
+        currentSession.value = session
+        currentUser.value = data.user as AuthUser
 
-      if (currentUser.value) {
-        await fetchUserPermissions()
+        if (currentUser.value) {
+          await fetchUserPermissions()
+        }
+      } catch (error) {
+        console.error('Error setting session:', error)
+        clearUserData()
+        throw error
+      } finally {
+        isLoading.value = false
       }
     }
   }
+
   const isAuthenticated = computed(() => {
     return currentUser.value !== null
   })
@@ -205,6 +218,7 @@ export const useUserStore = defineStore('user', () => {
   return {
     permissions,
     role,
+    organizationRole,
     isAuthenticated,
     isLoading,
     currentSession,
