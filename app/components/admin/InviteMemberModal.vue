@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { useOrganization } from '~/composables/useOrganization'
+import type { MemberRole } from '#types'
 
 const props = defineProps<{
   organizationId: string
@@ -17,12 +17,51 @@ const { t } = useI18n()
 const toast = useToast()
 
 const formSchema = computed(() => z.object({
-  email: z.string().email(t('organization.members.validation.emailInvalid'))
+  email: z.string().email(t('organization.members.validation.emailInvalid')),
+  role: z.enum(['owner', 'admin', 'member'], { required_error: t('admin.organization.detail.invitations.roleRequired') })
 }))
 
 const form = reactive({
-  email: ''
+  email: '',
+  role: 'member' as MemberRole
 })
+
+const hasOwner = ref(false)
+const checkingOwner = ref(false)
+
+// Check if organization has an owner when modal opens
+watch(open, async (isOpen) => {
+  if (isOpen) {
+    checkingOwner.value = true
+    try {
+      // Fetch members to check if organization has an owner
+      const members = await $fetch<Array<{ role: string }>>(
+        `/api/admin/organizations/${props.organizationId}/members`
+      )
+      hasOwner.value = members?.some(member => member.role === 'owner') || false
+
+      // Set default role to 'owner' if no owner exists, otherwise 'member'
+      form.role = hasOwner.value ? 'member' : 'owner'
+    } catch (err) {
+      console.error('Failed to check for owner:', err)
+      // Default to 'member' if check fails
+      form.role = 'member'
+      hasOwner.value = true // Assume owner exists to be safe
+    } finally {
+      checkingOwner.value = false
+    }
+  } else {
+    // Reset form when modal closes
+    form.email = ''
+    // Role will be set when modal opens again based on hasOwner check
+  }
+})
+
+const roleOptions = computed(() => [
+  { label: t('admin.organization.detail.invitations.roleOwner'), value: 'owner' },
+  { label: t('admin.organization.detail.invitations.roleAdmin'), value: 'admin' },
+  { label: t('admin.organization.detail.invitations.roleMember'), value: 'member' }
+])
 
 const inviting = ref(false)
 
@@ -35,7 +74,7 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
       method: 'POST',
       body: {
         email: event.data.email,
-        role: 'owner'
+        role: event.data.role
       }
     })
 
@@ -73,6 +112,15 @@ const handleSubmit = async (event: FormSubmitEvent<z.output<typeof formSchema.va
             v-model="form.email"
             type="email"
             :placeholder="t('admin.organization.detail.invitations.emailPlaceholder')"
+            size="lg"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField name="role" :label="t('admin.organization.detail.invitations.roleLabel')" required>
+          <USelect
+            v-model="form.role"
+            :items="roleOptions"
+            value-key="value"
             size="lg"
             class="w-full"
           />

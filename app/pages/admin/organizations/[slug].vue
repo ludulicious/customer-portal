@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError } from '#types'
-import AdminInviteOwnerModal from '~/components/admin/InviteOwnerModal.vue'
+import AdminInviteMemberModal from '~/components/admin/InviteMemberModal.vue'
 import ConfirmationModal from '~/components/common/ConfirmationModal.vue'
 
 definePageMeta({
@@ -308,8 +308,8 @@ onMounted(() => {
         </UCard>
       </div>
 
-      <!-- Invite Owner Modal -->
-      <AdminInviteOwnerModal
+      <!-- Invite Member Modal -->
+      <AdminInviteMemberModal
         v-if="showInviteModal && organization"
         v-model:open="showInviteModal"
         :organization-id="organization.id"

@@ -65,33 +65,12 @@ const route = useRoute()
 const error = ref<string | null>(null)
 const isLoading = ref(false)
 const invitationId = ref<string | null>(null)
-const invitationInfo = ref<{ organizationName?: string; role?: string; email?: string } | null>(null)
+const invitationInfo = ref<{ organizationName?: string, role?: string, email?: string } | null>(null)
 const acceptingInvitation = ref(false)
 
 // User store for checking authentication
 const userStore = useUserStore()
 const { isAuthenticated, currentUser } = storeToRefs(userStore)
-
-// Check for invitation ID in query parameters
-onMounted(async () => {
-  const invId = route.query.invitationId as string | undefined
-  if (invId) {
-    invitationId.value = invId
-
-    // Check if user is already logged in
-    if (isAuthenticated.value && currentUser.value) {
-      // User is logged in, try to accept invitation automatically
-      await handleLoggedInInvitation(invId)
-    } else {
-      // User is not logged in, store for later use
-      if (process.client) {
-        localStorage.setItem('pendingInvitationId', invId)
-        // Try to fetch invitation details to show context
-        fetchInvitationDetails(invId)
-      }
-    }
-  }
-})
 
 const fetchInvitationDetails = async (id: string) => {
   try {
@@ -137,7 +116,7 @@ const handleLoggedInInvitation = async (invId: string) => {
         expiresAt?: Date | string
       }>(`/api/organizations/get-invitation?id=${encodeURIComponent(invId)}`)
     } catch (fetchErr: unknown) {
-      const apiError = fetchErr as { data?: { message?: string }; message?: string }
+      const apiError = fetchErr as { data?: { message?: string }, message?: string }
       const errorMessage = apiError?.data?.message || apiError?.message || t('signup.invitation.loggedIn.error', { error: 'Invitation not found' })
       error.value = errorMessage
       toast.add({
@@ -177,17 +156,10 @@ const handleLoggedInInvitation = async (invId: string) => {
       return
     }
 
-    // Show accepting message
-    toast.add({
-      title: t('common.info'),
-      description: t('signup.invitation.loggedIn.accepting'),
-      color: 'info'
-    })
-
     // Accept the invitation using custom endpoint to bypass inviter membership check
     // This is necessary because admins who create organizations are removed as members
     try {
-      const result = await $fetch<{ success: boolean; organization?: { id: string; name: string } }>('/api/organizations/accept-invitation', {
+      const result = await $fetch<{ success: boolean, organization?: { id: string, name: string } }>('/api/organizations/accept-invitation', {
         method: 'POST',
         body: { invitationId: invId }
       })
@@ -202,7 +174,7 @@ const handleLoggedInInvitation = async (invId: string) => {
         await userStore.setActiveOrganizationId(result.organization.id)
       }
     } catch (err: unknown) {
-      const apiError = err as { data?: { message?: string }; message?: string }
+      const apiError = err as { data?: { message?: string }, message?: string }
       const errorMessage = apiError?.data?.message || apiError?.message || t('signup.invitation.loggedIn.error', { error: 'Unknown error' })
       error.value = errorMessage
       toast.add({
@@ -225,10 +197,7 @@ const handleLoggedInInvitation = async (invId: string) => {
       color: 'success'
     })
 
-    // Clear any stored invitation ID
-    if (process.client) {
-      localStorage.removeItem('pendingInvitationId')
-    }
+    localStorage.removeItem('pendingInvitationId')
 
     // Redirect to dashboard after short delay
     await new Promise(resolve => setTimeout(resolve, 1500))
@@ -256,7 +225,7 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
 
   // Store invitation ID if present
   const invId = route.query.invitationId as string | undefined
-  if (invId && process.client) {
+  if (invId) {
     localStorage.setItem('pendingInvitationId', invId)
   }
 
@@ -285,6 +254,21 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
     isLoading.value = false
   }
 }
+const invId = route.query.invitationId as string | undefined
+if (invId) {
+  invitationId.value = invId
+
+  // Check if user is already logged in
+  if (isAuthenticated.value && currentUser.value) {
+    // User is logged in, try to accept invitation automatically
+    await handleLoggedInInvitation(invId)
+  } else {
+    // User is not logged in, store for later use
+    localStorage.setItem('pendingInvitationId', invId)
+    // Try to fetch invitation details to show context
+    fetchInvitationDetails(invId)
+  }
+}
 
 </script>
 
@@ -294,29 +278,6 @@ const onSubmit = async (payload: FormSubmitEvent<Schema>) => {
     <div class="flex justify-center mb-8">
       <AppLogo class="w-auto h-8 shrink-0" />
     </div>
-
-    <!-- Accepting Invitation Alert (for logged-in users) -->
-    <UAlert
-      v-if="acceptingInvitation"
-      color="info"
-      variant="soft"
-      :title="t('signup.invitation.loggedIn.accepting')"
-      class="mb-4"
-    >
-      <template #icon>
-        <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-      </template>
-    </UAlert>
-
-    <!-- Invitation Alert -->
-    <UAlert
-      v-if="invitationInfo && !acceptingInvitation"
-      color="primary"
-      variant="soft"
-      :title="t('signup.invitation.title', { organizationName: invitationInfo.organizationName })"
-      :description="t('signup.invitation.description', { role: invitationInfo.role || 'member' })"
-      class="mb-4"
-    />
 
     <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')"
       :submit="{ label: t('signup.submitButton') }" @submit="onSubmit">
