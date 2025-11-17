@@ -1,9 +1,12 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
-import { invitation as invitationTable } from '~~/server/db/schema/auth-schema'
+import { invitation as invitationTable, organization as organizationTable } from '~~/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
-import type { OrganizationMemberWithUser, ApiError } from '~~/shared/types'
+import { checkOrganizationPermission } from '~~/server/utils/permissions'
+import { sendEmail } from '~~/server/utils/email'
+import { getInvitationEmailContent } from '~~/server/utils/email-texts'
+import type { SessionUser } from '#types'
 
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
@@ -11,6 +14,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
+  const user = session.user as SessionUser
   const organizationId = getRouterParam(event, 'id')
   const invitationId = getRouterParam(event, 'invitationId')
 
@@ -18,27 +22,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Organization ID and Invitation ID are required' })
   }
 
-  // Verify user has access to this organization and is owner/admin
-  try {
-    const result = await auth.api.listMembers({
-      query: { organizationId }
-    }) as unknown as { members?: OrganizationMemberWithUser[] } | OrganizationMemberWithUser[]
+  // Check if user has permission to create invitations (resending is creating a new invitation)
+  const hasPermission = await checkOrganizationPermission(
+    session as { user: { id: string, role?: string } },
+    organizationId,
+    'invitation',
+    'create'
+  )
 
-    const members = Array.isArray(result) ? result : result.members || []
-    const userMember = members.find(m => m.userId === session.user.id)
-
-    if (!userMember) {
-      throw createError({ statusCode: 403, message: 'Access denied' })
-    }
-
-    // Check if user is owner or admin
-    const role = Array.isArray(userMember.role) ? userMember.role[0] : userMember.role
-    if (role !== 'owner' && role !== 'admin') {
-      throw createError({ statusCode: 403, message: 'Only owners and admins can manage invitations' })
-    }
-  } catch (err) {
-    const error = err as ApiError
-    if (error.statusCode === 403) throw err
+  if (!hasPermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 
@@ -53,17 +45,38 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: 'Invitation not found' })
   }
 
-  // Resend invitation using Better Auth API
-  const result = await auth.api.inviteMember({
-    body: {
-      email: invitation.email,
-      organizationId: organizationId,
-      role: invitation.role || 'member',
-      resend: true
-    }
+  // Check if invitation is still pending
+  if (invitation.status !== 'pending') {
+    throw createError({ statusCode: 400, message: 'Can only resend pending invitations' })
+  }
+
+  // Get organization details for email
+  const [organization] = await db
+    .select()
+    .from(organizationTable)
+    .where(eq(organizationTable.id, organizationId))
+    .limit(1)
+
+  if (!organization) {
+    throw createError({ statusCode: 404, message: 'Organization not found' })
+  }
+
+  // Resend invitation email
+  const baseURL = process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3000'
+  const invitationLink = `${baseURL}/signup?invitationId=${invitationId}`
+
+  const emailContent = getInvitationEmailContent({
+    inviterName: user.name || '',
+    inviterEmail: user.email,
+    organizationName: organization.name,
+    role: invitation.role || 'member',
+    invitationLink
   })
 
-  return result
+  await sendEmail({
+    to: invitation.email,
+    ...emailContent
+  })
+
+  return { success: true, message: 'Invitation resent successfully' }
 })
-
-

@@ -3,7 +3,8 @@ import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { organization as organizationTable } from '~~/server/db/schema/auth-schema'
 import { eq } from 'drizzle-orm'
-import type { Organization, ApiError } from '~~/shared/types'
+import { checkOrganizationPermission } from '~~/server/utils/permissions'
+import type { Organization } from '~~/shared/types'
 
 export default defineEventHandler(async (event): Promise<Organization> => {
   const session = await auth.api.getSession({ headers: event.headers })
@@ -16,19 +17,15 @@ export default defineEventHandler(async (event): Promise<Organization> => {
     throw createError({ statusCode: 400, message: 'Organization ID is required' })
   }
 
-  // Verify user has access to this organization
-  try {
-    const result = await auth.api.listMembers({
-      query: { organizationId }
-    }) as unknown as { members: Array<{ userId: string }> }
+  // Check if user has permission to read this organization
+  const hasPermission = await checkOrganizationPermission(
+    session as { user: { id: string, role?: string } },
+    organizationId,
+    'organization',
+    'read'
+  )
 
-    const hasAccess = result.members.some((m: { userId: string }) => m.userId === session.user.id)
-    if (!hasAccess) {
-      throw createError({ statusCode: 403, message: 'Access denied' })
-    }
-  } catch (err) {
-    const error = err as ApiError
-    if (error.statusCode === 403) throw err
+  if (!hasPermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 

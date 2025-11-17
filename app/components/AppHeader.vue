@@ -48,18 +48,18 @@ const userMenuItems = computed(() => {
         icon: 'i-lucide-user',
         to: '/profile'
       },
-      ...(hasMultipleOrganizations.value
+      ...(hasMultipleOrganizations.value && isOrgAdmin.value
         ? [{
             label: t('myOrganizations.title'),
             icon: 'i-lucide-building-2',
             to: '/my-organizations'
           }]
         : []),
-      ...(hasSingleOrganization.value && singleOrganizationSlug.value
+      ...(activeOrganization.value
         ? [{
             label: t('nav.myOrganization'),
             icon: 'i-lucide-building-2',
-            to: `/admin/organizations/${singleOrganizationSlug.value}`
+            to: `/admin/organizations/${activeOrganization.value.slug}`
           }]
         : [])
     ]

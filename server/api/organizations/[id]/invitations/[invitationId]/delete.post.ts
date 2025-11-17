@@ -1,6 +1,6 @@
 import { defineEventHandler, createError, getRouterParam } from 'h3'
 import { auth } from '~~/server/utils/auth'
-import type { OrganizationMemberWithUser, ApiError } from '~~/shared/types'
+import { checkOrganizationPermission } from '~~/server/utils/permissions'
 
 export default defineEventHandler(async (event) => {
   const session = await auth.api.getSession({ headers: event.headers })
@@ -15,27 +15,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Organization ID and Invitation ID are required' })
   }
 
-  // Verify user has access to this organization and is owner/admin
-  try {
-    const result = await auth.api.listMembers({
-      query: { organizationId }
-    }) as unknown as { members?: OrganizationMemberWithUser[] } | OrganizationMemberWithUser[]
+  // Check if user has permission to cancel invitations
+  const hasPermission = await checkOrganizationPermission(
+    session as { user: { id: string, role?: string } },
+    organizationId,
+    'invitation',
+    'cancel'
+  )
 
-    const members = Array.isArray(result) ? result : result.members || []
-    const userMember = members.find(m => m.userId === session.user.id)
-
-    if (!userMember) {
-      throw createError({ statusCode: 403, message: 'Access denied' })
-    }
-
-    // Check if user is owner or admin
-    const role = Array.isArray(userMember.role) ? userMember.role[0] : userMember.role
-    if (role !== 'owner' && role !== 'admin') {
-      throw createError({ statusCode: 403, message: 'Only owners and admins can manage invitations' })
-    }
-  } catch (err) {
-    const error = err as ApiError
-    if (error.statusCode === 403) throw err
+  if (!hasPermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 
@@ -48,5 +36,3 @@ export default defineEventHandler(async (event) => {
 
   return result
 })
-
-

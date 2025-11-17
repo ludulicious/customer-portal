@@ -58,7 +58,7 @@
           "actions": "Acties",
           "resend": "Opnieuw Verzenden",
           "delete": "Verwijderen",
-          "inviteOwner": "Lid Uitnodigen",
+          "inviteMember": "Lid Uitnodigen",
           "modalTitle": "Organisatie Lid Uitnodigen",
           "emailLabel": "E-mailadres",
           "emailPlaceholder": "Voer het e-mailadres in",

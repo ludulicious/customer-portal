@@ -10,6 +10,10 @@ const toast = useToast()
 // Type for organization with role
 type OrganizationWithRole = Organization & { role?: string | null }
 
+if (!userStore.isAdmin) {
+  throw createError({ statusCode: 403, message: 'Access denied. You must be an admin to view this page.' })
+}
+
 // Page metadata
 useSeoMeta({
   title: t('myOrganizations.title'),

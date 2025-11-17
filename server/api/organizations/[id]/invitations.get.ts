@@ -3,7 +3,8 @@ import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { invitation as invitationTable } from '~~/server/db/schema/auth-schema'
 import { eq, and } from 'drizzle-orm'
-import type { OrganizationMemberWithUser, OrganizationInvitationsResponse, ApiError } from '~~/shared/types'
+import { checkOrganizationPermission } from '~~/server/utils/permissions'
+import type { OrganizationInvitationsResponse } from '~~/shared/types'
 
 export default defineEventHandler(async (event): Promise<OrganizationInvitationsResponse> => {
   const session = await auth.api.getSession({ headers: event.headers })
@@ -16,24 +17,15 @@ export default defineEventHandler(async (event): Promise<OrganizationInvitations
     throw createError({ statusCode: 400, message: 'Organization ID is required' })
   }
 
-  // Verify user has access to this organization
-  // Check if user is a member of this organization using better-auth API
-  try {
-    const result = await auth.api.listMembers({
-      query: { organizationId }
-    }) as unknown as { members?: OrganizationMemberWithUser[] } | OrganizationMemberWithUser[]
+  // Check if user has permission to list members (which includes viewing invitations)
+  const hasPermission = await checkOrganizationPermission(
+    session as { user: { id: string, role?: string } },
+    organizationId,
+    'member',
+    'list'
+  )
 
-    // Handle both array and object response
-    const members = Array.isArray(result) ? result : result.members || []
-
-    // Check if current user is in the members list
-    const hasAccess = members.some(m => m.userId === session.user.id)
-    if (!hasAccess) {
-      throw createError({ statusCode: 403, message: 'Access denied' })
-    }
-  } catch (err) {
-    const error = err as ApiError
-    if (error.statusCode === 403) throw err
+  if (!hasPermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 

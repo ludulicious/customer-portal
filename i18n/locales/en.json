@@ -58,7 +58,7 @@
           "actions": "Actions",
           "resend": "Resend",
           "delete": "Delete",
-          "inviteOwner": "Invite Member",
+          "inviteMember": "Invite Member",
           "modalTitle": "Invite Organization Member",
           "emailLabel": "Email Address",
           "emailPlaceholder": "Enter the email address",

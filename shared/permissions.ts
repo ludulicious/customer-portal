@@ -12,12 +12,13 @@ export const statement = {
     'list',
   ],
   // Organization-related permissions
-  organization: [
+  'organization': [
     'read',
+    'create',
     'update',
     'delete',
   ],
-  member: [
+  'member': [
     'read',
     'list',
     'create',
@@ -25,8 +26,10 @@ export const statement = {
     'delete',
     'update-name',
   ],
-  invitation: [
+  'invitation': [
+    'list',
     'create',
+    'resend',
     'cancel',
   ],
 } as const
