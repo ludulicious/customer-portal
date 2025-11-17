@@ -19,16 +19,6 @@ const hasMultipleOrganizations = computed(() => {
   return myOrganizations.value && myOrganizations.value.length > 1
 })
 
-const hasSingleOrganization = computed(() => {
-  return myOrganizations.value && myOrganizations.value.length === 1
-})
-
-const singleOrganizationSlug = computed(() => {
-  return myOrganizations.value && myOrganizations.value.length === 1 && myOrganizations.value[0]
-    ? myOrganizations.value[0].slug
-    : null
-})
-
 // Dropdown menu items for user avatar
 const userMenuItems = computed(() => {
   const menuItems = [
