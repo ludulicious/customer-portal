@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError } from '#types'
-import AdminInviteMemberModal from '~/components/admin/InviteMemberModal.vue'
-import ConfirmationModal from '~/components/common/ConfirmationModal.vue'
+import type { TableColumn } from '@nuxt/ui'
+import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError, Invitation } from '#types'
 
 definePageMeta({
   layout: 'default'
@@ -11,10 +10,16 @@ const userStore = useUserStore()
 const { isAdmin, myOrganizations } = storeToRefs(userStore)
 const { hasPermission } = userStore
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const route = useRoute()
 const slug = route.params.slug as string
+
+// Detect mobile breakpoint
+const breakpoints = useBreakpoints({
+  mobile: 768
+})
+const isMobile = breakpoints.smaller('mobile')
 
 // Check access: admin OR (member of organization AND has organization.read permission)
 const checkAccess = () => {
@@ -196,6 +201,43 @@ const handleDeleteInvitation = async () => {
   }
 }
 
+// Members table columns
+const membersColumns = computed<TableColumn<OrganizationMemberWithUser>[]>(() => {
+  // On mobile, only show Name and Role
+  if (isMobile.value) {
+    return [
+      { accessorKey: 'name', header: t('admin.organization.detail.members.name') },
+      { accessorKey: 'role', header: t('admin.organization.detail.members.role') }
+    ]
+  }
+  // On desktop, show all columns
+  return [
+    { accessorKey: 'email', header: t('admin.organization.detail.members.email') },
+    { accessorKey: 'name', header: t('admin.organization.detail.members.name') },
+    { accessorKey: 'role', header: t('admin.organization.detail.members.role') }
+  ]
+})
+
+// Invitations table columns
+const invitationsColumns = computed<TableColumn<Invitation>[]>(() => {
+  // On mobile, only show Email, Role, and Actions
+  if (isMobile.value) {
+    return [
+      { accessorKey: 'email', header: t('admin.organization.detail.invitations.email') },
+      { accessorKey: 'role', header: t('admin.organization.detail.invitations.role') },
+      { accessorKey: 'actions', header: '' }
+    ]
+  }
+  // On desktop, show all columns
+  return [
+    { accessorKey: 'email', header: t('admin.organization.detail.invitations.email') },
+    { accessorKey: 'role', header: t('admin.organization.detail.invitations.role') },
+    { accessorKey: 'status', header: t('admin.organization.detail.invitations.status') },
+    { accessorKey: 'expiresAt', header: t('admin.organization.detail.invitations.expires') },
+    { accessorKey: 'actions', header: t('admin.organization.detail.invitations.actions') }
+  ]
+})
+
 onMounted(() => {
   loadOrganization()
 })
@@ -261,37 +303,29 @@ onMounted(() => {
               </h2>
             </div>
           </template>
-          <div v-if="members.length === 0" class="text-center py-4 text-gray-600 dark:text-gray-400">
-            {{ t('admin.organization.detail.members.empty') }}
+          <div v-if="members.length === 0" class="text-center py-8">
+            <p class="text-gray-600 dark:text-gray-400">{{ t('admin.organization.detail.members.empty') }}</p>
           </div>
-          <div v-else class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{ t('admin.organization.detail.members.email') }}
-                  </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{ t('admin.organization.detail.members.name') }}
-                  </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{ t('admin.organization.detail.members.role') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                <tr v-for="member in members" :key="member.id">
-                  <td class="px-4 py-3 text-sm">{{ member.user.email }}</td>
-                  <td class="px-4 py-3 text-sm">{{ member.user.name || t('admin.table.notAvailable') }}</td>
-                  <td class="px-4 py-3 text-sm">
-                    <UBadge :color="member.role === 'owner' ? 'primary' : 'neutral'">
-                      {{ member.role }}
-                    </UBadge>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <UTable
+            v-else-if="members.length > 0"
+            :data="members"
+            :columns="membersColumns"
+            :loading="loading"
+          >
+            <template #email-cell="{ row }">
+              {{ row.original.user.email }}
+            </template>
+
+            <template #name-cell="{ row }">
+              {{ row.original.user.name || t('admin.table.notAvailable') }}
+            </template>
+
+            <template #role-cell="{ row }">
+              <UBadge :color="row.original.role === 'owner' ? 'primary' : row.original.role === 'admin' ? 'info' : 'neutral'" variant="soft">
+                {{ Array.isArray(row.original.role) ? row.original.role.join(', ') : row.original.role }}
+              </UBadge>
+            </template>
+          </UTable>
         </UCard>
 
         <!-- Invitations Card -->
@@ -308,64 +342,51 @@ onMounted(() => {
               </UButton>
             </div>
           </template>
-          <div v-if="invitations.length === 0" class="text-center py-4 text-gray-600 dark:text-gray-400">
-            {{ t('admin.organization.detail.invitations.empty') }}
+          <div v-if="invitations.length === 0" class="text-center py-8">
+            <p class="text-gray-600 dark:text-gray-400">{{ t('admin.organization.detail.invitations.empty') }}</p>
           </div>
-          <div v-else class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{
-                      t('admin.organization.detail.invitations.email') }}
-                  </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{
-                      t('admin.organization.detail.invitations.role') }}
-                  </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{
-                      t('admin.organization.detail.invitations.status') }}
-                  </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{
-                      t('admin.organization.detail.invitations.expires') }}
-                  </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    {{
-                      t('admin.organization.detail.invitations.actions') }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                <tr v-for="invitation in invitations" :key="invitation.id">
-                  <td class="px-4 py-3 text-sm">{{ invitation.email }}</td>
-                  <td class="px-4 py-3 text-sm">
-                    <UBadge color="primary">{{ invitation.role || 'member' }}</UBadge>
-                  </td>
-                  <td class="px-4 py-3 text-sm">
-                    <UBadge :color="invitation.status === 'pending' ? 'warning' : 'neutral'">
-                      {{ invitation.status }}
-                    </UBadge>
-                  </td>
-                  <td class="px-4 py-3 text-sm">{{ new Date(invitation.expiresAt).toLocaleDateString() }}</td>
-                  <td class="px-4 py-3 text-sm">
-                    <div class="flex gap-2">
-                      <UButton v-if="hasPermission('invitation', 'resend')" icon="i-lucide-send" variant="ghost"
-                        size="sm"
-                        @click="openResendModal(invitation.id, invitation.email, invitation.role || 'member')">
-                        {{ t('admin.organization.detail.invitations.resend') }}
-                      </UButton>
-                      <UButton v-if="hasPermission('invitation', 'delete')" icon="i-lucide-trash-2" variant="ghost"
-                        size="sm" color="error" @click="openDeleteModal(invitation.id)">
-                        {{ t('admin.organization.detail.invitations.delete') }}
-                      </UButton>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <UTable
+            v-else-if="invitations.length > 0"
+            :data="invitations"
+            :columns="invitationsColumns"
+            :loading="loading"
+          >
+            <template #email-cell="{ row }">
+              {{ row.original.email }}
+            </template>
+
+            <template #role-cell="{ row }">
+              <UBadge color="primary" variant="soft">
+                {{ row.original.role || 'member' }}
+              </UBadge>
+            </template>
+
+            <template #status-cell="{ row }">
+              <UBadge :color="row.original.status === 'pending' ? 'warning' : 'neutral'" variant="soft">
+                {{ row.original.status }}
+              </UBadge>
+            </template>
+
+            <template #expiresAt-cell="{ row }">
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                {{ new Date(row.original.expiresAt).toLocaleDateString(locale) }}
+              </span>
+            </template>
+
+            <template #actions-cell="{ row }">
+              <div class="flex gap-2">
+                <UButton v-if="hasPermission('invitation', 'resend')" icon="i-lucide-send" variant="ghost"
+                  size="sm"
+                  @click="openResendModal(row.original.id, row.original.email, row.original.role || 'member')">
+                  {{ t('admin.organization.detail.invitations.resend') }}
+                </UButton>
+                <UButton v-if="hasPermission('invitation', 'delete')" icon="i-lucide-trash-2" variant="ghost"
+                  size="sm" color="error" @click="openDeleteModal(row.original.id)">
+                  {{ t('admin.organization.detail.invitations.delete') }}
+                </UButton>
+              </div>
+            </template>
+          </UTable>
         </UCard>
       </div>
 

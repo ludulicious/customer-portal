@@ -111,7 +111,7 @@ export const getUserPermissions = async (
   }
 
   // For system admins with an active organization, grant all organization permissions
-  if (currentRole === 'admin' && organizationId) {
+  if (currentRole === 'admin') {
     const adminStatements = getRoleStatements(adminRole)
     const adminPermissions: RoleStatements = { ...adminStatements }
     // Add all organization-related permissions for admins
