@@ -77,6 +77,8 @@ const userMenuItems = computed(() => {
       icon: 'i-lucide-log-out',
       onSelect: async () => {
         await authClient.signOut()
+        // Explicitly clear user data to ensure immediate state update
+        userStore.clearUserData()
         await navigateTo('/')
       }
     }

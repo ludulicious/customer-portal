@@ -15,7 +15,72 @@ interface PermissionsResponse {
 }
 
 export const useUserStore = defineStore('user', () => {
-  const organizationsHelper = authClient.useListOrganizations()
+  const currentSession = ref<AuthSession | null>(null)
+  const currentUser = ref<AuthUser | null>(null)
+
+  // Manual organizations state to prevent 401 errors for unauthenticated users
+  const organizationsData = ref<Organization[] | null>(null)
+  const organizationsError = ref<Error | null>(null)
+  const organizationsIsPending = ref(false)
+  const organizationsIsRefetching = ref(false)
+
+  // Fetch organizations manually - only when authenticated
+  const fetchOrganizations = async () => {
+    if (!currentUser.value) {
+      organizationsData.value = null
+      organizationsError.value = null
+      return
+    }
+
+    try {
+      organizationsIsPending.value = true
+      organizationsError.value = null
+      const { data, error } = await authClient.organization.list()
+      if (error) {
+        organizationsError.value = new Error(error.message || 'Failed to fetch organizations')
+        organizationsData.value = null
+      } else if (data) {
+        // Convert null logos to undefined to match Organization type
+        organizationsData.value = data.map(org => ({
+          ...org,
+          logo: org.logo ?? undefined
+        })) as Organization[]
+      } else {
+        organizationsData.value = null
+      }
+    } catch (error) {
+      organizationsError.value = error instanceof Error ? error : new Error('Failed to fetch organizations')
+      organizationsData.value = null
+    } finally {
+      organizationsIsPending.value = false
+      organizationsIsRefetching.value = false
+    }
+  }
+
+  // Create a helper object that matches the composable interface
+  const organizationsHelper = computed(() => ({
+    data: organizationsData.value,
+    error: organizationsError.value,
+    isPending: organizationsIsPending.value,
+    isRefetching: organizationsIsRefetching.value,
+    refetch: async () => {
+      organizationsIsRefetching.value = true
+      await fetchOrganizations()
+    }
+  }))
+
+  // Watch authentication status and fetch organizations when user becomes authenticated
+  watch(currentUser, (user, oldUser) => {
+    if (user && !oldUser) {
+      // User just logged in, fetch organizations
+      fetchOrganizations()
+    } else if (!user) {
+      // User logged out, clear organizations
+      organizationsData.value = null
+      organizationsError.value = null
+    }
+  }, { immediate: true })
+
   const permissions = ref<UserPermissions>({})
   const role = ref<string | null>(null)
   const organizationRole = ref<string | null>(null)
@@ -23,11 +88,8 @@ export const useUserStore = defineStore('user', () => {
   const isLoading = ref(false)
   const activeOrganization = computed(() => {
     // Prefer the one from permissions API if available, otherwise use organizationsHelper
-    return activeOrganizationFromPermissions.value || organizationsHelper.value.data?.find(org => org.id === activeOrganizationId.value)
+    return activeOrganizationFromPermissions.value || organizationsHelper.value.data?.find((org: Organization) => org.id === activeOrganizationId.value)
   })
-
-  const currentSession = ref<AuthSession | null>(null)
-  const currentUser = ref<AuthUser | null>(null)
 
   const colorMode = useColorMode() // Use the colorMode composable
   const theme = ref(colorMode.preference)
@@ -131,6 +193,7 @@ export const useUserStore = defineStore('user', () => {
     organizationRole.value = null
     activeOrganizationFromPermissions.value = null
     currentSession.value = null
+    currentUser.value = null
     activeOrganizationRoleValue.value = null
   }
 
@@ -196,6 +259,9 @@ export const useUserStore = defineStore('user', () => {
       } finally {
         isLoading.value = false
       }
+    } else {
+      // Session is null/undefined - clear user data (e.g., on logout)
+      clearUserData()
     }
   }
 
@@ -205,6 +271,53 @@ export const useUserStore = defineStore('user', () => {
 
   // Store roles for each organization
   const organizationRoles = ref<Record<string, string>>({})
+
+  // Track if we've attempted to auto-set the first organization
+  const hasAttemptedAutoSet = ref(false)
+
+  // Auto-set first organization when activeOrganizationId is null but user has organizations
+  watch([activeOrganizationId, () => organizationsHelper.value.data, currentUser], async ([orgId, organizations, user]) => {
+    // Only run on client side
+    if (import.meta.server) return
+
+    // Only proceed if:
+    // 1. User is authenticated
+    // 2. activeOrganizationId is null
+    // 3. User has at least one organization
+    // 4. We haven't already attempted to set it
+    // 5. Organizations are not still loading
+    if (
+      user
+      && !orgId
+      && organizations
+      && organizations.length > 0
+      && !hasAttemptedAutoSet.value
+      && !organizationsHelper.value.isPending
+    ) {
+      hasAttemptedAutoSet.value = true
+      try {
+        const firstOrg = organizations[0]
+        if (firstOrg?.id) {
+          console.log('Auto-setting first organization as active:', firstOrg.id)
+          await setActiveOrganizationId(firstOrg.id)
+        }
+      } catch (error) {
+        console.error('Error auto-setting first organization:', error)
+        // Reset flag on error so we can retry later
+        hasAttemptedAutoSet.value = false
+      }
+    }
+  }, { immediate: true })
+
+  // Reset the auto-set flag when activeOrganizationId changes to a non-null value or user logs out
+  watch([activeOrganizationId, currentUser], ([orgId, user]) => {
+    if (orgId) {
+      hasAttemptedAutoSet.value = false
+    }
+    if (!user) {
+      hasAttemptedAutoSet.value = false
+    }
+  })
 
   // Fetch roles for all organizations when organizations are loaded
   watch(() => organizationsHelper.value.data, async (organizations) => {

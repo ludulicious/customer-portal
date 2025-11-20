@@ -15,11 +15,11 @@ export default defineNuxtPlugin({
 
     const { data: session } = await authClient.useSession(useFetch)
 
-    // Also watch for session changes to handle OTP verification
+    // Also watch for session changes to handle OTP verification and logout
     watch(
       () => session.value,
       async (newSession) => {
-        const sessionData = newSession as unknown as AuthSessionResponse
+        const sessionData = newSession as unknown as AuthSessionResponse | null
         await userStore.setSession(sessionData)
       },
       { deep: true }
