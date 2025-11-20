@@ -43,21 +43,34 @@ if (!checkAccess()) {
   throw createError({ statusCode: 403, message: 'Access denied. You must be an admin or a member of this organization with read permissions.' })
 }
 
-// Check if back button should be shown (only when navigating from another page)
+// Check if back button should be shown
+// For admins, always show back button (defaults to admin organizations list)
+// For non-admins, only show when navigating from my-organizations
 const showBackButton = computed(() => {
-  return !!route.query.from
-})
-
-// Determine back route based on query parameter
-const backRoute = computed(() => {
-  return route.query.from === 'my-organizations' ? '/my-organizations' : '/admin/organizations'
-})
-
-// Determine back button text based on query parameter
-const backButtonText = computed(() => {
+  if (isAdmin.value) {
+    return true // Always show for admins
+  }
   return route.query.from === 'my-organizations'
-    ? t('admin.organization.detail.backToMyOrganizations')
-    : t('admin.organization.detail.back')
+})
+
+// Determine back route based on query parameter and user role
+const backRoute = computed(() => {
+  if (isAdmin.value) {
+    // For admins, default to admin organizations list unless coming from my-organizations
+    return route.query.from === 'my-organizations' ? '/my-organizations' : '/admin/organizations'
+  }
+  // For non-admins, only allow going back to my-organizations
+  return '/my-organizations'
+})
+
+// Determine back button text based on query parameter and user role
+const backButtonText = computed(() => {
+  if (isAdmin.value) {
+    return route.query.from === 'my-organizations'
+      ? t('admin.organization.detail.backToMyOrganizations')
+      : t('admin.organization.detail.back')
+  }
+  return t('admin.organization.detail.backToMyOrganizations')
 })
 
 const loading = ref(true)

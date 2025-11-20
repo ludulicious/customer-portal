@@ -31,6 +31,7 @@ export const statement = {
     'create',
     'resend',
     'cancel',
+    'delete',
   ],
 } as const
 
