@@ -7,7 +7,7 @@ const color = computed(() => {
   if (colorMode.value === 'dark') {
     return '#0a0f1a' // Deep space background
   }
-  return '#fafbff' // Cosmic dawn background
+  return '#ffffff' // Enhanced vibrant background
 })
 
 // Enhanced meta tags for cosmic theme

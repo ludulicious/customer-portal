@@ -48,9 +48,9 @@ if (!checkAccess()) {
 // For non-admins, only show when navigating from my-organizations
 const showBackButton = computed(() => {
   if (isAdmin.value) {
-    return true // Always show for admins
+    return (route.query.from === 'my-organizations' || route.query.from === 'admin-organizations') ? true : false
   }
-  return route.query.from === 'my-organizations'
+  return false
 })
 
 // Determine back route based on query parameter and user role
@@ -60,7 +60,7 @@ const backRoute = computed(() => {
     return route.query.from === 'my-organizations' ? '/my-organizations' : '/admin/organizations'
   }
   // For non-admins, only allow going back to my-organizations
-  return '/my-organizations'
+  return undefined
 })
 
 // Determine back button text based on query parameter and user role

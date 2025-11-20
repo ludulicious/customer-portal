@@ -169,6 +169,7 @@ const revokeAllSessions = async () => {
   >
     <template #header>
       <div class="flex items-center justify-between w-full">
+        <h3 class="text-lg font-semibold">{{ t('admin.userManagement.sessions.title') }}</h3>
         <UButton
           v-if="currentUser && user && currentUser.id !== user.id"
           color="error"

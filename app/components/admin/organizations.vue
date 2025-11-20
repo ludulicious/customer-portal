@@ -90,7 +90,7 @@ onMounted(() => {
               {{ t('admin.organization.detail.created') }} {{ new Date(org.createdAt).toLocaleDateString() }}
             </p>
           </div>
-          <UButton :to="`/admin/organizations/${org.slug}`" variant="outline" size="sm">
+          <UButton :to="`/admin/organizations/${org.slug}?from=admin-organizations`" variant="outline" size="sm">
             {{ t('admin.organization.list.view') }}
           </UButton>
         </div>
