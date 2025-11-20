@@ -51,8 +51,8 @@ onMounted(() => {
             icon="i-lucide-refresh-cw"
             variant="outline"
             :loading="loading"
-            @click="loadOrganizations"
             class="flex-1 sm:flex-none"
+            @click="loadOrganizations"
           >
             {{ t('admin.organization.list.refresh') }}
           </UButton>

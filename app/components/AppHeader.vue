@@ -321,7 +321,7 @@ const stopImpersonating = async () => {
       <!-- Organization Switcher Modal -->
       <UModal v-model:open="showOrgSwitcherModal" title="Switch Organization" :ui="{ footer: 'justify-end' }">
         <template #body>
-          <OrganizationSwitcher :show-create-button="false" @switched="showOrgSwitcherModal = false" />
+          <OrganizationSwitcher v-if="isAuthenticated" :show-create-button="false" @switched="showOrgSwitcherModal = false" />
         </template>
         <template #footer="{ close }">
           <UButton label="Close" color="neutral" variant="outline" @click="close" />
