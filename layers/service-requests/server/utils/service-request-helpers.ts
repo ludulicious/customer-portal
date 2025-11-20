@@ -1,31 +1,46 @@
-import { authClient } from '~/utils/auth-client'
+import { checkOrganizationPermission, hasPermission, isOrganizationMember } from '~~/server/utils/permissions'
 import { db } from '~~/server/utils/db'
-import { eq, and, ilike } from 'drizzle-orm'
+import { eq, and, ilike, or } from 'drizzle-orm'
 import { serviceRequest } from '~~/server/db/schema/service-requests'
 
-export async function verifyOrganizationAccess(
-  userId: string,
-  organizationId: string
+/**
+ * Verify user has access to service requests in an organization
+ * Uses the centralized permission system
+ */
+export async function verifyServiceRequestAccess(
+  session: { user: { id: string, role?: string } },
+  organizationId: string,
+  action: 'read' | 'update' | 'delete' | 'list'
 ): Promise<boolean> {
-  try {
-    // Use better-auth client to check membership
-    const { data: member } = await authClient.organization.getActiveMember()
-    return member?.organizationId === organizationId
-  } catch {
-    return false
-  }
+  return await checkOrganizationPermission(session, organizationId, 'service-request', action)
 }
 
-export async function verifyAdminAccess(
-  userId: string,
+/**
+ * Verify user has admin-level access (can delete service requests)
+ * Organization owners/admins and system admins have this permission
+ */
+export async function verifyServiceRequestAdminAccess(
+  session: { user: { id: string, role?: string } },
   organizationId: string
 ): Promise<boolean> {
-  try {
-    const { data: role } = await authClient.organization.getActiveMemberRole()
-    return role?.role === 'owner' || role?.role === 'admin'
-  } catch {
-    return false
-  }
+  return await hasPermission(
+    session.user.id,
+    session.user.role,
+    organizationId,
+    'service-request',
+    'delete'
+  )
+}
+
+/**
+ * Verify user is a member of the organization
+ * System admins are considered members of all organizations
+ */
+export async function verifyOrganizationMembership(
+  session: { user: { id: string, role?: string } },
+  organizationId: string
+): Promise<boolean> {
+  return await isOrganizationMember(session.user.id, organizationId, session.user.role)
 }
 
 export async function verifyRequestOwnership(
@@ -40,6 +55,9 @@ export async function verifyRequestOwnership(
   return row?.createdById === userId
 }
 
+/**
+ * Build query conditions for filtering service requests
+ */
 export function buildRequestQuery(filters: any) {
   const conditions = [] as any[]
   if (filters.status) conditions.push(eq(serviceRequest.status, filters.status))
@@ -49,7 +67,10 @@ export function buildRequestQuery(filters: any) {
   if (filters.createdById) conditions.push(eq(serviceRequest.createdById, filters.createdById))
   if (filters.search) {
     conditions.push(
-      ilike(serviceRequest.title, `%${filters.search}%`) as any
+      or(
+        ilike(serviceRequest.title, `%${filters.search}%`),
+        ilike(serviceRequest.description, `%${filters.search}%`)
+      )!
     )
   }
   return conditions.length ? and(...conditions) : undefined

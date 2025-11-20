@@ -1,10 +1,12 @@
 import { authClient } from '~/utils/auth-client'
 
 export const useServiceRequestMenu = () => {
-  const { data: role } = authClient.organization.getActiveMemberRole()
+  const userStore = useUserStore()
+  const { activeOrganizationRole } = storeToRefs(userStore)
+
   const isOrganizationAdmin = computed(() => {
-    if (!role.value) return false
-    return role.value.role === 'owner' || role.value.role === 'admin'
+    const role = activeOrganizationRole.value
+    return role === 'owner' || role === 'admin'
   })
 
   const menuItems = computed(() => {

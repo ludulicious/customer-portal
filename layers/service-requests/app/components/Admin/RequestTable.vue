@@ -79,58 +79,67 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
       <USelect v-model="filters.priority" :options="priorityOptions" placeholder="Priority" />
       <UInput v-model="filters.search" placeholder="Search..." icon="i-lucide-search" />
     </div>
-    
+
     <!-- Table -->
-    <UTable 
-      :rows="requests" 
+    <div v-if="loading">
+      <USkeleton class="h-12 w-full mb-2" v-for="i in 5" :key="i" />
+    </div>
+
+    <UEmpty
+      v-else-if="requests.length === 0"
+      icon="i-lucide-ticket"
+      description="No service requests found"
+    />
+
+    <UTable
+      v-else
+      :rows="requests"
       :columns="columns"
-      :loading="loading"
-      @select="$emit('select', $event.id)"
     >
       <template #title-data="{ row }">
         <div class="cursor-pointer hover:underline" @click="$emit('select', row.id)">
           {{ row.title }}
         </div>
       </template>
-      
+
       <template #status-data="{ row }">
-        <ServiceRequestStatusBadge :status="row.status" />
+        <StatusBadge :status="row.status" />
       </template>
-      
+
       <template #priority-data="{ row }">
         <UBadge :color="getPriorityColor(row.priority)" size="xs">
           {{ row.priority }}
         </UBadge>
       </template>
-      
+
       <template #organization-data="{ row }">
         {{ row.organization?.name }}
       </template>
-      
+
       <template #assignedTo-data="{ row }">
         <span v-if="row.assignedTo">
           {{ row.assignedTo.name || row.assignedTo.email }}
         </span>
-        <UButton 
-          v-else 
-          size="xs" 
+        <UButton
+          v-else
+          size="xs"
           variant="ghost"
           @click="$emit('assign', row.id)"
         >
           Assign
         </UButton>
       </template>
-      
+
       <template #actions-data="{ row }">
-        <UDropdown :items="getActions(row)">
+        <UDropdownMenu :items="getActions(row)">
           <UButton variant="ghost" icon="i-lucide-more-vertical" />
-        </UDropdown>
+        </UDropdownMenu>
       </template>
     </UTable>
-    
+
     <!-- Pagination -->
     <div v-if="pagination.pages > 1" class="flex justify-center mt-4">
-      <UPagination 
+      <UPagination
         v-model="currentPage"
         :total="pagination.total"
         :page-size="pagination.limit"

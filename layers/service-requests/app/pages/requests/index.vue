@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const { 
-  requests, 
-  loading, 
-  pagination, 
-  fetchRequests 
+const {
+  requests,
+  loading,
+  pagination,
+  fetchRequests
 } = useServiceRequests()
 
 onMounted(() => {
@@ -14,14 +14,11 @@ const handleFilter = (filters: ServiceRequestFilters) => {
   fetchRequests(filters)
 }
 
-definePageMeta({
-  middleware: 'auth'
-})
 </script>
 
 <template>
   <div class="container mx-auto py-8">
-    <CustomerRequestList 
+    <CustomerRequestList
       :requests="requests"
       :loading="loading"
       :pagination="pagination"

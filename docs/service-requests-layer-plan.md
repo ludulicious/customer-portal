@@ -26,9 +26,9 @@ This plan has been updated to work with the existing better-auth organization im
 
 This implementation uses Drizzle's modular schema approach to organize the database schema by domain:
 
-- **Main schema** (`db/schema/auth-schema.ts`) contains better-auth models and core authentication tables
-- **Service requests schema** (`db/schema/service-requests.ts`) contains only service request related models
-- **Schema aggregation** via `drizzle.config.ts` which points to the `db/schema/` directory
+- **Main schema** (`server/db/schema/auth-schema.ts`) contains better-auth models and core authentication tables
+- **Service requests schema** (`server/db/schema/service-requests.ts`) contains only service request related models
+- **Schema aggregation** via `drizzle.config.ts` which points to the `server/db/schema/` directory
 - **Automatic inclusion** of all schema files exported from the schema directory
 - **Clean separation** of concerns between different feature domains
 - **Easy layer removal** by simply deleting or commenting out the service-requests schema file
@@ -54,7 +54,7 @@ layers/service-requests/
         ├── en.json
         └── nl.json
 
-Note: The Drizzle schema is defined in `db/schema/service-requests.ts` at the root level, not in the layer directory.
+Note: The Drizzle schema is defined in `server/db/schema/service-requests.ts` at the root level, not in the layer directory.
 ```
 
 ### 1.2 Create Layer Nuxt Config
@@ -71,7 +71,7 @@ export default defineNuxtConfig({
 
 ### 2.1 Define Service Request Schema
 
-Create `db/schema/service-requests.ts`:
+Create `server/db/schema/service-requests.ts`:
 ```typescript
 import { pgEnum, pgTable, text, timestamp, jsonb, index } from 'drizzle-orm/pg-core'
 
@@ -128,13 +128,13 @@ export const serviceRequest = pgTable(
 
 ### 2.2 Update Drizzle Config
 
-The `drizzle.config.ts` should already point to the `db/schema/` directory, which will automatically include all exported schema files:
+The `drizzle.config.ts` should already point to the `server/db/schema/` directory, which will automatically include all exported schema files:
 
 ```typescript
 import { defineConfig } from 'drizzle-kit'
 
 export default defineConfig({
-  schema: './db/schema',
+  schema: './server/db/schema',
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: { url: process.env.DATABASE_URL! },
@@ -143,7 +143,7 @@ export default defineConfig({
 
 ### 2.3 Export Schema from Index (Optional)
 
-Create or update `db/schema/index.ts` to export all schemas:
+Create or update `server/db/schema/index.ts` to export all schemas:
 ```typescript
 export * from './auth-schema'
 export * from './service-requests'
@@ -231,9 +231,23 @@ export interface AdminServiceRequestUpdateInput extends ServiceRequestUpdateInpu
 
 ## Phase 4: Permissions
 
-### 4.1 Add Service Request Permissions
+### 4.1 Permission System Overview
 
-Update `lib/auth/permissions.ts` in main layer:
+This implementation uses the centralized permission system from `server/utils/permissions.ts`:
+
+- **Permission checking**: Use `checkOrganizationPermission()` for organization-scoped operations
+- **General permissions**: Use `hasPermission()` for general permission checks
+- **Membership verification**: Use `isOrganizationMember()` for membership checks
+- **Organization role permissions**: Automatically handled by `getUserPermissions()`:
+  - **Owner**: Full service-request permissions (create, read, update, delete, list)
+  - **Admin**: Full service-request permissions (create, read, update, delete, list)
+  - **Member**: Basic service-request permissions (create, read, update, list) - no delete
+  - **System Admin**: All permissions regardless of organization role
+
+### 4.2 Service Request Permissions
+
+Service request permissions are already defined in `shared/permissions.ts`:
+
 ```typescript
 export const statement = {
   ...defaultStatements,
@@ -243,46 +257,12 @@ export const statement = {
     'update',
     'delete',
     'list',
-    'assign',
-    'resolve',
-    'reopen',
-    'view-internal-notes',
-    'edit-internal-notes'
   ],
   // ... existing statements
 } as const
 ```
 
-### 4.2 Update Role Permissions
-
-```typescript
-export const user = ac.newRole({
-  'service-request': [
-    'create',        // Create requests for their org
-    'read',          // Read requests in their org
-    'update',        // Update own requests
-    'list'           // List org requests
-  ],
-  // ... existing permissions
-})
-
-export const admin = ac.newRole({
-  ...adminAc.statements,
-  'service-request': [
-    'create',
-    'read',
-    'update',
-    'delete',
-    'list',
-    'assign',
-    'resolve',
-    'reopen',
-    'view-internal-notes',
-    'edit-internal-notes'
-  ],
-  // ... existing permissions
-})
-```
+The permission system automatically grants appropriate service-request permissions based on organization role (see `server/utils/permissions.ts` - `getOrganizationRolePermissions()`).
 
 ## Phase 5: Server API - Validation Utilities
 
@@ -328,36 +308,54 @@ export const filterServiceRequestSchema = z.object({
 
 Create `layers/service-requests/server/utils/service-request-helpers.ts`:
 ```typescript
-import { authClient } from '~/utils/auth-client'
+import { checkOrganizationPermission, hasPermission, isOrganizationMember } from '~~/server/utils/permissions'
 import { db } from '~~/server/utils/db'
 import { eq, and, ilike, or } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
 
-export async function verifyOrganizationAccess(
-  userId: string,
-  organizationId: string
+/**
+ * Verify user has access to service requests in an organization
+ * Uses the centralized permission system
+ */
+export async function verifyServiceRequestAccess(
+  session: { user: { id: string, role?: string } },
+  organizationId: string,
+  action: 'read' | 'update' | 'delete' | 'list'
 ): Promise<boolean> {
-  try {
-    // Use better-auth client to check membership
-    const { data: member } = await authClient.organization.getActiveMember()
-    return member?.organizationId === organizationId
-  } catch {
-    return false
-  }
+  return await checkOrganizationPermission(session, organizationId, 'service-request', action)
 }
 
-export async function verifyAdminAccess(
-  userId: string,
+/**
+ * Verify user has admin-level access (can delete service requests)
+ * Organization owners/admins and system admins have this permission
+ */
+export async function verifyServiceRequestAdminAccess(
+  session: { user: { id: string, role?: string } },
   organizationId: string
 ): Promise<boolean> {
-  try {
-    const { data: role } = await authClient.organization.getActiveMemberRole()
-    return role?.includes('owner') || role?.includes('admin')
-  } catch {
-    return false
-  }
+  return await hasPermission(
+    session.user.id,
+    session.user.role,
+    organizationId,
+    'service-request',
+    'delete'
+  )
 }
 
+/**
+ * Verify user is a member of the organization
+ * System admins are considered members of all organizations
+ */
+export async function verifyOrganizationMembership(
+  session: { user: { id: string, role?: string } },
+  organizationId: string
+): Promise<boolean> {
+  return await isOrganizationMember(session.user.id, organizationId, session.user.role)
+}
+
+/**
+ * Verify user owns a specific service request
+ */
 export async function verifyRequestOwnership(
   userId: string,
   requestId: string
@@ -370,6 +368,9 @@ export async function verifyRequestOwnership(
   return row?.createdById === userId
 }
 
+/**
+ * Build query conditions for filtering service requests
+ */
 export function buildRequestQuery(filters: any) {
   const conditions = []
   
@@ -398,13 +399,15 @@ export function buildRequestQuery(filters: any) {
 
 Create `layers/service-requests/server/api/service-requests/index.get.ts`:
 ```typescript
-import { authClient } from '~/utils/auth-client'
+import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { and, desc, eq, sql } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { filterServiceRequestSchema } from '../../utils/service-request-validation'
+import { buildRequestQuery, verifyServiceRequestAccess } from '../../utils/service-request-helpers'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
@@ -412,12 +415,17 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const filters = filterServiceRequestSchema.parse(query)
   
-  // Get user's organization using better-auth
-  const { data: member } = await authClient.organization.getActiveMember()
-  const organizationId = member?.organizationId
+  // Get user's active organization from session
+  const organizationId = (session as any).session?.activeOrganizationId
   
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No organization found' })
+  }
+  
+  // Verify user has permission to list service requests
+  const hasAccess = await verifyServiceRequestAccess(session, organizationId, 'list')
+  if (!hasAccess) {
+    throw createError({ statusCode: 403, message: 'Access denied' })
   }
   
   const whereConditions = [
@@ -467,12 +475,15 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/index.post.ts`:
 ```typescript
-import { authClient } from '~/utils/auth-client'
+import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { createServiceRequestSchema } from '../../utils/service-request-validation'
+import { verifyServiceRequestAccess } from '../../utils/service-request-helpers'
+import { nanoid } from 'nanoid'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
@@ -480,12 +491,17 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const data = createServiceRequestSchema.parse(body)
   
-  // Get user's organization using better-auth
-  const { data: member } = await authClient.organization.getActiveMember()
-  const organizationId = member?.organizationId
+  // Get user's active organization from session
+  const organizationId = (session as any).session?.activeOrganizationId
   
   if (!organizationId) {
     throw createError({ statusCode: 400, message: 'No organization found' })
+  }
+  
+  // Verify user has permission to create service requests
+  const hasAccess = await verifyServiceRequestAccess(session, organizationId, 'create')
+  if (!hasAccess) {
+    throw createError({ statusCode: 403, message: 'Access denied' })
   }
   
   const [request] = await db
@@ -507,13 +523,14 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].get.ts`:
 ```typescript
-import { authClient } from '~/utils/auth-client'
+import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { verifyServiceRequestAccess, verifyServiceRequestAdminAccess } from '../../utils/service-request-helpers'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
@@ -531,9 +548,10 @@ export default defineEventHandler(async (event) => {
   }
   
   // Verify user has access to this organization's requests
-  const hasAccess = await verifyOrganizationAccess(
-    session.user.id,
-    request.organizationId
+  const hasAccess = await verifyServiceRequestAccess(
+    session,
+    request.organizationId,
+    'read'
   )
   
   if (!hasAccess) {
@@ -541,8 +559,7 @@ export default defineEventHandler(async (event) => {
   }
   
   // Hide internal notes from non-admin users
-  const { data: role } = await authClient.organization.getActiveMemberRole()
-  const isAdmin = role?.includes('owner') || role?.includes('admin')
+  const isAdmin = await verifyServiceRequestAdminAccess(session, request.organizationId)
   
   if (!isAdmin) {
     delete request.internalNotes
@@ -556,12 +573,15 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].patch.ts`:
 ```typescript
+import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { updateServiceRequestSchema } from '../../utils/service-request-validation'
+import { verifyServiceRequestAccess, verifyRequestOwnership } from '../../utils/service-request-helpers'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
@@ -570,10 +590,26 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const data = updateServiceRequestSchema.parse(body)
   
-  // Verify ownership or organization membership
-  const isOwner = await verifyRequestOwnership(session.user.id, id)
+  // Get the request to check organization
+  const [existingRequest] = await db
+    .select({ organizationId: serviceRequest.organizationId })
+    .from(serviceRequest)
+    .where(eq(serviceRequest.id, id!))
+    .limit(1)
   
-  if (!isOwner) {
+  if (!existingRequest) {
+    throw createError({ statusCode: 404, message: 'Request not found' })
+  }
+  
+  // Verify user has permission to update (must be owner or have update permission)
+  const isOwner = await verifyRequestOwnership(session.user.id, id!)
+  const hasUpdatePermission = await verifyServiceRequestAccess(
+    session,
+    existingRequest.organizationId,
+    'update'
+  )
+  
+  if (!isOwner && !hasUpdatePermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
   
@@ -598,22 +634,40 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/[id].delete.ts`:
 ```typescript
+import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { verifyServiceRequestAccess, verifyRequestOwnership } from '../../utils/service-request-helpers'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
   
   const id = getRouterParam(event, 'id')
   
-  // Verify ownership
-  const isOwner = await verifyRequestOwnership(session.user.id, id)
+  // Get the request to check organization
+  const [existingRequest] = await db
+    .select({ organizationId: serviceRequest.organizationId })
+    .from(serviceRequest)
+    .where(eq(serviceRequest.id, id!))
+    .limit(1)
   
-  if (!isOwner) {
+  if (!existingRequest) {
+    throw createError({ statusCode: 404, message: 'Request not found' })
+  }
+  
+  // Verify ownership or admin delete permission
+  const isOwner = await verifyRequestOwnership(session.user.id, id!)
+  const hasDeletePermission = await verifyServiceRequestAccess(
+    session,
+    existingRequest.organizationId,
+    'delete'
+  )
+  
+  if (!isOwner && !hasDeletePermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
   
@@ -631,20 +685,28 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/admin/index.get.ts`:
 ```typescript
-import { authClient } from '~/utils/auth-client'
+import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { desc, sql } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { filterServiceRequestSchema } from '../../../utils/service-request-validation'
+import { buildRequestQuery, verifyServiceRequestAdminAccess } from '../../../utils/service-request-helpers'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
   
-  // Check if user is admin using better-auth organization roles
-  const { data: role } = await authClient.organization.getActiveMemberRole()
-  const isAdmin = role?.includes('owner') || role?.includes('admin')
+  // Get active organization from session
+  const organizationId = (session as any).session?.activeOrganizationId
+  
+  if (!organizationId) {
+    throw createError({ statusCode: 400, message: 'No organization found' })
+  }
+  
+  // Check if user has admin-level access (can delete service requests)
+  const isAdmin = await verifyServiceRequestAdminAccess(session, organizationId)
   
   if (!isAdmin) {
     throw createError({ statusCode: 403, message: 'Admin access required' })
@@ -699,20 +761,34 @@ export default defineEventHandler(async (event) => {
 
 Create `layers/service-requests/server/api/service-requests/admin/[id].patch.ts`:
 ```typescript
-import { authClient } from '~/utils/auth-client'
+import { auth } from '~~/server/utils/auth'
 import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
-import { serviceRequest } from '~~/db/schema/service-requests'
+import { serviceRequest } from '~~/server/db/schema/service-requests'
+import { adminUpdateServiceRequestSchema } from '../../../utils/service-request-validation'
+import { verifyServiceRequestAdminAccess } from '../../../utils/service-request-helpers'
 
 export default defineEventHandler(async (event) => {
-  const session = await getUserSession(event)
+  const session = await auth.api.getSession({ headers: event.headers })
   if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
   
-  // Check if user is admin using better-auth organization roles
-  const { data: role } = await authClient.organization.getActiveMemberRole()
-  const isAdmin = role?.includes('owner') || role?.includes('admin')
+  const id = getRouterParam(event, 'id')
+  
+  // Get the request to check organization
+  const [existingRequest] = await db
+    .select({ organizationId: serviceRequest.organizationId })
+    .from(serviceRequest)
+    .where(eq(serviceRequest.id, id!))
+    .limit(1)
+  
+  if (!existingRequest) {
+    throw createError({ statusCode: 404, message: 'Request not found' })
+  }
+  
+  // Check if user has admin-level access
+  const isAdmin = await verifyServiceRequestAdminAccess(session, existingRequest.organizationId)
   
   if (!isAdmin) {
     throw createError({ statusCode: 403, message: 'Admin access required' })
@@ -991,11 +1067,11 @@ const props = defineProps<{
 
 const statusColor = computed(() => {
   switch (props.status) {
-    case 'OPEN': return 'blue'
-    case 'IN_PROGRESS': return 'yellow'
-    case 'RESOLVED': return 'green'
-    case 'CLOSED': return 'gray'
-    default: return 'gray'
+    case 'OPEN': return 'primary'
+    case 'IN_PROGRESS': return 'warning'
+    case 'RESOLVED': return 'success'
+    case 'CLOSED': return 'neutral'
+    default: return 'neutral'
   }
 })
 
@@ -1006,6 +1082,8 @@ const statusLabel = computed(() => {
 })
 </script>
 ```
+
+**Note**: Uses NuxtUI `UBadge` component with semantic color names (primary, warning, success, neutral).
 
 ### 10.2 Customer Request Form Component
 
@@ -1122,13 +1200,15 @@ Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestLis
     </div>
     
     <!-- List -->
-    <div v-if="loading" class="text-center py-8">
-      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
+    <div v-if="loading">
+      <USkeleton class="h-20 w-full mb-2" v-for="i in 5" :key="i" />
     </div>
     
-    <div v-else-if="requests.length === 0" class="text-center py-8 text-gray-500">
-      No service requests found
-    </div>
+    <UEmpty
+      v-else-if="requests.length === 0"
+      icon="i-lucide-ticket"
+      description="No service requests found"
+    />
     
     <div v-else class="space-y-3">
       <UCard 
@@ -1149,7 +1229,7 @@ Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestLis
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
-            <ServiceRequestStatusBadge :status="request.status" />
+            <StatusBadge :status="request.status" />
             <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
               {{ request.priority }}
             </UBadge>
@@ -1211,7 +1291,7 @@ Create `layers/service-requests/app/components/ServiceRequest/CustomerRequestDet
       <div>
         <h1 class="text-3xl font-bold">{{ request.title }}</h1>
         <div class="flex gap-2 mt-2">
-          <ServiceRequestStatusBadge :status="request.status" />
+          <StatusBadge :status="request.status" />
           <UBadge :color="getPriorityColor(request.priority)">
             {{ request.priority }}
           </UBadge>
@@ -1377,7 +1457,7 @@ Create `layers/service-requests/app/components/ServiceRequest/AdminRequestTable.
       </template>
       
       <template #status-data="{ row }">
-        <ServiceRequestStatusBadge :status="row.status" />
+        <StatusBadge :status="row.status" />
       </template>
       
       <template #priority-data="{ row }">
@@ -1405,10 +1485,13 @@ Create `layers/service-requests/app/components/ServiceRequest/AdminRequestTable.
       </template>
       
       <template #actions-data="{ row }">
-        <UDropdown :items="getActions(row)">
+        <UDropdownMenu :items="getActions(row)">
           <UButton variant="ghost" icon="i-lucide-more-vertical" />
-        </UDropdown>
+        </UDropdownMenu>
       </template>
+```
+
+**Note**: Uses `UDropdownMenu` instead of `UDropdown` for consistency with NuxtUI patterns.
     </UTable>
     
     <!-- Pagination -->
@@ -2117,7 +2200,7 @@ Create `app/components/RecentServiceRequestsWidget.vue`:
           <p class="font-medium">{{ request.title }}</p>
           <p class="text-xs text-gray-500">{{ formatDate(request.createdAt) }}</p>
         </div>
-        <ServiceRequestStatusBadge :status="request.status" />
+        <StatusBadge :status="request.status" />
       </div>
     </div>
   </div>
@@ -2170,7 +2253,7 @@ if (widget) {
 
 **Layer Structure:**
 - `layers/service-requests/nuxt.config.ts`
-- `db/schema/service-requests.ts` (Drizzle schema at root level)
+- `server/db/schema/service-requests.ts` (Drizzle schema at root level)
 - `layers/service-requests/app/types/service-request.d.ts`
 
 **Server:**
@@ -2214,8 +2297,22 @@ if (widget) {
 - Update `app/components/AppHeader.vue`
 - Update `app/pages/dashboard.vue`
 - Create `app/components/RecentServiceRequestsWidget.vue`
-- Update `drizzle.config.ts` (should already point to `db/schema/`)
-- Create or update `db/schema/index.ts` (optional, to export all schemas)
+- Update `drizzle.config.ts` (should already point to `server/db/schema/`)
+- Create or update `server/db/schema/index.ts` (optional, to export all schemas)
+
+## NuxtUI Component Recommendations
+
+When implementing components, use these NuxtUI components for better consistency:
+
+- **Loading states**: Use `USkeleton` component instead of custom loading spinners
+- **Empty states**: Use `UEmpty` component with appropriate icon and description
+- **Error states**: Use `UAlert` component with error color variant
+- **Dropdowns**: Use `UDropdownMenu` instead of `UDropdown` for consistency
+- **Forms**: Already using `UForm`, `UFormField`, `UInput`, `UTextarea`, `USelect` (good)
+- **Badges**: Use `UBadge` with semantic colors (primary, success, warning, error, neutral)
+- **Cards**: Use `UCard` with header/body/footer slots
+- **Tables**: Use `UTable` component for data tables
+- **Pagination**: Use `UPagination` component
 
 ## Testing
 
@@ -2241,7 +2338,7 @@ if (widget) {
 ## To-dos
 
 - [ ] Create service requests layer directory structure
-- [ ] Define ServiceRequest Drizzle schema in `db/schema/service-requests.ts` (using existing better-auth Organization model)
+- [ ] Define ServiceRequest Drizzle schema in `server/db/schema/service-requests.ts` (using existing better-auth Organization model)
 - [ ] Build customer-facing Vue components (form, list, detail, badge)
 - [ ] Create customer pages for listing, creating, and viewing requests
 - [ ] Implement useServiceRequests composable for customer operations (using better-auth organization client)
@@ -2257,4 +2354,4 @@ if (widget) {
 - [ ] Update dashboard to conditionally show service request widget
 - [ ] Add internationalization keys for service requests in layer locale files
 - [ ] Create and run database migrations for service requests (extending existing better-auth schema)
-- [ ] Verify `drizzle.config.ts` includes `db/schema/` directory
+- [ ] Verify `drizzle.config.ts` includes `server/db/schema/` directory

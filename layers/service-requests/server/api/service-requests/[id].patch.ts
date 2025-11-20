@@ -1,13 +1,13 @@
-import { authClient } from '~/utils/auth-client'
+import { auth } from '~~/server/utils/auth'
 import { updateServiceRequestSchema } from '../../utils/service-request-validation'
-import { verifyRequestOwnership } from '../../utils/service-request-helpers'
+import { verifyServiceRequestAccess, verifyRequestOwnership } from '../../utils/service-request-helpers'
 import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
 import { serviceRequest } from '~~/server/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
-  const session = await authClient.getSession()
-  if (!session?.data?.user) {
+  const session = await auth.api.getSession({ headers: event.headers })
+  if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
@@ -15,10 +15,26 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const data = updateServiceRequestSchema.parse(body)
 
-  // Verify ownership or organization membership
-  const isOwner = await verifyRequestOwnership(session.data.user.id!, id!)
+  // Get the request to check organization
+  const [existingRequest] = await db
+    .select({ organizationId: serviceRequest.organizationId })
+    .from(serviceRequest)
+    .where(eq(serviceRequest.id, id!))
+    .limit(1)
 
-  if (!isOwner) {
+  if (!existingRequest) {
+    throw createError({ statusCode: 404, message: 'Request not found' })
+  }
+
+  // Verify user has permission to update (must be owner or have update permission)
+  const isOwner = await verifyRequestOwnership(session.user.id, id!)
+  const hasUpdatePermission = await verifyServiceRequestAccess(
+    session,
+    existingRequest.organizationId,
+    'update'
+  )
+
+  if (!isOwner && !hasUpdatePermission) {
     throw createError({ statusCode: 403, message: 'Access denied' })
   }
 

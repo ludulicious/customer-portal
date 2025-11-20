@@ -79,8 +79,9 @@ definePageMeta({
 
 <template>
   <div class="container mx-auto py-8 max-w-4xl">
-    <div v-if="loading" class="text-center py-8">
-      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
+    <div v-if="loading">
+      <USkeleton class="h-32 w-full mb-4" />
+      <USkeleton class="h-64 w-full" />
     </div>
 
     <div v-else-if="!request" class="text-center py-8">

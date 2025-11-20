@@ -1,12 +1,12 @@
-import { authClient } from '~/utils/auth-client'
-import { verifyOrganizationAccess } from '../../utils/service-request-helpers'
+import { auth } from '~~/server/utils/auth'
+import { verifyServiceRequestAccess, verifyServiceRequestAdminAccess } from '../../utils/service-request-helpers'
 import { db } from '~~/server/utils/db'
 import { eq } from 'drizzle-orm'
 import { serviceRequest } from '~~/server/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
-  const session = await authClient.getSession()
-  if (!session?.data?.user) {
+  const session = await auth.api.getSession({ headers: event.headers })
+  if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
@@ -23,9 +23,10 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify user has access to this organization's requests
-  const hasAccess = await verifyOrganizationAccess(
-    session.data.user.id,
-    request.organizationId
+  const hasAccess = await verifyServiceRequestAccess(
+    session,
+    request.organizationId,
+    'read'
   )
 
   if (!hasAccess) {
@@ -33,8 +34,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Hide internal notes from non-admin users
-  const { data: role } = await authClient.organization.getActiveMemberRole()
-  const isAdmin = role?.role === 'owner' || role?.role === 'admin'
+  const isAdmin = await verifyServiceRequestAdminAccess(session, request.organizationId)
 
   if (!isAdmin) {
     delete (request as any).internalNotes

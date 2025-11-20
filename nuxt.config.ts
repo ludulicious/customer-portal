@@ -3,9 +3,9 @@ import { fileURLToPath } from 'node:url'
 
 export default defineNuxtConfig({
   ssr: false,
-  // extends: [
-  //   './layers/service-requests'
-  // ],
+  extends: [
+    './layers/service-requests'
+  ],
   modules: [
     '@nuxt/eslint',
     '@nuxt/image',

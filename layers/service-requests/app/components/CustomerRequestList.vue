@@ -63,38 +63,40 @@ const formatDate = (date: Date) => {
         New Request
       </UButton>
     </div>
-    
+
     <!-- Filters -->
     <div class="flex gap-2">
-      <USelect 
-        v-model="filters.status" 
+      <USelect
+        v-model="filters.status"
         :options="statusOptions"
         placeholder="Filter by status"
       />
-      <USelect 
-        v-model="filters.priority" 
+      <USelect
+        v-model="filters.priority"
         :options="priorityOptions"
         placeholder="Filter by priority"
       />
-      <UInput 
-        v-model="filters.search" 
+      <UInput
+        v-model="filters.search"
         placeholder="Search requests..."
         icon="i-lucide-search"
       />
     </div>
-    
+
     <!-- List -->
-    <div v-if="loading" class="text-center py-8">
-      <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto text-gray-400" />
+    <div v-if="loading">
+      <USkeleton class="h-20 w-full mb-2" v-for="i in 5" :key="i" />
     </div>
-    
-    <div v-else-if="requests.length === 0" class="text-center py-8 text-gray-500">
-      No service requests found
-    </div>
-    
+
+    <UEmpty
+      v-else-if="requests.length === 0"
+      icon="i-lucide-ticket"
+      description="No service requests found"
+    />
+
     <div v-else class="space-y-3">
-      <UCard 
-        v-for="request in requests" 
+      <UCard
+        v-for="request in requests"
         :key="request.id"
         class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
         @click="$emit('select', request.id)"
@@ -111,7 +113,7 @@ const formatDate = (date: Date) => {
             </div>
           </div>
           <div class="flex flex-col items-end gap-2">
-            <ServiceRequestStatusBadge :status="request.status" />
+            <StatusBadge :status="request.status" />
             <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
               {{ request.priority }}
             </UBadge>
@@ -119,10 +121,10 @@ const formatDate = (date: Date) => {
         </div>
       </UCard>
     </div>
-    
+
     <!-- Pagination -->
     <div v-if="pagination.pages > 1" class="flex justify-center">
-      <UPagination 
+      <UPagination
         v-model="currentPage"
         :total="pagination.total"
         :page-size="pagination.limit"

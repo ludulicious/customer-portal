@@ -124,6 +124,17 @@ const items = computed(() => {
     active: isRouteActive('/dashboard')
   }]
 
+  // Add service request menu items if layer is present
+  if (serviceRequestMenu?.menuItems) {
+    const serviceRequestItems = serviceRequestMenu.menuItems.value.map(item => ({
+      label: item.label,
+      to: item.to,
+      active: isRouteActive(item.to),
+      icon: item.icon
+    }))
+    privateItems.push(...serviceRequestItems)
+  }
+
   // Add organization management items for admins/owners
   if (isOrgAdmin.value) {
     privateItems.push({
@@ -146,31 +157,15 @@ const items = computed(() => {
 })
 
 // Try to use service request menu composable (will be undefined if layer not present)
-// const serviceRequestMenu = useServiceRequestMenu?.() || null
-
-// Use static items to avoid hydration mismatch
-// const items = computed(() => {
-//   const baseItemsList = baseItems.value
-// Add service request menu items if layer is present
-// if (serviceRequestMenu?.menuItems) {
-//   const serviceRequestItems = serviceRequestMenu.menuItems.value.map(item => ({
-//     label: item.label,
-//     to: item.to,
-//     active: isRouteActive(item.to),
-//     icon: item.icon
-//   }))
-
-//   // Insert service request items after dashboard
-//   const dashboardIndex = baseItemsList.findIndex(item => item.to.includes('/dashboard'))
-//   if (dashboardIndex !== -1) {
-//     baseItemsList.splice(dashboardIndex + 1, 0, ...serviceRequestItems)
-//   } else {
-//     baseItemsList.unshift(...serviceRequestItems)
-//   }
-// }
-
-// return baseItemsList
-// })
+let serviceRequestMenu: ReturnType<typeof useServiceRequestMenu> | null = null
+try {
+  if (typeof useServiceRequestMenu !== 'undefined') {
+    serviceRequestMenu = useServiceRequestMenu()
+  }
+} catch {
+  // Service request layer not available
+  serviceRequestMenu = null
+}
 
 // Create a reactive locale ref that's properly initialized
 const currentLocale = ref(locale.value)

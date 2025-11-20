@@ -1,20 +1,27 @@
-import { authClient } from '~/utils/auth-client'
+import { auth } from '~~/server/utils/auth'
 import { filterServiceRequestSchema } from '../../../utils/service-request-validation'
-import { buildRequestQuery } from '../../../utils/service-request-helpers'
+import { buildRequestQuery, verifyServiceRequestAdminAccess } from '../../../utils/service-request-helpers'
 import { db } from '~~/server/utils/db'
-import { desc } from 'drizzle-orm'
+import { desc, sql } from 'drizzle-orm'
 import { serviceRequest } from '~~/server/db/schema/service-requests'
-import { defineEventHandler, createError, getQuery } from 'h3'
 
 export default defineEventHandler(async (event) => {
-  const session = await authClient.getSession()
-  if (!session?.data?.user) {
+  const session = await auth.api.getSession({ headers: event.headers })
+  if (!session?.user) {
     throw createError({ statusCode: 401, message: 'Unauthorized' })
   }
 
-  // Check if user is admin using better-auth organization roles
-  const { data: role } = await authClient.organization.getActiveMemberRole()
-  const isAdmin = role?.role === 'owner' || role?.role === 'admin'
+  // Get active organization from session
+  type SessionWithOrg = { session?: { activeOrganizationId?: string }, activeOrganizationId?: string }
+  const sessionWithOrg = session as SessionWithOrg
+  const organizationId = sessionWithOrg?.session?.activeOrganizationId || sessionWithOrg?.activeOrganizationId
+
+  if (!organizationId) {
+    throw createError({ statusCode: 400, message: 'No organization found' })
+  }
+
+  // Check if user has admin-level access (can delete service requests)
+  const isAdmin = await verifyServiceRequestAdminAccess(session, organizationId)
 
   if (!isAdmin) {
     throw createError({ statusCode: 403, message: 'Admin access required' })
@@ -25,7 +32,7 @@ export default defineEventHandler(async (event) => {
 
   const where = buildRequestQuery(filters)
 
-  const [requests, total, statsRows] = await Promise.all([
+  const [requests, totalRows, statusCounts] = await Promise.all([
     db
       .select()
       .from(serviceRequest)
@@ -34,15 +41,24 @@ export default defineEventHandler(async (event) => {
       .offset(((filters.page || 1) - 1) * (filters.limit || 20))
       .limit(filters.limit || 20),
     db
-      .select({ count: serviceRequest.id })
+      .select({ count: sql<number>`count(*)` })
       .from(serviceRequest)
-      .where(where as any)
-      .then(rows => rows.length),
+      .where(where as any),
     db
-      .select({ status: serviceRequest.status })
+      .select({
+        status: serviceRequest.status,
+        count: sql<number>`count(*)`
+      })
       .from(serviceRequest)
       .where(where as any)
+      .groupBy(serviceRequest.status)
   ])
+
+  const total = Number(totalRows[0]?.count || 0)
+  const stats = statusCounts.reduce((acc, item) => {
+    acc[item.status as string] = Number(item.count)
+    return acc
+  }, {} as Record<string, number>)
 
   return {
     requests,
@@ -52,9 +68,6 @@ export default defineEventHandler(async (event) => {
       limit: filters.limit || 20,
       pages: Math.ceil(total / (filters.limit || 20))
     },
-    stats: statsRows.reduce((acc, item) => {
-      acc[item.status as string] = (acc[item.status as string] ?? 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    stats
   }
 })

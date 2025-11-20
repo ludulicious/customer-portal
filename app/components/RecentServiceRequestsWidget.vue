@@ -56,7 +56,7 @@ const formatDate = (date: Date) => {
           <p class="font-medium">{{ request.title }}</p>
           <p class="text-xs text-gray-500">{{ formatDate(request.createdAt) }}</p>
         </div>
-        <ServiceRequestStatusBadge :status="request.status" />
+        <StatusBadge :status="request.status" />
       </div>
     </div>
   </div>
