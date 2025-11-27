@@ -2,7 +2,7 @@
 const props = defineProps<{
   requests: ServiceRequestWithRelations[]
   loading: boolean
-  pagination: any
+  pagination: { total: number, page: number, limit: number, pages: number }
 }>()
 
 const emit = defineEmits<{
@@ -51,7 +51,7 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
 }
 
 const formatDate = (date: Date) => {
-  return new Date(date).toLocaleDateString()
+  return date.toLocaleDateString()
 }
 </script>
 
@@ -85,7 +85,7 @@ const formatDate = (date: Date) => {
 
     <!-- List -->
     <div v-if="loading">
-      <USkeleton class="h-20 w-full mb-2" v-for="i in 5" :key="i" />
+      <USkeleton v-for="i in 5" :key="i" class="h-20 w-full mb-2" />
     </div>
 
     <UEmpty

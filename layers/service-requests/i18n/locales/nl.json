@@ -1,6 +1,7 @@
 {
   "serviceRequest": {
     "title": "Serviceaanvragen",
+    "subTitle": "Bekijk en beheer alle serviceaanvragen",
     "create": "Aanvraag Maken",
     "edit": "Aanvraag Bewerken",
     "delete": "Aanvraag Verwijderen",

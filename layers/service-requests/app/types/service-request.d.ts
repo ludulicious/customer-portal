@@ -2,6 +2,16 @@ declare global {
   export type ServiceRequestStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
   export type ServiceRequestPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
+  export interface ServiceRequestAttachment {
+    id: string
+    url: string
+    filename: string
+    size: number
+    mimeType: string
+    uploadedAt: Date
+    uploadedById?: string
+  }
+
   export interface ServiceRequest {
     id: string
     title: string
@@ -12,7 +22,7 @@ declare global {
     organizationId: string
     createdById: string
     assignedToId?: string
-    attachments?: any[]
+    attachments?: ServiceRequestAttachment[]
     internalNotes?: string
     createdAt: Date
     updatedAt: Date

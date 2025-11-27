@@ -1,6 +1,7 @@
 {
   "serviceRequest": {
     "title": "Service Requests",
+    "subTitle": "View and manage all service requests",
     "create": "Create Request",
     "edit": "Edit Request",
     "delete": "Delete Request",

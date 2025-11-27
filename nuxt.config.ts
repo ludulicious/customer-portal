@@ -102,11 +102,13 @@ export default defineNuxtConfig({
     locales: [
       {
         code: 'en',
+        iso: 'en-US',
         name: 'English',
         file: 'en.json'
       },
       {
         code: 'nl',
+        iso: 'nl-NL',
         name: 'Nederlands',
         file: 'nl.json'
       }
@@ -120,6 +122,5 @@ export default defineNuxtConfig({
       alwaysRedirect: false,
       fallbackLocale: 'en'
     },
-    langDir: 'locales'
   }
 })
