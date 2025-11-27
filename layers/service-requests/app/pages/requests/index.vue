@@ -56,11 +56,11 @@ const getDropdownActions = (serviceRequest: ServiceRequestWithRelations): Dropdo
 
 const getPriorityColor = (priority: ServiceRequestPriority) => {
   switch (priority) {
-    case 'LOW': return 'green'
+    case 'LOW': return 'success'
     case 'MEDIUM': return 'blue'
-    case 'HIGH': return 'orange'
-    case 'URGENT': return 'red'
-    default: return 'gray'
+    case 'HIGH': return 'warning'
+    case 'URGENT': return 'error'
+    default: return 'neutral'
   }
 }
 
@@ -112,7 +112,7 @@ const refreshTable = async () => {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- List -->
       <div v-if="pending">
-        <USkeleton v-for="i in 5" :key="i" class="h-20 w-full mb-2" />
+        <USkeleton v-for="i in pageSize" :key="i" class="h-20 w-full mb-2" />
       </div>
 
       <UEmpty v-else-if="requestsList.length === 0" icon="i-lucide-ticket" description="No service requests found" />
