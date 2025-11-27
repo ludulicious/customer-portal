@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { QueryResult } from '~~/shared/types'
-import { vInfiniteScroll } from '@vueuse/components'
 
 const { t } = useI18n()
 
@@ -70,6 +69,10 @@ const formatDate = (date: Date) => {
 }
 
 watch([currentPage, pageSize], async () => {
+  if (currentPage.value === 1) {
+    // Reset list when going back to page 1
+    list.value = []
+  }
   await refresh()
 })
 
@@ -80,22 +83,48 @@ const refreshTable = async () => {
   }
   await refresh()
 }
-const list = ref<ServiceRequestWithRelations[]>([])
 
-watch(pending, (value) => {
-  if (!value) {
-    list.value = data.value.items ?? []
+const list = ref<ServiceRequestWithRelations[]>(data.value?.items ?? [])
+
+watch(data, (newData) => {
+  if (newData && Array.isArray(newData.items)) {
+    if (currentPage.value === 1) {
+      // Replace list on first page or refresh
+      list.value = newData.items
+    } else {
+      // Append items when loading more pages
+      list.value = [...list.value, ...newData.items]
+    }
   }
-})
+}, { immediate: true, deep: true })
 
-const onLoadMore = async () => {
+const isLoadingMore = ref(false)
+
+const onLoadMore = () => {
+  if (isLoadingMore.value || pending.value || !canLoadMore.value) return
+
+  isLoadingMore.value = true
   currentPage.value++
-  await refresh()
+  // The watch on currentPage will trigger refresh automatically
 }
 
 const canLoadMore = computed(() => {
   return currentPage.value < Math.ceil(totalCount.value / pageSize.value)
 })
+
+watch(pending, (isPending) => {
+  if (!isPending) {
+    isLoadingMore.value = false
+  }
+})
+
+useInfiniteScroll(
+  window,
+  () => {
+    onLoadMore()
+  },
+  { distance: 10 }
+)
 </script>
 
 <template>
@@ -135,8 +164,7 @@ const canLoadMore = computed(() => {
       <UEmpty v-else-if="list.length === 0" icon="i-lucide-ticket" description="No service requests found" />
 
       <div v-else class="space-y-3">
-        <div v-infinite-scroll="[onLoadMore, { distance: 10, canLoadMore }]">
-          <UCard v-for="request in list" :key="request.id"
+        <UCard v-for="request in list" :key="request.id"
             class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900">
             <div class="flex justify-between items-start">
               <div class="flex-1">
@@ -157,7 +185,6 @@ const canLoadMore = computed(() => {
               </div>
             </div>
           </UCard>
-        </div>
       </div>
     </div>
   </div>
