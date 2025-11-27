@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { DropdownMenuItem, TableColumn } from '@nuxt/ui'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type { QueryResult } from '~~/shared/types'
+import { vInfiniteScroll } from '@vueuse/components'
 
 const { t } = useI18n()
 
 const currentPage = ref(1)
-const pageSize = ref(5)
+const pageSize = ref(20)
 const { data, pending, error, refresh } = await useAsyncData(
   'service-requests',
   () => $fetch<QueryResult<ServiceRequestWithRelations>>('/api/service-requests', {
@@ -20,7 +21,7 @@ const { data, pending, error, refresh } = await useAsyncData(
 )
 const toast = useToast()
 const { copy } = useClipboard()
-const requestsList = computed(() => data.value?.items ?? [])
+
 const totalCount = computed(() => data.value?.totalCount ?? 0)
 
 const getDropdownActions = (serviceRequest: ServiceRequestWithRelations): DropdownMenuItem[][] => {
@@ -57,7 +58,7 @@ const getDropdownActions = (serviceRequest: ServiceRequestWithRelations): Dropdo
 const getPriorityColor = (priority: ServiceRequestPriority) => {
   switch (priority) {
     case 'LOW': return 'success'
-    case 'MEDIUM': return 'blue'
+    case 'MEDIUM': return 'info'
     case 'HIGH': return 'warning'
     case 'URGENT': return 'error'
     default: return 'neutral'
@@ -79,6 +80,22 @@ const refreshTable = async () => {
   }
   await refresh()
 }
+const list = ref<ServiceRequestWithRelations[]>([])
+
+watch(pending, (value) => {
+  if (!value) {
+    list.value = data.value.items ?? []
+  }
+})
+
+const onLoadMore = async () => {
+  currentPage.value++
+  await refresh()
+}
+
+const canLoadMore = computed(() => {
+  return currentPage.value < Math.ceil(totalCount.value / pageSize.value)
+})
 </script>
 
 <template>
@@ -115,32 +132,33 @@ const refreshTable = async () => {
         <USkeleton v-for="i in pageSize" :key="i" class="h-20 w-full mb-2" />
       </div>
 
-      <UEmpty v-else-if="requestsList.length === 0" icon="i-lucide-ticket" description="No service requests found" />
+      <UEmpty v-else-if="list.length === 0" icon="i-lucide-ticket" description="No service requests found" />
 
       <div v-else class="space-y-3">
-        <UCard v-for="request in requestsList" :key="request.id"
-          class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900">
-          <div class="flex justify-between items-start">
-            <div class="flex-1">
-              <h3 class="font-semibold">{{ request.title }}</h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                {{ request.description }}
-              </p>
-              <div class="flex gap-2 mt-2 text-xs text-gray-500">
-                <span>{{ formatDate(request.createdAt) }}</span>
-                <span v-if="request.category">• {{ request.category }}</span>
+        <div v-infinite-scroll="[onLoadMore, { distance: 10, canLoadMore }]">
+          <UCard v-for="request in list" :key="request.id"
+            class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <h3 class="font-semibold">{{ request.title }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                  {{ request.description }}
+                </p>
+                <div class="flex gap-2 mt-2 text-xs text-gray-500">
+                  <span>{{ formatDate(request.createdAt) }}</span>
+                  <span v-if="request.category">• {{ request.category }}</span>
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-2">
+                <StatusBadge :status="request.status" />
+                <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
+                  {{ request.priority }}
+                </UBadge>
               </div>
             </div>
-            <div class="flex flex-col items-end gap-2">
-              <StatusBadge :status="request.status" />
-              <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
-                {{ request.priority }}
-              </UBadge>
-            </div>
-          </div>
-        </UCard>
+          </UCard>
+        </div>
       </div>
-      <UPagination v-model:page="currentPage" :total="totalCount" :page-size="pageSize" />
     </div>
   </div>
 </template>
