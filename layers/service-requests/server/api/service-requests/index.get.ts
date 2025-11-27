@@ -31,28 +31,25 @@ export default defineEventHandler(async (event) => {
 
   const where = and(eq(serviceRequest.organizationId, organizationId), buildRequestQuery(filters))
 
-  const [requests, total] = await Promise.all([
-    db
-      .select()
-      .from(serviceRequest)
-      .where(where)
-      .orderBy(desc(serviceRequest.createdAt))
-      .offset(((filters.page || 1) - 1) * (filters.limit || 20))
-      .limit(filters.limit || 20),
-    db
-      .select({ count: serviceRequest.id })
-      .from(serviceRequest)
-      .where(where)
-      .then(rows => rows.length),
-  ])
+  const totalCount = await db.$count(serviceRequest, where)
+
+  if (totalCount === 0) {
+    return {
+      items: [],
+      totalCount
+    }
+  }
+
+  const items = await db
+    .select()
+    .from(serviceRequest)
+    .where(where)
+    .orderBy(desc(serviceRequest.createdAt))
+    .offset(filters.skip)
+    .limit(filters.take)
 
   return {
-    requests,
-    pagination: {
-      total,
-      page: filters.page || 1,
-      limit: filters.limit || 20,
-      pages: Math.ceil(total / (filters.limit || 20))
-    }
+    items,
+    totalCount
   }
 })

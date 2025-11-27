@@ -24,3 +24,8 @@ export interface QueryInput {
   take?: number // Number of records to return
   skip?: number // Number of records to skip
 }
+
+export interface QueryResult<T> {
+  items: T[]
+  totalCount: number
+}

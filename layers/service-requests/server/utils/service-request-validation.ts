@@ -27,6 +27,6 @@ export const filterServiceRequestSchema = z.object({
   assignedToId: z.string().optional(),
   createdById: z.string().optional(),
   search: z.string().optional(),
-  page: z.number().int().positive().optional(),
-  limit: z.number().int().positive().max(100).optional()
+  skip: z.coerce.number().int().nonnegative().optional().default(0),
+  take: z.coerce.number().int().positive().max(1000).optional().default(20)
 })

@@ -35,15 +35,19 @@ declare global {
       id: string
       name?: string
       email: string
+      image?: string
     }
     assignedTo?: {
       id: string
       name?: string
       email: string
+      image?: string
     }
     organization?: {
       id: string
       name: string
+      slug: string
+      logo?: string
     }
   }
 

@@ -51,7 +51,7 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
 }
 
 const formatDate = (date: Date) => {
-  return date.toLocaleDateString()
+  return new Date(date).toLocaleDateString()
 }
 </script>
 
@@ -68,12 +68,12 @@ const formatDate = (date: Date) => {
     <div class="flex gap-2">
       <USelect
         v-model="filters.status"
-        :options="statusOptions"
+        :items="statusOptions"
         placeholder="Filter by status"
       />
       <USelect
         v-model="filters.priority"
-        :options="priorityOptions"
+        :items="priorityOptions"
         placeholder="Filter by priority"
       />
       <UInput

@@ -47,5 +47,6 @@ export type {
 export type {
   FilterOperator,
   Filter,
-  QueryInput
+  QueryInput,
+  QueryResult
 } from './sections/queryBuilder'

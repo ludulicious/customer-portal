@@ -217,6 +217,7 @@
     }
   },
   "common": {
+    "refresh": "Refresh",
     "cancel": "Cancel",
     "close": "Close",
     "confirm": "Confirm",

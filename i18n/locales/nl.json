@@ -217,6 +217,7 @@
     }
   },
   "common": {
+    "refresh": "Verversen",
     "cancel": "Annuleren",
     "close": "Sluiten",
     "createdAt": "Aangemaakt op",
