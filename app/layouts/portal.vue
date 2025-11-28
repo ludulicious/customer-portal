@@ -1,10 +1,131 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { NavigationMenuItem, DropdownMenuItem } from '@nuxt/ui'
+import { en, nl } from '@nuxt/ui/locale'
+import { authClient } from '~/utils/auth-client'
 
 const route = useRoute()
 const toast = useToast()
-const { t } = useI18n()
+const { t, locale, setLocale } = useI18n()
 const open = ref(false)
+
+const userStore = useUserStore()
+const { currentUser, userInitials, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization, activeOrganizationRole } = storeToRefs(userStore)
+
+// Reactive states for menu items
+const isOrgAdmin = computed(() => {
+  return activeOrganizationRole.value === 'admin' || activeOrganizationRole.value === 'owner'
+})
+const showOrgSwitcherModal = ref(false)
+
+const hasMultipleOrganizations = computed(() => {
+  return myOrganizations.value && myOrganizations.value.length > 1
+})
+
+// Dropdown menu items for user avatar
+const userMenuItems = computed(() => {
+  const menuItems = [
+    [
+      {
+        label: currentUser.value?.name || currentUser.value?.email || 'User',
+        avatar: {
+          src: currentUser.value?.image,
+          alt: currentUser.value?.name || currentUser.value?.email || 'User'
+        },
+        type: 'label' as const
+      }
+    ],
+    [
+      {
+        label: t('nav.profile'),
+        icon: 'i-lucide-user',
+        to: '/profile'
+      },
+      ...(hasMultipleOrganizations.value && isOrgAdmin.value
+        ? [{
+          label: t('myOrganizations.title'),
+          icon: 'i-lucide-building-2',
+          to: '/my-organizations'
+        }]
+        : []),
+      ...(activeOrganization.value
+        ? [{
+          label: t('nav.myOrganization'),
+          icon: 'i-lucide-building-2',
+          to: `/admin/organizations/${activeOrganization.value.slug}`
+        }]
+        : [])
+    ]
+  ] as DropdownMenuItem[][]
+
+  // Add organization menu items for admins/owners
+  if (isOrgAdmin.value && menuItems[1]) {
+    menuItems[1].push({
+      label: 'Create Organization',
+      icon: 'i-lucide-plus-circle',
+      to: '/organizations/create'
+    }, {
+      label: 'Invite User',
+      icon: 'i-lucide-user-plus',
+      onSelect: () => {
+        // Navigate to organization page with invite modal
+        navigateTo('/organization?invite=true')
+      }
+    })
+  }
+
+  menuItems.push([
+    {
+      label: t('menu.logout'),
+      icon: 'i-lucide-log-out',
+      onSelect: async () => {
+        await authClient.signOut()
+        // Explicitly clear user data to ensure immediate state update
+        userStore.clearUserData()
+        await navigateTo('/')
+      }
+    }
+  ])
+
+  return menuItems
+})
+
+// Create a reactive locale ref that's properly initialized
+const currentLocale = ref(locale.value)
+
+// Watch for locale changes and handle them properly
+watch(locale, (newLocale) => {
+  currentLocale.value = newLocale
+  setLocale(newLocale)
+}, { immediate: false })
+
+// Watch currentLocale changes to update the global locale
+watch(currentLocale, (newLocale) => {
+  setLocale(newLocale)
+})
+
+// Impersonation state
+const isImpersonating = computed(() => !!currentSession.value?.impersonatedBy)
+
+// Stop impersonating function
+const stopImpersonating = async () => {
+  try {
+    await authClient.admin.stopImpersonating()
+    toast.add({
+      title: t('common.success'),
+      description: t('admin.userManagement.impersonate.stopSuccess'),
+      color: 'success'
+    })
+    // Reload dashboard page
+    window.location.href = '/dashboard'
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : t('admin.userManagement.impersonate.stopError')
+    toast.add({
+      title: t('common.error'),
+      description: errorMessage,
+      color: 'error'
+    })
+  }
+}
 
 const links = [[{
   label: t('menu.home'),
@@ -125,48 +246,121 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UDashboardGroup unit="rem">
-    <UDashboardSidebar
-      id="default"
-      v-model:open="open"
-      collapsible
-      resizable
-      class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
-    >
-      <template #header="{ collapsed }">
-        <TeamsMenu :collapsed="collapsed" />
+  <div class="flex flex-col h-screen w-full overflow-hidden">
+    <!-- Impersonation Banner -->
+    <div v-if="isImpersonating" class="sticky top-0 z-50">
+      <UAlert color="warning" variant="soft" orientation="horizontal"
+        :title="t('admin.userManagement.impersonate.indicator')" :ui="{
+          root: 'rounded-none py-2 px-4',
+          wrapper: 'flex-1',
+          title: 'text-sm font-medium',
+          actions: 'ml-auto'
+        }">
+        <template #actions>
+          <UButton color="warning" variant="solid" size="sm" @click="stopImpersonating">
+            {{ t('admin.userManagement.impersonate.stop') }}
+          </UButton>
+        </template>
+      </UAlert>
+    </div>
+
+    <UHeader :ui="{ root: 'z-[45]', container: 'max-w-full px-4 sm:px-6 lg:px-8' }">
+      <template #left>
+        <div class="flex items-center gap-3">
+          <!-- Logo Icon -->
+          <NuxtLink to="/" class="shrink-0">
+            <div class="relative">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background circle -->
+                <circle cx="20" cy="20" r="20" fill="#75cbfe" />
+                <!-- Building/facility icon -->
+                <rect x="12" y="15" width="4" height="10" fill="white" rx="1" />
+                <rect x="18" y="12" width="4" height="13" fill="white" rx="1" />
+                <rect x="24" y="18" width="4" height="7" fill="white" rx="1" />
+                <!-- Roof/peak -->
+                <path d="M10 15 L20 8 L30 15 L28 15 L20 10 L12 15 Z" fill="white" />
+                <!-- Door -->
+                <rect x="18" y="20" width="2" height="5" fill="#75cbfe" />
+              </svg>
+            </div>
+          </NuxtLink>
+
+          <!-- ApexPro Title with Organization Name or Facility Services Subtitle -->
+          <div class="flex flex-col">
+            <span class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+              ApexPro
+            </span>
+            <button v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations" type="button"
+              class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1 text-left hover:text-highlighted transition-colors"
+              @click="showOrgSwitcherModal = true">
+              {{ activeOrganization.name }}
+            </button>
+            <span v-else-if="isAuthenticated && activeOrganization"
+              class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
+              {{ activeOrganization.name }}
+            </span>
+            <span v-else-if="isAuthenticated && loadingOrganization"
+              class="text-sm text-gray-400 leading-tight -mt-1 flex items-center gap-1">
+              <UIcon name="i-lucide-loader-2" class="w-3 h-3 animate-spin" />
+              Loading...
+            </span>
+            <span v-else class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
+              Facility Services
+            </span>
+          </div>
+        </div>
       </template>
 
-      <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+      <template #right>
+        <div class="flex items-center gap-3">
+          <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" />
+          <UColorModeButton />
 
-        <UNavigationMenu
-          :collapsed="collapsed"
-          :items="links[0]"
-          orientation="vertical"
-          tooltip
-          popover
-        />
+          <!-- User Avatar Dropdown (only show when user is logged in) -->
+          <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
+            <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'"
+              :text="userInitials" size="sm" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
+          </UDropdownMenu>
+        </div>
 
-        <UNavigationMenu
-          :collapsed="collapsed"
-          :items="links[1]"
-          orientation="vertical"
-          tooltip
-          class="mt-auto"
-        />
+        <!-- Organization Switcher Modal -->
+        <UModal v-model:open="showOrgSwitcherModal" title="Switch Organization" :ui="{ footer: 'justify-end' }">
+          <template #body>
+            <OrganizationSwitcher v-if="isAuthenticated" :show-create-button="false"
+              @switched="showOrgSwitcherModal = false" />
+          </template>
+          <template #footer="{ close }">
+            <UButton label="Close" color="neutral" variant="outline" @click="close" />
+          </template>
+        </UModal>
       </template>
+    </UHeader>
 
-      <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
-      </template>
-    </UDashboardSidebar>
+    <UDashboardGroup unit="rem" class="overflow-hidden mt-(--ui-header-height) h-[calc(100vh-var(--ui-header-height))]">
+      <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25"
+        :ui="{ footer: 'lg:border-t lg:border-default' }">
+        <template #header="{ collapsed }">
+          <TeamsMenu :collapsed="collapsed" />
+        </template>
 
-    <UDashboardSearch :groups="groups" />
+        <template #default="{ collapsed }">
+          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
-    <slot />
+          <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
 
-    <NotificationsSlideover />
-  </UDashboardGroup>
+          <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
+        </template>
+
+        <template #footer="{ collapsed }">
+          <UserMenu :collapsed="collapsed" />
+        </template>
+      </UDashboardSidebar>
+
+      <UDashboardSearch :groups="groups" />
+
+      <slot />
+
+      <NotificationsSlideover />
+    </UDashboardGroup>
+  </div>
 </template>
