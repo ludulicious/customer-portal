@@ -146,7 +146,7 @@ useInfiniteScroll(
     </template>
 
     <template #body>
-      <div ref="listContainerRefon" class="min-h-screen">
+      <div ref="listContainerRef" class="min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <!-- List -->
           <div v-if="pending">
