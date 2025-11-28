@@ -264,7 +264,7 @@ onMounted(async () => {
       </UAlert>
     </div>
 
-    <UHeader :ui="{ root: 'z-[45]', container: 'max-w-full px-4 sm:px-6 lg:px-8' }">
+    <UHeader :ui="{ root: 'relative z-[45]', container: 'max-w-full px-4 sm:px-6 lg:px-8' }">
       <template #left>
         <div class="flex items-center gap-3">
           <!-- Logo Icon -->
@@ -336,7 +336,7 @@ onMounted(async () => {
       </template>
     </UHeader>
 
-    <UDashboardGroup unit="rem" class="overflow-hidden mt-(--ui-header-height) h-[calc(100vh-var(--ui-header-height))]">
+    <UDashboardGroup unit="rem" class="flex-1 overflow-hidden">
       <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25"
         :ui="{ footer: 'lg:border-t lg:border-default' }">
         <template #header="{ collapsed }">
