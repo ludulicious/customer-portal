@@ -337,13 +337,10 @@ onMounted(async () => {
     </UHeader>
 
     <UDashboardGroup unit="rem" class="flex-1 overflow-hidden">
-      <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25"
+      <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25 h-full"
         :ui="{ footer: 'lg:border-t lg:border-default' }">
-        <template #header="{ collapsed }">
-          <TeamsMenu :collapsed="collapsed" />
-        </template>
-
         <template #default="{ collapsed }">
+          <div class="h-2" />
           <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
           <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
