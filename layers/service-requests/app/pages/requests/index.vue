@@ -130,7 +130,7 @@ useInfiniteScroll(
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Page Header -->
-    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <div class="fixed left-0 right-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm" style="top: calc(var(--ui-header-height) - 1px);">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex items-center justify-between">
           <div>
@@ -155,7 +155,8 @@ useInfiniteScroll(
       </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Content area with top margin to account for fixed headers -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style="margin-top: calc(var(--ui-header-height, 4.5rem) + 40px);">
       <!-- List -->
       <div v-if="pending">
         <USkeleton v-for="i in pageSize" :key="i" class="h-20 w-full mb-2" />
