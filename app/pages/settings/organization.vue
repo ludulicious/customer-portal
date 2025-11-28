@@ -3,7 +3,7 @@ import type { TableColumn } from '@nuxt/ui'
 import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError, Invitation } from '#types'
 
 const userStore = useUserStore()
-const { isAdmin, myOrganizations, activeOrganizationId } = storeToRefs(userStore)
+const { myOrganizations, activeOrganizationId } = storeToRefs(userStore)
 const { hasPermission } = userStore
 
 const { t, locale } = useI18n()

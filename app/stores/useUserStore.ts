@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { AuthSession, AuthUser, AuthSessionResponse } from '~/utils/auth-client'
 import { authClient } from '~/utils/auth-client'
 import type { Organization } from '#types'
+import type { DashboardUser } from '~/types'
 
 interface UserPermissions {
   [key: string]: boolean
@@ -369,6 +370,25 @@ export const useUserStore = defineStore('user', () => {
   const setCurrentUser = (data: AuthUser | null) => {
     currentUser.value = data
   }
+
+  const dashboardUser = computed(() => {
+    if (!currentUser.value) {
+      return {
+        name: 'User',
+        avatar: {
+          src: undefined,
+          alt: 'User'
+        }
+      } as DashboardUser
+    }
+    return {
+      name: currentUser.value.name || currentUser.value?.email || 'User',
+      avatar: {
+        src: currentUser.value.image,
+        alt: currentUser.value.name || currentUser.value?.email || 'User'
+      }
+    } as DashboardUser
+  })
   // Fetch current session data using getSession()
   return {
     permissions,
@@ -392,6 +412,7 @@ export const useUserStore = defineStore('user', () => {
     clearUserData,
     setSession,
     setActiveOrganizationId,
-    setCurrentUser
+    setCurrentUser,
+    dashboardUser
   }
 })

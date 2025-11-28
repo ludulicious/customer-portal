@@ -73,7 +73,7 @@ const userMenuItems = computed(() => {
 
   menuItems.push([
     {
-      label: 'Logout',
+      label: t('menu.logout'),
       icon: 'i-lucide-log-out',
       onSelect: async () => {
         await authClient.signOut()

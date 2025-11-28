@@ -7,7 +7,7 @@ const { t } = useI18n()
 const open = ref(false)
 
 const links = [[{
-  label: 'menu.home.title',
+  label: t('menu.home'),
   icon: 'i-lucide-house',
   to: '/',
   onSelect: () => {
@@ -15,7 +15,7 @@ const links = [[{
   }
 },
 {
-  label: 'menu.dashboard.title',
+  label: t('menu.dashboard'),
   icon: 'i-lucide-layout-dashboard',
   to: '/dashboard',
   onSelect: () => {
@@ -24,7 +24,7 @@ const links = [[{
   badge: '4',
 },
 {
-  label: 'menu.inbox.title',
+  label: t('menu.inbox'),
   icon: 'i-lucide-inbox',
   to: '/inbox',
   badge: '4',
@@ -32,7 +32,7 @@ const links = [[{
     open.value = false
   }
 }, {
-  label: 'menu.serviceRequests.title',
+  label: t('menu.serviceRequests.title'),
   icon: 'i-lucide-ticket',
   to: '/requests',
   onSelect: () => {
@@ -71,12 +71,12 @@ const links = [[{
     }
   }]
 }], [{
-  label: t('menu.feedback.title'),
+  label: t('menu.feedback'),
   icon: 'i-lucide-message-circle',
   to: 'https://github.com/nuxt-ui-templates/dashboard',
   target: '_blank'
 }, {
-  label: t('menu.helpSupport.title'),
+  label: t('menu.helpSupport'),
   icon: 'i-lucide-info',
   to: 'https://github.com/nuxt-ui-templates/dashboard',
   target: '_blank'

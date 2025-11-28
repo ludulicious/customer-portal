@@ -30,7 +30,7 @@ export interface DashboardUser {
 export interface Mail {
   id: number
   unread?: boolean
-  from: User
+  from: DashboardUser
   subject: string
   body: string
   date: string

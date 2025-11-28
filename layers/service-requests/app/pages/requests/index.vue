@@ -78,14 +78,6 @@ watch([currentPage, pageSize], async () => {
   await refresh()
 })
 
-const refreshTable = async () => {
-  if (currentPage.value !== 1) {
-    currentPage.value = 1 // will trigger a refresh
-    return
-  }
-  await refresh()
-}
-
 const list = ref<ServiceRequestWithRelations[]>(data.value?.items ?? [])
 
 watch(data, (newData) => {
@@ -117,6 +109,16 @@ const canLoadMore = computed(() => {
 watch(pending, (isPending) => {
   if (!isPending) {
     isLoadingMore.value = false
+  }
+})
+
+watch(error, (newError) => {
+  if (newError) {
+    toast.add({
+      title: 'Error loading service requests',
+      description: newError.message,
+      color: 'error'
+    })
   }
 })
 

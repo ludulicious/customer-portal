@@ -233,6 +233,34 @@
     "success": "Succesvol!",
     "view": "Bekijken"
   },
+  "menu": {
+    "dashboard": "Dashboard",
+    "serviceRequests": {
+      "title": "Service Requests"
+    },
+    "inbox": "Inbox",
+    "customers": "Customers",
+    "helpSupport": "Help & Support",
+    "feedback": "Feedback",
+    "home": "Home",
+    "settings": {
+      "title": "Settings",
+      "general": "General",
+      "organization": "Organization",
+      "notifications": "Notifications",
+      "security": "Security",
+      "documentation": "Documentation"
+    },
+    "logout": "Uitloggen"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "organization": "Organization",
+    "notifications": "Notifications",
+    "security": "Security",
+    "documentation": "Documentation"
+  },
   "contact": {
     "cards": {
       "email": {
