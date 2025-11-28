@@ -121,9 +121,9 @@ watch(error, (newError) => {
     })
   }
 })
-
+const listContainerRef = ref<HTMLElement | null>(null)
 useInfiniteScroll(
-  window,
+  listContainerRef,
   () => {
     onLoadMore()
   },
@@ -146,7 +146,7 @@ useInfiniteScroll(
     </template>
 
     <template #body>
-      <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div ref="listContainerRefon" class="min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <!-- List -->
           <div v-if="pending">
