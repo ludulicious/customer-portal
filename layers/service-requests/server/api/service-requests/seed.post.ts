@@ -186,14 +186,14 @@ function randomChoice<T>(array: T[]): T {
 function weightedRandomChoice<T>(items: Array<{ value: T; weight: number }>): T {
   const totalWeight = items.reduce((sum, item) => sum + item.weight, 0)
   let random = Math.random() * totalWeight
-  
+
   for (const item of items) {
     random -= item.weight
     if (random <= 0) {
       return item.value
     }
   }
-  
+
   return items[items.length - 1].value
 }
 
@@ -249,7 +249,7 @@ export default defineEventHandler(async (event) => {
       .from(organizationTable)
       .where(eq(organizationTable.id, targetOrganizationId))
       .limit(1)
-    
+
     if (!org) {
       throw createError({ statusCode: 404, message: 'Organization not found' })
     }
@@ -297,14 +297,14 @@ export default defineEventHandler(async (event) => {
   // Generate service requests
   const requestsToInsert = []
   const templateTypes = Object.keys(requestTemplates) as Array<keyof typeof requestTemplates>
-  
+
   for (let i = 0; i < count; i++) {
     // Select random organization
     const org = randomChoice(organizations)
     const orgUserIds = orgUsersMap.get(org.id) || []
-    
+
     // Select random user from organization (or any user if no members)
-    const creatorId = orgUserIds.length > 0 
+    const creatorId = orgUserIds.length > 0
       ? randomChoice(orgUserIds)
       : randomChoice(allUsers).id
 
@@ -334,16 +334,16 @@ export default defineEventHandler(async (event) => {
     // Use exponential distribution to favor recent dates
     const daysAgo = Math.floor(Math.pow(Math.random(), 2) * 90) // Square to favor recent dates
     const createdAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000)
-    
+
     // Generate updated date (same as created or later)
-    const updatedAt = status === 'OPEN' 
+    const updatedAt = status === 'OPEN'
       ? createdAt // If still open, updated = created
       : randomDateBetween(createdAt, new Date()) // Otherwise, updated sometime after creation
 
     // Generate resolved/closed dates for resolved/closed statuses
     let resolvedAt: Date | undefined
     let closedAt: Date | undefined
-    
+
     if (status === 'RESOLVED') {
       const daysToResolve = Math.floor(Math.random() * 30) + 1 // 1-30 days after creation
       resolvedAt = new Date(createdAt.getTime() + daysToResolve * 24 * 60 * 60 * 1000)
@@ -398,4 +398,3 @@ export default defineEventHandler(async (event) => {
     message: `Successfully generated ${requestsToInsert.length} service requests`
   }
 })
-

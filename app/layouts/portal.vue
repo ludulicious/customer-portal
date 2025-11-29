@@ -34,7 +34,7 @@ const links = [[{
   label: t('menu.settings.title'),
   to: '/settings',
   icon: 'i-lucide-settings',
-  defaultOpen: true,
+  defaultOpen: false,
   type: 'trigger',
   children: [{
     label: t('menu.settings.general'),
@@ -127,10 +127,10 @@ onMounted(async () => {
           <TeamsMenu :collapsed="collapsed" />
         </template>
         <template #default="{ collapsed }">
+          <TeamsMenu :collapsed="collapsed" class="lg:hidden" />
           <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
-
           <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
-
+          <UserMenu :collapsed="collapsed" class="lg:hidden" />
           <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
         </template>
 

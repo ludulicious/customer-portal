@@ -25,7 +25,7 @@ const links = [[{
   icon: 'i-lucide-shield',
   to: '/settings/security'
 }], [{
-  label: t('settings.documentation'),
+  label: t('menu.documentation'),
   icon: 'i-lucide-book-open',
   to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
   target: '_blank'
@@ -41,7 +41,7 @@ const links = [[{
         </template>
       </UDashboardNavbar>
 
-      <UDashboardToolbar>
+      <UDashboardToolbar class="hidden lg:flex">
         <!-- NOTE: The `-mx-1` class is used to align with the `DashboardSidebarCollapse` button here. -->
         <UNavigationMenu :items="links" highlight class="-mx-1 flex-1" />
       </UDashboardToolbar>

@@ -243,13 +243,15 @@
     "helpSupport": "Help & Support",
     "feedback": "Feedback",
     "home": "Home",
+    "documentation": "Documentation",
+    "profile": "Profile",
+    "theme": "Theme",
     "settings": {
       "title": "Settings",
       "general": "General",
       "organization": "Organization",
       "notifications": "Notifications",
-      "security": "Security",
-      "documentation": "Documentation"
+      "security": "Security"
     },
     "logout": "Log Out"
   },
