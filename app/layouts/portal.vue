@@ -117,29 +117,33 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UDashboardGroup unit="rem">
-    <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }">
-      <template #header="{ collapsed }">
-        <TeamsMenu :collapsed="collapsed" />
-      </template>
-      <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+  <div class="relative min-h-screen">
+    <!-- Orange bar - only visible on large screens -->
+    <div class="hidden lg:block h-8 bg-orange-500 fixed top-0 left-0 right-0 z-50" />
+    <UDashboardGroup unit="rem" class="lg:pt-8">
+      <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25 lg:pb-12"
+        :ui="{ footer: 'lg:border-t lg:border-default' }">
+        <template #header="{ collapsed }">
+          <TeamsMenu :collapsed="collapsed" />
+        </template>
+        <template #default="{ collapsed }">
+          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
-        <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
+          <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
 
-        <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
-      </template>
+          <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
+        </template>
 
-      <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
-      </template>
-    </UDashboardSidebar>
+        <template #footer="{ collapsed }">
+          <UserMenu :collapsed="collapsed" />
+        </template>
+      </UDashboardSidebar>
 
-    <UDashboardSearch :groups="groups" />
+      <UDashboardSearch :groups="groups" />
 
-    <slot />
+      <slot />
 
-    <NotificationsSlideover />
-  </UDashboardGroup>
+      <NotificationsSlideover />
+    </UDashboardGroup>
+  </div>
 </template>
