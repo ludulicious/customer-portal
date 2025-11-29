@@ -128,6 +128,14 @@ const stopImpersonating = async () => {
 }
 
 const links = [[{
+  label: t('menu.home'),
+  icon: 'i-lucide-house',
+  to: '/',
+  onSelect: () => {
+    open.value = false
+  }
+},
+{
   label: t('menu.dashboard'),
   icon: 'i-lucide-layout-dashboard',
   to: '/dashboard',
@@ -238,29 +246,118 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UDashboardGroup unit="rem">
-    <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }">
-      <template #header="{ collapsed }">
-        <TeamsMenu :collapsed="collapsed" />
+  <div class="flex flex-col h-screen w-full overflow-hidden">
+    <!-- Impersonation Banner -->
+    <div v-if="isImpersonating" class="sticky top-0 z-50">
+      <UAlert color="warning" variant="soft" orientation="horizontal"
+        :title="t('admin.userManagement.impersonate.indicator')" :ui="{
+          root: 'rounded-none py-2 px-4',
+          wrapper: 'flex-1',
+          title: 'text-sm font-medium',
+          actions: 'ml-auto'
+        }">
+        <template #actions>
+          <UButton color="warning" variant="solid" size="sm" @click="stopImpersonating">
+            {{ t('admin.userManagement.impersonate.stop') }}
+          </UButton>
+        </template>
+      </UAlert>
+    </div>
+
+    <UHeader :ui="{ root: 'relative z-[45]', container: 'max-w-full px-4 sm:px-6 lg:px-8' }">
+      <template #left>
+        <div class="flex items-center gap-3">
+          <!-- Logo Icon -->
+          <NuxtLink to="/" class="shrink-0">
+            <div class="relative">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background circle -->
+                <circle cx="20" cy="20" r="20" fill="#75cbfe" />
+                <!-- Building/facility icon -->
+                <rect x="12" y="15" width="4" height="10" fill="white" rx="1" />
+                <rect x="18" y="12" width="4" height="13" fill="white" rx="1" />
+                <rect x="24" y="18" width="4" height="7" fill="white" rx="1" />
+                <!-- Roof/peak -->
+                <path d="M10 15 L20 8 L30 15 L28 15 L20 10 L12 15 Z" fill="white" />
+                <!-- Door -->
+                <rect x="18" y="20" width="2" height="5" fill="#75cbfe" />
+              </svg>
+            </div>
+          </NuxtLink>
+
+          <!-- ApexPro Title with Organization Name or Facility Services Subtitle -->
+          <div class="flex flex-col">
+            <span class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
+              ApexPro
+            </span>
+            <button v-if="isAuthenticated && activeOrganization && hasMultipleOrganizations" type="button"
+              class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1 text-left hover:text-highlighted transition-colors"
+              @click="showOrgSwitcherModal = true">
+              {{ activeOrganization.name }}
+            </button>
+            <span v-else-if="isAuthenticated && activeOrganization"
+              class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
+              {{ activeOrganization.name }}
+            </span>
+            <span v-else-if="isAuthenticated && loadingOrganization"
+              class="text-sm text-gray-400 leading-tight -mt-1 flex items-center gap-1">
+              <UIcon name="i-lucide-loader-2" class="w-3 h-3 animate-spin" />
+              Loading...
+            </span>
+            <span v-else class="text-sm text-gray-600 dark:text-gray-400 leading-tight -mt-1">
+              Facility Services
+            </span>
+          </div>
+        </div>
       </template>
-      <template #default="{ collapsed }">
-        <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
-        <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
+      <template #right>
+        <div class="flex items-center gap-3">
+          <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" />
+          <UColorModeButton />
 
-        <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
+          <!-- User Avatar Dropdown (only show when user is logged in) -->
+          <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
+            <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'"
+              :text="userInitials" size="sm" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
+          </UDropdownMenu>
+        </div>
+
+        <!-- Organization Switcher Modal -->
+        <UModal v-model:open="showOrgSwitcherModal" title="Switch Organization" :ui="{ footer: 'justify-end' }">
+          <template #body>
+            <OrganizationSwitcher v-if="isAuthenticated" :show-create-button="false"
+              @switched="showOrgSwitcherModal = false" />
+          </template>
+          <template #footer="{ close }">
+            <UButton label="Close" color="neutral" variant="outline" @click="close" />
+          </template>
+        </UModal>
       </template>
+    </UHeader>
 
-      <template #footer="{ collapsed }">
-        <UserMenu :collapsed="collapsed" />
-      </template>
-    </UDashboardSidebar>
+    <UDashboardGroup unit="rem" class="flex-1 overflow-hidden">
+      <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25 h-full"
+        :ui="{ footer: 'lg:border-t lg:border-default' }">
+        <template #default="{ collapsed }">
+          <div class="h-2" />
+          <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
 
-    <UDashboardSearch :groups="groups" />
+          <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
 
-    <slot />
+          <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
+        </template>
 
-    <NotificationsSlideover />
-  </UDashboardGroup>
+        <template #footer="{ collapsed }">
+          <UserMenu :collapsed="collapsed" />
+        </template>
+      </UDashboardSidebar>
+
+      <UDashboardSearch :groups="groups" />
+
+      <slot />
+
+      <NotificationsSlideover />
+    </UDashboardGroup>
+  </div>
 </template>

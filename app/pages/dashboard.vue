@@ -7,6 +7,8 @@ definePageMeta({
   layout: 'portal',
 })
 
+const { t } = useI18n()
+
 // Fake data for ApexPro dashboard
 const dashboardData = ref({
   overview: {
@@ -146,7 +148,7 @@ const period = ref<Period>('daily')
 <template>
   <UDashboardPanel id="dashboard">
     <template #header>
-      <UDashboardNavbar title="Dahboard" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :title="t('dashboard.title')" :ui="{ right: 'gap-3' }">
         <template #leading>
           <UDashboardSidebarCollapse />
         </template>
