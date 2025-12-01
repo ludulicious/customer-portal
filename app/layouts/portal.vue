@@ -120,7 +120,7 @@ onMounted(async () => {
   <div class="relative min-h-screen">
     <!-- Orange bar - only visible on large screens -->
     <div class="hidden lg:block h-8 bg-orange-500 fixed top-0 left-0 right-0 z-50" />
-    <UDashboardGroup unit="rem" class="lg:pt-8">
+    <UDashboardGroup unit="rem" class="lg:p-8">
       <UDashboardSidebar id="default" v-model:open="open" collapsible resizable class="bg-elevated/25 lg:pb-12"
         :ui="{ footer: 'lg:border-t lg:border-default' }">
         <template #header="{ collapsed }">
@@ -130,7 +130,6 @@ onMounted(async () => {
           <TeamsMenu :collapsed="collapsed" class="lg:hidden" />
           <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
           <UNavigationMenu :collapsed="collapsed" :items="links[0]" orientation="vertical" tooltip popover />
-          <UserMenu :collapsed="collapsed" class="lg:hidden" />
           <UNavigationMenu :collapsed="collapsed" :items="links[1]" orientation="vertical" tooltip class="mt-auto" />
         </template>
 
@@ -140,9 +139,7 @@ onMounted(async () => {
       </UDashboardSidebar>
 
       <UDashboardSearch :groups="groups" />
-
-      <slot />
-
+        <slot />
       <NotificationsSlideover />
     </UDashboardGroup>
   </div>

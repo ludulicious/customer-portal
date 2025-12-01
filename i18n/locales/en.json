@@ -14,6 +14,11 @@
     },
     "organization": {
       "title": "Organization Details",
+      "manage": {
+        "title": "Manage Organizations",
+        "back": "Back",
+        "name": "Organization Name"
+      },
       "create": {
         "title": "Create Organization",
         "back": "Back",

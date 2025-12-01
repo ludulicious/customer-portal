@@ -180,10 +180,10 @@ type ServiceRequestStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
 type ServiceRequestPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
 
 function randomChoice<T>(array: T[]): T {
-  return array[Math.floor(Math.random() * array.length)]
+  return array[Math.floor(Math.random() * array.length)] as T
 }
 
-function weightedRandomChoice<T>(items: Array<{ value: T; weight: number }>): T {
+function weightedRandomChoice<T>(items: Array<{ value: T, weight: number }>): T {
   const totalWeight = items.reduce((sum, item) => sum + item.weight, 0)
   let random = Math.random() * totalWeight
 
@@ -194,13 +194,7 @@ function weightedRandomChoice<T>(items: Array<{ value: T; weight: number }>): T 
     }
   }
 
-  return items[items.length - 1].value
-}
-
-function randomDateInPast(days: number): Date {
-  const now = Date.now()
-  const daysAgo = Math.floor(Math.random() * days) * 24 * 60 * 60 * 1000
-  return new Date(now - daysAgo)
+  return items[items.length - 1]!.value as T
 }
 
 function randomDateBetween(start: Date, end: Date): Date {

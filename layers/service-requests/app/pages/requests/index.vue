@@ -104,7 +104,7 @@ useInfiniteScroll(
 </script>
 
 <template>
-  <UDashboardPanel id="dashboard">
+  <UDashboardPanel id="dashboard" class="lg:pb-8">
     <template #header>
       <UDashboardNavbar :title="t('serviceRequest.title')" :ui="{ right: 'gap-3' }">
         <template #leading>

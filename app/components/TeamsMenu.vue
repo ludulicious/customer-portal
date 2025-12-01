@@ -25,7 +25,7 @@ const teams = ref([{
   }
 }])
 const selectedTeam = ref(teams.value[0])
-
+const { t } = useI18n()
 const items = computed<DropdownMenuItem[][]>(() => {
   return [teams.value.map(team => ({
     ...team,
@@ -33,11 +33,13 @@ const items = computed<DropdownMenuItem[][]>(() => {
       selectedTeam.value = team
     }
   })), [{
-    label: 'Create team',
-    icon: 'i-lucide-circle-plus'
+    label: t('admin.organization.create.createButton'),
+    icon: 'i-lucide-circle-plus',
+    to: '/admin/organizations/create'
   }, {
-    label: 'Manage teams',
-    icon: 'i-lucide-cog'
+    label: t('admin.organization.manage.title'),
+    icon: 'i-lucide-cog',
+    to: '/my-organizations'
   }]]
 })
 </script>

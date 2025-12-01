@@ -4,64 +4,16 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 const userStore = useUserStore()
 const { dashboardUser } = storeToRefs(userStore)
 
-const props = defineProps<{
+defineProps<{
   collapsed?: boolean
 }>()
 const { t } = useI18n()
 const colorMode = useColorMode()
-const appConfig = useAppConfig()
-
-const colors = ['red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
-const neutrals = ['slate', 'gray', 'zinc', 'neutral', 'stone']
 
 const items = computed<DropdownMenuItem[][]>(() => ([[{
   label: t('menu.profile'),
   icon: 'i-lucide-user',
   to: '/settings'
-}], [{
-  label: t('menu.theme'),
-  icon: 'i-lucide-palette',
-  children: [{
-    label: 'Primary',
-    slot: 'chip',
-    chip: appConfig.ui.colors.primary,
-    content: {
-      align: 'center',
-      collisionPadding: 16
-    },
-    children: colors.map(color => ({
-      label: color,
-      chip: color,
-      slot: 'chip',
-      checked: appConfig.ui.colors.primary === color,
-      type: 'checkbox',
-      onSelect: (e) => {
-        e.preventDefault()
-
-        appConfig.ui.colors.primary = color
-      }
-    }))
-  }, {
-    label: 'Neutral',
-    slot: 'chip',
-    chip: appConfig.ui.colors.neutral === 'neutral' ? 'old-neutral' : appConfig.ui.colors.neutral,
-    content: {
-      align: 'end',
-      collisionPadding: 16
-    },
-    children: neutrals.map(color => ({
-      label: color,
-      chip: color === 'neutral' ? 'old-neutral' : color,
-      slot: 'chip',
-      type: 'checkbox',
-      checked: appConfig.ui.colors.neutral === color,
-      onSelect: (e) => {
-        e.preventDefault()
-
-        appConfig.ui.colors.neutral = color
-      }
-    }))
-  }]
 }, {
   label: 'Appearance',
   icon: 'i-lucide-sun-moon',
@@ -90,11 +42,6 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
     }
   }]
 }], [{
-  label: t('menu.documentation'),
-  icon: 'i-lucide-book-open',
-  to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-  target: '_blank'
-}, {
   label: 'Log out',
   icon: 'i-lucide-log-out',
   onSelect: async () => {
@@ -113,8 +60,8 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
       label: collapsed ? undefined : dashboardUser?.name,
       trailingIcon: collapsed ? undefined : 'i-lucide-chevrons-up-down'
     }" color="neutral" variant="ghost" block :square="collapsed" class="data-[state=open]:bg-elevated" :ui="{
-        trailingIcon: 'text-dimmed'
-      }" />
+      trailingIcon: 'text-dimmed'
+    }" />
 
     <template #chip-leading="{ item }">
       <div class="inline-flex items-center justify-center shrink-0 size-5">
