@@ -3,10 +3,6 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Period, Range } from '~/types'
 import { sub } from 'date-fns'
 
-definePageMeta({
-  layout: 'portal',
-})
-
 const { t } = useI18n()
 
 // Fake data for ApexPro dashboard

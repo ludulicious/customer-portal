@@ -1,90 +1,18 @@
 <script setup lang="ts">
 import { en, nl } from '@nuxt/ui/locale'
 import { authClient } from '~/utils/auth-client'
-import type { DropdownMenuItem } from '@nuxt/ui'
 
 const route = useRoute()
 const { t, locale, setLocale } = useI18n()
 const toast = useToast()
-
 // User store
 const userStore = useUserStore()
-const { currentUser, userInitials, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization } = storeToRefs(userStore)
+const { currentUser, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization } = storeToRefs(userStore)
 
-// Reactive states for menu items
-const isOrgAdmin = ref(false)
 const showOrgSwitcherModal = ref(false)
 
 const hasMultipleOrganizations = computed(() => {
   return myOrganizations.value && myOrganizations.value.length > 1
-})
-
-// Dropdown menu items for user avatar
-const userMenuItems = computed(() => {
-  const menuItems = [
-    [
-      {
-        label: currentUser.value?.name || currentUser.value?.email || 'User',
-        avatar: {
-          src: currentUser.value?.image,
-          alt: currentUser.value?.name || currentUser.value?.email || 'User'
-        },
-        type: 'label' as const
-      }
-    ],
-    [
-      {
-        label: t('nav.profile'),
-        icon: 'i-lucide-user',
-        to: '/profile'
-      },
-      ...(hasMultipleOrganizations.value && isOrgAdmin.value
-        ? [{
-            label: t('myOrganizations.title'),
-            icon: 'i-lucide-building-2',
-            to: '/my-organizations'
-          }]
-        : []),
-      ...(activeOrganization.value
-        ? [{
-            label: t('nav.myOrganization'),
-            icon: 'i-lucide-building-2',
-            to: `/admin/organizations/${activeOrganization.value.slug}`
-          }]
-        : [])
-    ]
-  ] as DropdownMenuItem[]
-
-  // Add organization menu items for admins/owners
-  if (isOrgAdmin.value && menuItems[1]) {
-    menuItems[1].push({
-      label: 'Create Organization',
-      icon: 'i-lucide-plus-circle',
-      to: '/organizations/create'
-    }, {
-      label: 'Invite User',
-      icon: 'i-lucide-user-plus',
-      onSelect: () => {
-        // Navigate to organization page with invite modal
-        navigateTo('/organization?invite=true')
-      }
-    })
-  }
-
-  menuItems.push([
-    {
-      label: t('menu.logout'),
-      icon: 'i-lucide-log-out',
-      onSelect: async () => {
-        await authClient.signOut()
-        // Explicitly clear user data to ensure immediate state update
-        userStore.clearUserData()
-        await navigateTo('/')
-      }
-    }
-  ])
-
-  return menuItems
 })
 
 // Function to check if a route is active
@@ -123,49 +51,8 @@ const items = computed(() => {
     to: '/dashboard',
     active: isRouteActive('/dashboard')
   }]
-
-  // Add service request menu items if layer is present
-  if (serviceRequestMenu?.menuItems) {
-    const serviceRequestItems = serviceRequestMenu.menuItems.value.map(item => ({
-      label: item.label,
-      to: item.to,
-      active: isRouteActive(item.to),
-      icon: item.icon
-    }))
-    privateItems.push(...serviceRequestItems)
-  }
-
-  // Add organization management items for admins/owners
-  if (isOrgAdmin.value) {
-    privateItems.push({
-      label: t('nav.organization'),
-      to: '/organization',
-      active: isRouteActive('/organization')
-    })
-  }
-
-  // Add admin menu items for system admins
-  if (userStore.isAdmin) {
-    privateItems.push({
-      label: t('nav.admin'),
-      to: '/admin',
-      active: isRouteActive('/admin')
-    })
-  }
-
   return [...privateItems, ...publicItems]
 })
-
-// Try to use service request menu composable (will be undefined if layer not present)
-let serviceRequestMenu: ReturnType<typeof useServiceRequestMenu> | null = null
-try {
-  if (typeof useServiceRequestMenu !== 'undefined') {
-    serviceRequestMenu = useServiceRequestMenu()
-  }
-} catch {
-  // Service request layer not available
-  serviceRequestMenu = null
-}
 
 // Create a reactive locale ref that's properly initialized
 const currentLocale = ref(locale.value)
@@ -309,10 +196,7 @@ const stopImpersonating = async () => {
         <UColorModeButton />
 
         <!-- User Avatar Dropdown (only show when user is logged in) -->
-        <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
-          <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
-            size="sm" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
-        </UDropdownMenu>
+        <AppUserMenu size="sm" />
       </div>
 
       <!-- Organization Switcher Modal -->
@@ -367,10 +251,7 @@ const stopImpersonating = async () => {
 
       <!-- User Avatar Dropdown for Mobile (only show when user is logged in) -->
       <div v-if="currentUser" class="mb-6">
-        <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-48' }">
-          <UAvatar :src="currentUser.image ?? undefined" :alt="currentUser.name || currentUser.email || 'User'" :text="userInitials"
-            size="md" class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" />
-        </UDropdownMenu>
+        <AppUserMenu size="md" />
       </div>
 
       <UFormField :label="t('nav.language')" name="language">

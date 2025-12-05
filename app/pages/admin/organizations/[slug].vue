@@ -2,10 +2,6 @@
 import type { TableColumn } from '@nuxt/ui'
 import type { Organization, OrganizationInvitationsResponse, OrganizationMemberWithUser, ApiError, Invitation } from '#types'
 
-definePageMeta({
-  layout: 'default'
-})
-
 const userStore = useUserStore()
 const { isAdmin, myOrganizations } = storeToRefs(userStore)
 const { hasPermission } = userStore
@@ -251,9 +247,8 @@ const invitationsColumns = computed<TableColumn<Invitation>[]>(() => {
   ]
 })
 
-onMounted(() => {
-  loadOrganization()
-})
+await loadOrganization()
+
 </script>
 
 <template>

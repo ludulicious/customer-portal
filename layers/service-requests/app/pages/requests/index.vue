@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import type { QueryResult } from '~~/shared/types'
 
-definePageMeta({
-  layout: 'portal',
-})
 const { t } = useI18n()
 const currentPage = ref(1)
 const pageSize = ref(20)
