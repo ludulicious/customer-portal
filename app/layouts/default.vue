@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="max-w-7xl mx-auto">
     <AppHeader />
 
     <UMain class="main-content">

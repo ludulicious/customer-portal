@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-definePageMeta({
-  layout: 'portal'
-})
-
 const { t } = useI18n()
 
 const links = [[{

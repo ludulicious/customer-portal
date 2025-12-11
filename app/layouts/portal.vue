@@ -1,83 +1,14 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
-
 const route = useRoute()
 const toast = useToast()
-const { t } = useI18n()
 const open = ref(false)
 
-const links = [[{
-  label: t('menu.dashboard'),
-  icon: 'i-lucide-layout-dashboard',
-  to: '/dashboard',
-  onSelect: () => {
-    open.value = false
-  },
-  badge: '4',
-},
-{
-  label: t('menu.inbox'),
-  icon: 'i-lucide-inbox',
-  to: '/inbox',
-  badge: '4',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: t('menu.serviceRequests.title'),
-  icon: 'i-lucide-ticket',
-  to: '/requests',
-  onSelect: () => {
-    open.value = false
-  }
-}, {
-  label: t('menu.settings.title'),
-  to: '/settings',
-  icon: 'i-lucide-settings',
-  defaultOpen: false,
-  type: 'trigger',
-  children: [{
-    label: t('menu.settings.general'),
-    to: '/settings',
-    exact: true,
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: t('menu.settings.organization'),
-    to: '/settings/organization',
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: t('menu.settings.notifications'),
-    to: '/settings/notifications',
-    onSelect: () => {
-      open.value = false
-    }
-  }, {
-    label: t('menu.settings.security'),
-    to: '/settings/security',
-    onSelect: () => {
-      open.value = false
-    }
-  }]
-}], [{
-  label: t('menu.feedback'),
-  icon: 'i-lucide-message-circle',
-  to: 'https://github.com/nuxt-ui-templates/dashboard',
-  target: '_blank'
-}, {
-  label: t('menu.helpSupport'),
-  icon: 'i-lucide-info',
-  to: 'https://github.com/nuxt-ui-templates/dashboard',
-  target: '_blank'
-}]] satisfies NavigationMenuItem[][]
+const { links } = useNavigationLinks(open)
 
 const groups = computed(() => [{
   id: 'links',
   label: 'Go to',
-  items: links.flat()
+  items: links.value.flat()
 }, {
   id: 'code',
   label: 'Code',
