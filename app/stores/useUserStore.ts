@@ -389,6 +389,10 @@ export const useUserStore = defineStore('user', () => {
       }
     } as DashboardUser
   })
+
+  const changePasswordAllowed = computed(() => {
+    return currentUser.value?.providerId === 'credential'
+  })
   // Fetch current session data using getSession()
   return {
     permissions,
@@ -413,6 +417,7 @@ export const useUserStore = defineStore('user', () => {
     setSession,
     setActiveOrganizationId,
     setCurrentUser,
-    dashboardUser
+    dashboardUser,
+    changePasswordAllowed
   }
 })

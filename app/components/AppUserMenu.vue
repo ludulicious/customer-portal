@@ -33,24 +33,10 @@ const userMenuItems = computed(() => {
     ],
     [
       {
-        label: t('nav.profile'),
-        icon: 'i-lucide-user',
-        to: '/profile'
-      },
-      ...(hasMultipleOrganizations.value && isOrgAdmin.value
-        ? [{
-            label: t('myOrganizations.title'),
-            icon: 'i-lucide-building-2',
-            to: '/my-organizations'
-          }]
-        : []),
-      ...(activeOrganization.value
-        ? [{
-            label: t('nav.myOrganization'),
-            icon: 'i-lucide-building-2',
-            to: `/admin/organizations/${activeOrganization.value.slug}`
-          }]
-        : [])
+        label: t('menu.settings.title'),
+        icon: 'i-lucide-cog',
+        to: '/settings'
+      }
     ]
   ] as DropdownMenuItem[]
 
@@ -89,13 +75,12 @@ const userMenuItems = computed(() => {
 
 <template>
   <UDropdownMenu v-if="currentUser" :items="userMenuItems" :ui="{ content: 'w-48' }">
-    <UAvatar 
-      :src="currentUser.image ?? undefined" 
-      :alt="currentUser.name || currentUser.email || 'User'" 
+    <UAvatar
+      :src="currentUser.image ?? undefined"
+      :alt="currentUser.name || currentUser.email || 'User'"
       :text="userInitials"
-      :size="size" 
-      class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all" 
+      :size="size"
+      class="cursor-pointer hover:ring-2 hover:ring-primary/20 transition-all"
     />
   </UDropdownMenu>
 </template>
-

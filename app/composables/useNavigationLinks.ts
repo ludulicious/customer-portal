@@ -72,39 +72,41 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
       onSelect: () => {
         sidebarOpen.value = false
       }
-    }, {
-      label: t('menu.settings.title'),
-      to: '/settings',
-      icon: 'i-lucide-settings',
-      defaultOpen: false,
-      type: 'trigger',
-      children: [{
-        label: t('menu.settings.general'),
-        to: '/settings',
-        exact: true,
-        onSelect: () => {
-          sidebarOpen.value = false
-        }
-      }, {
-        label: t('menu.settings.organization'),
-        to: '/settings/organization',
-        onSelect: () => {
-          sidebarOpen.value = false
-        }
-      }, {
-        label: t('menu.settings.notifications'),
-        to: '/settings/notifications',
-        onSelect: () => {
-          sidebarOpen.value = false
-        }
-      }, {
-        label: t('menu.settings.security'),
-        to: '/settings/security',
-        onSelect: () => {
-          sidebarOpen.value = false
-        }
-      }]
     }]
+
+    // const settingsLinks = [{
+    //   label: t('menu.settings.title'),
+    //   to: '/settings',
+    //   icon: 'i-lucide-settings',
+    //   defaultOpen: false,
+    //   type: 'trigger',
+    //   children: [{
+    //     label: t('menu.settings.general'),
+    //     to: '/settings',
+    //     exact: true,
+    //     onSelect: () => {
+    //       sidebarOpen.value = false
+    //     }
+    //   }, {
+    //     label: t('menu.settings.organization'),
+    //     to: '/settings/organization',
+    //     onSelect: () => {
+    //       sidebarOpen.value = false
+    //     }
+    //   }, {
+    //     label: t('menu.settings.notifications'),
+    //     to: '/settings/notifications',
+    //     onSelect: () => {
+    //       sidebarOpen.value = false
+    //     }
+    //   }, {
+    //     label: t('menu.settings.security'),
+    //     to: '/settings/security',
+    //     onSelect: () => {
+    //       sidebarOpen.value = false
+    //     }
+    //   }]
+    // }]
 
     return [dashboardMainLinks, footerLinks]
   })

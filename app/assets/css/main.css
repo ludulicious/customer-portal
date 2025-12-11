@@ -269,13 +269,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Enhanced focus states for accessibility */
-.main-content:focus-within {
-  outline: 2px solid var(--ui-primary);
-  outline-offset: 2px;
-  border-radius: var(--ui-radius);
-}
-
 /* Light Mode Enhancements */
 
 /* Enhanced body background with subtle gradient */

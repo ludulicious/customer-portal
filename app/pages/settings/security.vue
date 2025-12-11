@@ -14,6 +14,9 @@ const password = reactive<Partial<PasswordSchema>>({
   new: undefined
 })
 
+const userStore = useUserStore()
+const { changePasswordAllowed } = storeToRefs(userStore)
+console.log(changePasswordAllowed.value)
 const validate = (state: Partial<PasswordSchema>): FormError[] => {
   const errors: FormError[] = []
   if (state.current && state.new && state.current === state.new) {
@@ -24,10 +27,10 @@ const validate = (state: Partial<PasswordSchema>): FormError[] => {
 </script>
 
 <template>
-  <UPageCard
+  <div>
+  <AppCard v-if="changePasswordAllowed"
     title="Password"
     description="Confirm your current password before setting a new one."
-    variant="subtle"
   >
     <UForm
       :schema="passwordSchema"
@@ -55,15 +58,27 @@ const validate = (state: Partial<PasswordSchema>): FormError[] => {
 
       <UButton label="Update" class="w-fit" type="submit" />
     </UForm>
-  </UPageCard>
+  </AppCard>
 
-  <UPageCard
+  <UCard
     title="Account"
-    description="No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently."
-    class="bg-gradient-to-tl from-error/10 from-5% to-default"
+    description=""
+    class="bg-gradient-to-tl from-error/10 from-5% to-default mt-8"
+    variant="subtle"
   >
+  <template #header>
+      <div>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+          Terminate Account
+        </h2>
+        <h6 class="text-sm text-gray-600 dark:text-gray-400">
+           No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.
+        </h6>
+      </div>
+    </template>
     <template #footer>
       <UButton label="Delete account" color="error" />
-    </template>
-  </UPageCard>
+      </template>
+    </UCard>
+  </div>
 </template>

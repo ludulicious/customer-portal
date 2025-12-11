@@ -248,7 +248,7 @@
     "theme": "Thema",
     "settings": {
       "title": "Settings",
-      "general": "General",
+      "profile": "Profiel",
       "organization": "Organization",
       "notifications": "Notifications",
       "security": "Security"
@@ -257,7 +257,7 @@
   },
   "settings": {
     "title": "Settings",
-    "general": "General",
+    "profile": "Profiel",
     "organization": "Organization",
     "notifications": "Notifications",
     "security": "Security",
@@ -592,8 +592,9 @@
       "nameDescription": "Je weergavenaam",
       "namePlaceholder": "Voer je naam in",
       "profilePicture": "Profielfoto",
-      "profilePictureDescription": "Voer een URL in voor je profielfoto",
-      "profilePicturePlaceholder": "https://voorbeeld.nl/avatar.jpg"
+      "profilePictureDescription": "JPG, GIF of PNG. Max. 1MB.",
+      "profilePicturePlaceholder": "https://voorbeeld.nl/avatar.jpg",
+      "chooseAvatar": "Kiezen"
     },
     "messages": {
       "error": "Fout",

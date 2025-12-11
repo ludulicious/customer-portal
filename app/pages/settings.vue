@@ -4,7 +4,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 const { t } = useI18n()
 
 const links = [[{
-  label: t('settings.general'),
+  label: t('settings.profile'),
   icon: 'i-lucide-user',
   to: '/settings',
   exact: true
@@ -20,33 +20,14 @@ const links = [[{
   label: t('settings.security'),
   icon: 'i-lucide-shield',
   to: '/settings/security'
-}], [{
-  label: t('menu.documentation'),
-  icon: 'i-lucide-book-open',
-  to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-  target: '_blank'
 }]] satisfies NavigationMenuItem[][]
 </script>
 
 <template>
-  <UDashboardPanel id="settings" :ui="{ body: 'lg:py-12' }">
-    <template #header>
-      <UDashboardNavbar title="Settings">
-        <template #leading>
-          <UDashboardSidebarCollapse />
-        </template>
-      </UDashboardNavbar>
-
-      <UDashboardToolbar class="hidden lg:flex">
-        <!-- NOTE: The `-mx-1` class is used to align with the `DashboardSidebarCollapse` button here. -->
-        <UNavigationMenu :items="links" highlight class="-mx-1 flex-1" />
-      </UDashboardToolbar>
-    </template>
-
-    <template #body>
-      <div class="flex flex-col gap-4 sm:gap-6 lg:gap-12 w-full lg:max-w-4xl mx-auto">
-        <NuxtPage />
-      </div>
-    </template>
-  </UDashboardPanel>
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <UContainer>
+      <UNavigationMenu :items="links" highlight class="mb-4" />
+      <NuxtPage />
+    </UContainer>
+  </div>
 </template>

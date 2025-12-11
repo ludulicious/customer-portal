@@ -253,7 +253,7 @@
     "theme": "Theme",
     "settings": {
       "title": "Settings",
-      "general": "General",
+      "profile": "Profile",
       "organization": "Organization",
       "notifications": "Notifications",
       "security": "Security"
@@ -262,7 +262,7 @@
   },
   "settings": {
     "title": "Settings",
-    "general": "General",
+    "profile": "Profile",
     "organization": "Organization",
     "notifications": "Notifications",
     "security": "Security",
@@ -597,8 +597,9 @@
       "nameDescription": "Your display name",
       "namePlaceholder": "Enter your name",
       "profilePicture": "Profile Picture",
-      "profilePictureDescription": "Enter a URL for your profile picture",
-      "profilePicturePlaceholder": "https://example.com/avatar.jpg"
+      "profilePictureDescription": "JPG, GIF or PNG. 1MB Max.",
+      "profilePicturePlaceholder": "https://example.com/avatar.jpg",
+      "chooseAvatar": "Choose"
     },
     "messages": {
       "error": "Error",

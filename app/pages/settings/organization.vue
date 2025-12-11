@@ -196,7 +196,7 @@ await loadOrganization()
 </script>
 
 <template>
-  <UContainer>
+  <div>
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-8">
       <UIcon name="i-lucide-loader-2" class="w-8 h-8 animate-spin mx-auto" />
@@ -211,10 +211,7 @@ await loadOrganization()
     <!-- Organization Details -->
     <div v-else-if="organization && hasPermission('organization', 'read')" class="space-y-6">
       <!-- Organization Info Card -->
-      <UCard>
-        <template #header>
-          <h2 class="text-xl font-semibold">{{ t('admin.organization.detail.title') }}</h2>
-        </template>
+      <AppCard :title="t('admin.organization.detail.title')">
         <div class="space-y-2">
           <div>
             <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.organization.detail.name') }}</span>
@@ -236,10 +233,10 @@ await loadOrganization()
             <p>{{ new Date(organization.createdAt).toLocaleDateString() }}</p>
           </div>
         </div>
-      </UCard>
+      </AppCard>
 
       <!-- Members Card -->
-      <UCard v-if="hasPermission('member', 'list')">
+      <UCard v-if="hasPermission('member', 'list')" :title="t('admin.organization.detail.members.title')" :description="t('admin.organization.detail.members.empty')">
         <template #header>
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold">
@@ -277,7 +274,7 @@ await loadOrganization()
               {{ t('admin.organization.detail.invitations.title') }} ({{
                 invitations.length }})
             </h2>
-            <UButton v-if="hasPermission('invitation', 'create')" icon="i-lucide-user-plus" color="primary"
+            <UButton v-if="hasPermission('invitation', 'create')" icon="i-lucide-user-plus" color="primary" variant="outline"
               class="w-full sm:w-auto" @click="showInviteModal = true">
               {{ t('admin.organization.detail.invitations.inviteMember') }}
             </UButton>
@@ -343,5 +340,5 @@ await loadOrganization()
       message="admin.organization.detail.invitations.confirmDelete.message"
       confirm-text="admin.organization.detail.invitations.confirmDelete.confirm" confirm-color="error"
       @confirm="handleDeleteInvitation" />
-  </UContainer>
+  </div>
 </template>
