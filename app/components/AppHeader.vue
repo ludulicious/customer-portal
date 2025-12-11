@@ -341,5 +341,15 @@ const stopImpersonating = async () => {
   </UHeader>
 
   <!-- Dashboard Search Modal -->
-  <UDashboardSearch v-model:open="searchOpen" :groups="searchGroups" />
+  <UDashboardSearch
+    v-model:open="searchOpen"
+    :groups="searchGroups"
+    :fuse="{
+      fuseOptions: {
+        ignoreLocation: true,
+        threshold: 0.1,
+        keys: ['label', 'suffix', '_searchText']
+      }
+    }"
+  />
 </template>

@@ -2,309 +2,358 @@ import type { CommandPaletteGroup, CommandPaletteItem, NavigationMenuItem } from
 
 type CommandPaletteItemWithChildren = CommandPaletteItem & {
   children?: CommandPaletteItem[]
+  _searchText?: string
+}
+
+type MenuItemRole = 'public' | 'authenticated' | 'admin'
+
+interface MenuItemConfig {
+  id: string
+  labelKey: string
+  icon?: string
+  to?: string
+  target?: '_blank'
+  badge?: string | number
+  roles?: MenuItemRole[]
+  children?: MenuItemConfig[]
+  searchGroup?: string // 'home' | 'navigation'
+  showInRoot?: boolean // Whether to show in root navigation (default: true)
+  showInSearch?: boolean // Whether to show in search (default: true)
+  showInHome?: boolean // Whether to show in home (default: false)
 }
 
 export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const { t } = useI18n()
   const userStore = useUserStore()
-  const { isAdmin } = storeToRefs(userStore)
+  const { isAdmin, isAuthenticated } = storeToRefs(userStore)
 
   const route = useRoute()
   const isHome = computed(() => route.path === '/')
 
-  const links = computed<NavigationMenuItem[][]>(() => {
-    // Footer links (same for both home and dashboard)
-    const footerLinks: NavigationMenuItem[] = [{
-      label: t('menu.feedback'),
-      icon: 'i-lucide-message-circle',
-      to: 'https://github.com/nuxt-ui-templates/dashboard',
-      target: '_blank'
-    }, {
-      label: t('menu.helpSupport'),
-      icon: 'i-lucide-info',
-      to: 'https://github.com/nuxt-ui-templates/dashboard',
-      target: '_blank'
-    }]
-
-    // Home page menu (public-facing)
-    if (isHome.value) {
-      const homeMainLinks: NavigationMenuItem[] = [{
-        label: t('menu.dashboard'),
-        icon: 'i-lucide-layout-dashboard',
-        to: '/dashboard',
-        onSelect: () => {
-          sidebarOpen.value = false
+  // Define all menu items in a structured array
+  const menuItemsConfig: MenuItemConfig[] = [
+    // Home group items
+    {
+      id: 'home',
+      labelKey: 'menu.home',
+      icon: 'i-lucide-home',
+      to: '/',
+      roles: ['public'],
+      searchGroup: 'home',
+      showInRoot: false,
+      children: [
+        {
+          id: 'blog',
+          labelKey: 'nav.blog',
+          icon: 'i-lucide-book-open',
+          to: '/blog',
+          roles: ['public'],
+          searchGroup: 'home',
+          showInRoot: false,
+          showInHome: true
+        },
+        {
+          id: 'contact',
+          labelKey: 'nav.contact',
+          icon: 'i-lucide-mail',
+          to: '/contact',
+          roles: ['public'],
+          searchGroup: 'home',
+          showInRoot: false,
+          showInHome: true
         }
-      }, {
-        label: t('nav.blog'),
-        icon: 'i-lucide-book-open',
-        to: '/blog',
-        onSelect: () => {
-          sidebarOpen.value = false
-        }
-      }, {
-        label: t('nav.contact'),
-        icon: 'i-lucide-mail',
-        to: '/contact',
-        onSelect: () => {
-          sidebarOpen.value = false
-        }
-      }]
-
-      return [homeMainLinks, footerLinks]
-    }
-
-    // Dashboard/portal menu (authenticated)
-    const dashboardMainLinks: NavigationMenuItem[] = [{
-      label: t('menu.dashboard'),
+      ]
+    },
+    // Main navigation items
+    {
+      id: 'dashboard',
+      labelKey: 'menu.dashboard',
       icon: 'i-lucide-layout-dashboard',
       to: '/dashboard',
-      onSelect: () => {
-        sidebarOpen.value = false
-      },
+      roles: ['public', 'authenticated'],
+      showInRoot: true,
+      showInHome: true
     },
     {
-      label: t('menu.inbox'),
+      id: 'inbox',
+      labelKey: 'menu.inbox',
       icon: 'i-lucide-inbox',
       to: '/inbox',
       badge: '4',
-      onSelect: () => {
-        sidebarOpen.value = false
-      }
-    }, {
-      label: t('menu.serviceRequests.title'),
+      roles: ['authenticated'],
+      searchGroup: 'navigation',
+      showInRoot: true
+    },
+    {
+      id: 'service-requests',
+      labelKey: 'menu.serviceRequests.title',
       icon: 'i-lucide-ticket',
       to: '/requests',
-      onSelect: () => {
-        sidebarOpen.value = false
-      }
-    }]
-
-    // Add admin menu if user is admin
-    if (isAdmin.value) {
-      dashboardMainLinks.push({
-        label: t('nav.admin'),
-        icon: 'i-lucide-shield-check',
-        to: '/admin/organizations',
-        onSelect: () => {
-          sidebarOpen.value = false
+      roles: ['authenticated'],
+      searchGroup: 'navigation',
+      showInRoot: true
+    },
+    {
+      id: 'my-organizations',
+      labelKey: 'myOrganizations.title',
+      icon: 'i-lucide-building',
+      to: '/my-organizations',
+      roles: ['authenticated'],
+      searchGroup: 'navigation',
+      showInRoot: false,
+      showInSearch: false
+    },
+    // Settings with children
+    {
+      id: 'settings',
+      labelKey: 'menu.settings.title',
+      icon: 'i-lucide-settings',
+      to: '/settings',
+      roles: ['authenticated'],
+      searchGroup: 'navigation',
+      showInRoot: false,
+      children: [
+        {
+          id: 'settings-profile',
+          labelKey: 'menu.settings.profile',
+          icon: 'i-lucide-user',
+          to: '/settings',
+          roles: ['authenticated'],
+          searchGroup: 'navigation',
+          showInRoot: false
+        },
+        {
+          id: 'settings-organization',
+          labelKey: 'menu.settings.organization',
+          icon: 'i-lucide-building-2',
+          to: '/settings/organization',
+          roles: ['authenticated'],
+          searchGroup: 'navigation',
+          showInRoot: false
+        },
+        {
+          id: 'settings-notifications',
+          labelKey: 'menu.settings.notifications',
+          icon: 'i-lucide-bell',
+          to: '/settings/notifications',
+          roles: ['authenticated'],
+          searchGroup: 'navigation',
+          showInRoot: false
+        },
+        {
+          id: 'settings-security',
+          labelKey: 'menu.settings.security',
+          icon: 'i-lucide-shield',
+          to: '/settings/security',
+          roles: ['authenticated'],
+          searchGroup: 'navigation',
+          showInRoot: false
         }
-      })
-    }
-
-    return [dashboardMainLinks, footerLinks]
-  })
-
-  const searchGroups = computed(() => {
-    if (links.value.length === 0) return []
-
-    // Flatten all menu items from all groups, including children
-    const allItems: CommandPaletteItemWithChildren[] = []
-    const itemsMap = new Map<string, CommandPaletteItemWithChildren>()
-
-    links.value.forEach((group, groupIndex) => {
-      group.forEach((item) => {
-        // Add the main item if it has a 'to' property (is a link, not just a trigger)
-        if (item.to && !('type' in item && item.type === 'trigger')) {
-          const commandItem: CommandPaletteItemWithChildren = {
-            id: item.id || `item-${groupIndex}-${item.to}`,
-            label: item.label,
-            to: item.to as string,
-            icon: item.icon,
-            children: [] // Initialize children array
-          }
-          allItems.push(commandItem)
-          itemsMap.set(item.to as string, commandItem)
-        }
-
-        // Add children items if they exist
-        if ('children' in item && item.children && Array.isArray(item.children)) {
-          item.children.forEach((child) => {
-            if (child.to) {
-              const childItem: CommandPaletteItemWithChildren = {
-                id: child.id || `child-${groupIndex}-${child.to}`,
-                label: child.label,
-                to: child.to as string,
-                icon: child.icon
-              }
-              allItems.push(childItem)
-              itemsMap.set(child.to as string, childItem)
-            }
-          })
-        }
-      })
-    })
-
-    // Add Settings routes as children of Settings parent
-    // Find or create Settings parent item
-    let settingsParent = itemsMap.get('/settings')
-    if (!settingsParent) {
-      settingsParent = {
-        id: 'settings',
-        label: t('menu.settings.title'),
-        to: '/settings',
-        icon: 'i-lucide-settings'
-      }
-      allItems.push(settingsParent)
-      itemsMap.set('/settings', settingsParent)
-    }
-
-    // Add settings children
-    const settingsChildren: CommandPaletteItem[] = [
-      {
-        id: 'settings-general',
-        label: t('menu.settings.profile'),
-        to: '/settings',
-        icon: 'i-lucide-user'
-      },
-      {
-        id: 'settings-organization',
-        label: t('menu.settings.organization'),
-        to: '/settings/organization',
-        icon: 'i-lucide-building-2'
-      },
-      {
-        id: 'settings-notifications',
-        label: t('menu.settings.notifications'),
-        to: '/settings/notifications',
-        icon: 'i-lucide-bell'
-      },
-      {
-        id: 'settings-security',
-        label: t('menu.settings.security'),
-        to: '/settings/security',
-        icon: 'i-lucide-shield'
-      }
-    ]
-
-    // Add settings children to the parent item (only in children, not in root)
-    if (!settingsParent.children) {
-      settingsParent.children = []
-    }
-    settingsChildren.forEach((child) => {
-      const existsInChildren = settingsParent.children!.some(item => item.to === child.to)
-      if (!existsInChildren) {
-        // Only add to parent's children array, not to allItems (to keep them nested only)
-        settingsParent.children!.push(child)
-      }
-    })
-
-    // Add my-organizations as standalone item
-    const myOrgsExists = allItems.some(item => item.to === '/my-organizations')
-    if (!myOrgsExists) {
-      allItems.push({
-        id: 'my-organizations',
-        label: t('myOrganizations.title'),
-        to: '/my-organizations',
-        icon: 'i-lucide-building'
-      })
-    }
-
-    // Add Admin routes as children of Admin parent
-    if (isAdmin.value) {
-      // Find or create Admin parent item
-      let adminParent = itemsMap.get('/admin/organizations')
-      if (!adminParent) {
-        adminParent = {
-          id: 'admin',
-          label: t('nav.admin'),
-          to: '/admin/organizations',
-          icon: 'i-lucide-shield-check'
-        }
-        allItems.push(adminParent)
-        itemsMap.set('/admin/organizations', adminParent)
-      }
-
-      // Ensure children array is initialized
-      if (!adminParent.children) {
-        adminParent.children = []
-      }
-
-      // Add admin children
-      const adminChildren: CommandPaletteItem[] = [
+      ]
+    },
+    // Admin with children
+    {
+      id: 'admin',
+      labelKey: 'nav.admin',
+      icon: 'i-lucide-shield-check',
+      to: '/admin/organizations',
+      roles: ['admin'],
+      searchGroup: 'navigation',
+      showInRoot: true,
+      children: [
         {
           id: 'admin-organizations',
-          label: t('admin.dashboard.organizations'),
+          labelKey: 'admin.dashboard.organizations',
+          icon: 'i-lucide-building-2',
           to: '/admin/organizations',
-          icon: 'i-lucide-building-2'
+          roles: ['admin'],
+          searchGroup: 'navigation',
+          showInRoot: false
         },
         {
           id: 'admin-users',
-          label: t('admin.dashboard.users'),
+          labelKey: 'admin.dashboard.users',
+          icon: 'i-lucide-users',
           to: '/admin/users',
-          icon: 'i-lucide-users'
+          roles: ['admin'],
+          searchGroup: 'navigation',
+          showInRoot: false
         },
         {
           id: 'admin-organizations-create',
-          label: t('admin.organization.create.title'),
+          labelKey: 'admin.organization.create.title',
+          icon: 'i-lucide-plus-circle',
           to: '/admin/organizations/create',
-          icon: 'i-lucide-plus-circle'
+          roles: ['admin'],
+          searchGroup: 'navigation',
+          showInRoot: false,
+          showInSearch: false
         }
       ]
-
-      // Add admin children to the parent item (only in children, not in root)
-      adminChildren.forEach((child) => {
-        const existsInChildren = adminParent.children!.some(item => item.to === child.to)
-        if (!existsInChildren) {
-          // Only add to parent's children for hierarchical display, not to allItems
-          adminParent.children!.push(child)
-        }
-      })
     }
+  ]
 
-    // Create Home group with blog, contact, feedback, and help & support as children
-    const homeChildren: CommandPaletteItem[] = [
-      {
-        id: 'blog',
-        label: t('nav.blog'),
-        to: '/blog',
-        icon: 'i-lucide-book-open'
-      },
-      {
-        id: 'contact',
-        label: t('nav.contact'),
-        to: '/contact',
-        icon: 'i-lucide-mail'
-      },
-      {
-        id: 'feedback',
-        label: t('menu.feedback'),
-        to: 'https://github.com/nuxt-ui-templates/dashboard',
-        icon: 'i-lucide-message-circle',
-        target: '_blank'
-      },
-      {
-        id: 'help-support',
-        label: t('menu.helpSupport'),
-        to: 'https://github.com/nuxt-ui-templates/dashboard',
-        icon: 'i-lucide-info',
-        target: '_blank'
+  // Helper function to check if user has required role
+  const hasRequiredRole = (roles?: MenuItemRole[]): boolean => {
+    if (!roles || roles.length === 0) return true
+    if (roles.includes('public')) return true
+    if (roles.includes('authenticated') && isAuthenticated.value) return true
+    if (roles.includes('admin') && isAdmin.value) return true
+    return false
+  }
+
+  // Helper function to convert MenuItemConfig to NavigationMenuItem
+  const configToNavigationItem = (config: MenuItemConfig): NavigationMenuItem | null => {
+    if (!hasRequiredRole(config.roles)) return null
+
+    const item: NavigationMenuItem = {
+      id: config.id,
+      label: t(config.labelKey),
+      icon: config.icon,
+      to: config.to,
+      target: config.target,
+      badge: config.badge,
+      onSelect: () => {
+        sidebarOpen.value = false
       }
-    ]
-
-    const homeParent: CommandPaletteItemWithChildren = {
-      id: 'home',
-      label: t('menu.home'),
-      to: '/',
-      icon: 'i-lucide-home',
-      children: homeChildren
     }
 
-    // Home children are only in the parent's children array, not in root list
+    if (config.children && config.children.length > 0) {
+      const children = config.children
+        .map(child => configToNavigationItem(child))
+        .filter((item): item is NavigationMenuItem => item !== null)
 
-    // Create groups - Home group and Navigation group
-    const groups: CommandPaletteGroup<CommandPaletteItem>[] = [
-      {
+      if (children.length > 0) {
+        item.children = children
+      }
+    }
+
+    return item
+  }
+
+  // Helper function to recursively extract all labels from an item and its children
+  const extractSearchableText = (item: CommandPaletteItemWithChildren): string => {
+    let text = item.label || ''
+    if (item.children && item.children.length > 0) {
+      const childrenText = item.children
+        .map(child => extractSearchableText(child as CommandPaletteItemWithChildren))
+        .join(' ')
+      text = `${text} ${childrenText}`.trim()
+    }
+    return text
+  }
+
+  // Helper function to convert MenuItemConfig to CommandPaletteItem
+  const configToCommandPaletteItem = (config: MenuItemConfig): CommandPaletteItemWithChildren | null => {
+    if (!hasRequiredRole(config.roles) || config.showInSearch === false) return null
+
+    const item: CommandPaletteItemWithChildren = {
+      id: config.id,
+      label: t(config.labelKey),
+      icon: config.icon,
+      to: config.to as string,
+      target: config.target,
+      children: []
+    }
+
+    if (config.children && config.children.length > 0) {
+      const children = config.children
+        .map(child => configToCommandPaletteItem(child))
+        .filter((item): item is CommandPaletteItem => item !== null)
+
+      if (children.length > 0) {
+        item.children = children
+      }
+    }
+
+    // Add searchable text that includes children labels
+    // This allows Fuse.js to search through children without flattening the structure
+    item._searchText = extractSearchableText(item)
+
+    return item
+  }
+
+  // Generate navigation links
+  const links = computed<NavigationMenuItem[][]>(() => {
+    const mainLinks: NavigationMenuItem[] = []
+    const footerLinks: NavigationMenuItem[] = []
+
+    menuItemsConfig.forEach((config) => {
+      // Skip home item itself, but include its children for home page
+      if (config.id === 'home') {
+        if (isHome.value && config.children) {
+          config.children.forEach((child) => {
+            const item = configToNavigationItem(child)
+            if (item) mainLinks.push(item)
+          })
+        }
+        return
+      }
+
+      // For authenticated pages, skip public-only items that aren't in children
+      if (!isHome.value && config.roles?.includes('public') && !config.roles.includes('authenticated')) {
+        return
+      }
+
+      // Add main navigation items
+      if (config.showInRoot !== false) {
+        const item = configToNavigationItem(config)
+        if (item && (config.showInHome === true || !isHome.value)) mainLinks.push(item)
+      }
+    })
+
+    return [mainLinks, footerLinks]
+  })
+
+  // Generate search groups
+  const searchGroups = computed(() => {
+    const homeGroupItems: CommandPaletteItemWithChildren[] = []
+    const navigationGroupItems: CommandPaletteItemWithChildren[] = []
+
+    // Process each menu item config
+    menuItemsConfig.forEach((config) => {
+      // Skip if user doesn't have required role or item shouldn't be in search
+      if (!hasRequiredRole(config.roles) || config.showInSearch === false) return
+
+      // Convert config to command palette item (this handles children automatically)
+      const item = configToCommandPaletteItem(config)
+      if (!item) return
+
+      // Determine which group this item belongs to
+      const searchGroup = config.searchGroup || 'navigation'
+
+      // Add to appropriate group based on searchGroup property
+      // For search, we include items even if showInRoot is false (they'll appear as parents with children)
+      if (searchGroup === 'home') {
+        homeGroupItems.push(item)
+      } else {
+        // Add to navigation group - include parent items even if showInRoot is false
+        // Children with showInRoot: false are already handled by configToCommandPaletteItem
+        navigationGroupItems.push(item)
+      }
+    })
+
+    // Build groups array
+    const groups: CommandPaletteGroup<CommandPaletteItem>[] = []
+
+    // Home group - find the home parent and add it
+    const homeParent = homeGroupItems.find(item => item.id === 'home')
+    if (homeParent) {
+      groups.push({
         id: 'home',
         label: t('menu.home'),
         items: [homeParent]
-      },
-      {
+      })
+    }
+
+    // Navigation group - add all navigation items
+    if (navigationGroupItems.length > 0) {
+      groups.push({
         id: 'navigation',
         label: 'Go to',
-        items: allItems
-      }
-    ]
+        items: navigationGroupItems
+      })
+    }
 
     return groups
   })

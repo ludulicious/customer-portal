@@ -247,21 +247,20 @@
     "profile": "Profiel",
     "theme": "Thema",
     "settings": {
-      "title": "Settings",
+      "title": "Instellingen",
       "profile": "Profiel",
-      "organization": "Organization",
-      "notifications": "Notifications",
-      "security": "Security"
+      "organization": "Organisatie",
+      "notifications": "Notificaties",
+      "security": "Beveiliging"
     },
     "logout": "Uitloggen"
   },
   "settings": {
-    "title": "Settings",
+    "title": "Instellingen",
     "profile": "Profiel",
-    "organization": "Organization",
-    "notifications": "Notifications",
-    "security": "Security",
-    "documentation": "Documentation"
+    "organization": "Organisatie",
+    "notifications": "Notificaties",
+    "security": "Beveiliging"
   },
   "security": {
     "password": {

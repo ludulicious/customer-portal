@@ -72,7 +72,16 @@ onMounted(async () => {
         </template>
       </UDashboardSidebar>
 
-      <UDashboardSearch :groups="groups" />
+      <UDashboardSearch
+        :groups="groups"
+        :fuse="{
+          fuseOptions: {
+            ignoreLocation: true,
+            threshold: 0.1,
+            keys: ['label', 'suffix', '_searchText']
+          }
+        }"
+      />
 
       <NotificationsSlideover />
       <UMain>
