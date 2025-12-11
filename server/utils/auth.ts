@@ -23,6 +23,7 @@ const adminEmails = process.env.ADMIN_EMAILS?.split(',')
   .filter(Boolean) ?? []
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3051',
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {
@@ -44,7 +45,7 @@ export const auth = betterAuth({
   user: {
     deleteUser: {
       enabled: true,
-      sendDeleteAccountVerification: async ({ user, url, token }, request) => {
+      sendDeleteAccountVerification: async ({ user, url, token: _token }, _request) => {
         // url is already a full URL from better-auth, use it directly
         const emailContent = getDeleteAccountEmailContent({
           userName: user.name || '',
@@ -57,15 +58,21 @@ export const auth = betterAuth({
           ...emailContent
         })
       },
-      beforeDelete: async (user) => {
-        // Prevent admin account deletion
-        const [userRecord] = await db
-          .select({ role: userTable.role })
-          .from(userTable)
-          .where(eq(userTable.id, user.id))
-          .limit(1)
+      beforeDelete: async (user, _request) => {
+        let userRole
+        try {
+          const [userRecord] = await db
+            .select({ role: userTable.role })
+            .from(userTable)
+            .where(eq(userTable.id, user.id))
+            .limit(1)
 
-        if (userRecord?.role === 'admin') {
+          userRole = userRecord?.role
+        } catch (error) {
+          console.error('Error checking user role in beforeDelete:', error)
+          return
+        }
+        if (userRole === 'admin') {
           throw new APIError('BAD_REQUEST', {
             message: 'Admin accounts cannot be deleted'
           })

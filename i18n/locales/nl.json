@@ -285,6 +285,8 @@
       "title": "Account beëindigen",
       "description": "Wilt u onze service niet meer gebruiken? U kunt hier uw account verwijderen. Deze actie kan niet ongedaan worden gemaakt. Alle informatie met betrekking tot dit account wordt permanent verwijderd.",
       "deleteButton": "Account verwijderen",
+      "deleteRequested": "Accountverwijdering aangevraagd",
+      "deleteRequestedDescription": "We hebben u een verificatie-e-mail gestuurd. Controleer uw e-mail en klik op de link om het accountverwijderingsproces te voltooien.",
       "delete": {
         "confirmTitle": "Accountverwijdering bevestigen",
         "confirmMessage": "Weet u zeker dat u uw account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",

@@ -290,6 +290,8 @@
       "title": "Terminate Account",
       "description": "No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.",
       "deleteButton": "Delete account",
+      "deleteRequested": "Account Deletion Requested",
+      "deleteRequestedDescription": "We have sent you a verification email. Please check your email and click the link to complete the account deletion process.",
       "delete": {
         "confirmTitle": "Confirm Account Deletion",
         "confirmMessage": "Are you sure you want to delete your account? This action cannot be undone.",

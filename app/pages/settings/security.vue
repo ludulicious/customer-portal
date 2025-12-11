@@ -85,9 +85,11 @@ const handleSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
   }
 }
 
+const isDeleteRequested = ref(false)
 const handleDeleteSuccess = () => {
   // Account deletion handled in modal (redirects to home)
   showDeleteModal.value = false
+  isDeleteRequested.value = true
 }
 
 const handleDeleteError = (message: string) => {
@@ -158,10 +160,12 @@ const handleDeleteError = (message: string) => {
     <template #footer>
       <UButton
         :label="t('security.account.deleteButton')"
+        :disabled="isDeleteRequested"
         color="error"
         @click="showDeleteModal = true"
       />
       </template>
+      <UAlert v-if="isDeleteRequested" variant="outline" color="warning" :title="t('security.account.deleteRequested')" :description="t('security.account.deleteRequestedDescription')" />
     </UCard>
 
     <!-- Delete Account Modal -->
