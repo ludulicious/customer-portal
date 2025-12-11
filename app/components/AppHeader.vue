@@ -11,6 +11,7 @@ const userStore = useUserStore()
 const { currentUser, isAuthenticated, currentSession, myOrganizations, activeOrganization, loadingOrganization } = storeToRefs(userStore)
 
 const showOrgSwitcherModal = ref(false)
+const searchOpen = ref(false)
 
 const hasMultipleOrganizations = computed(() => {
   return myOrganizations.value && myOrganizations.value.length > 1
@@ -20,7 +21,7 @@ const hasMultipleOrganizations = computed(() => {
 const sidebarOpen = ref(false)
 
 // Get navigation links from composable
-const { links } = useNavigationLinks(sidebarOpen)
+const { links, searchGroups } = useNavigationLinks(sidebarOpen)
 
 // Function to check if a route is active
 const isRouteActive = (itemPath: string) => {
@@ -218,6 +219,14 @@ const stopImpersonating = async () => {
 
     <template #right>
       <div class="hidden lg:flex items-center gap-3">
+        <UButton
+          icon="i-lucide-search"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          square
+          @click="searchOpen = true"
+        />
         <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" />
         <UColorModeButton />
 
@@ -313,11 +322,24 @@ const stopImpersonating = async () => {
       <div v-if="currentUser" class="mb-6">
         <AppUserMenu size="md" />
       </div>
-
+      <UButton
+        icon="i-lucide-search"
+        color="neutral"
+        variant="outline"
+        size="sm"
+        block
+        class="mb-4"
+        @click="searchOpen = true"
+      >
+        Search
+      </UButton>
       <UFormField :label="t('nav.language')" name="language">
         <ULocaleSelect v-model="currentLocale" :locales="[en, nl]" class="w-48" />
       </UFormField>
       <UserMenu />
     </template>
   </UHeader>
+
+  <!-- Dashboard Search Modal -->
+  <UDashboardSearch v-model:open="searchOpen" :groups="searchGroups" />
 </template>
