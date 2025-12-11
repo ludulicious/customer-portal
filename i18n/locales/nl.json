@@ -284,7 +284,18 @@
     "account": {
       "title": "Account beëindigen",
       "description": "Wilt u onze service niet meer gebruiken? U kunt hier uw account verwijderen. Deze actie kan niet ongedaan worden gemaakt. Alle informatie met betrekking tot dit account wordt permanent verwijderd.",
-      "deleteButton": "Account verwijderen"
+      "deleteButton": "Account verwijderen",
+      "delete": {
+        "confirmTitle": "Accountverwijdering bevestigen",
+        "confirmMessage": "Weet u zeker dat u uw account wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
+        "passwordRequired": "Voer uw wachtwoord in om accountverwijdering te bevestigen",
+        "passwordPlaceholder": "Voer uw wachtwoord in",
+        "deleteButton": "Account verwijderen",
+        "cancelButton": "Annuleren",
+        "success": "Account succesvol verwijderd",
+        "error": "Account verwijderen mislukt",
+        "emailVerificationSent": "Verificatie-e-mail verzonden. Controleer uw e-mail om de accountverwijdering te voltooien."
+      }
     }
   },
   "contact": {

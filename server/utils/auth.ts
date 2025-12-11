@@ -1,7 +1,8 @@
 import { betterAuth } from 'better-auth'
+import { APIError } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { sendEmail } from './email'
-import { getInvitationEmailContent, getOTPEmailContent } from './email-texts'
+import { getInvitationEmailContent, getOTPEmailContent, getDeleteAccountEmailContent } from './email-texts'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { db } from './db'
 import { eq } from 'drizzle-orm'
@@ -39,6 +40,38 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true
+  },
+  user: {
+    deleteUser: {
+      enabled: true,
+      sendDeleteAccountVerification: async ({ user, url, token }, request) => {
+        // url is already a full URL from better-auth, use it directly
+        const emailContent = getDeleteAccountEmailContent({
+          userName: user.name || '',
+          userEmail: user.email,
+          deletionLink: url
+        })
+
+        await sendEmail({
+          to: user.email,
+          ...emailContent
+        })
+      },
+      beforeDelete: async (user) => {
+        // Prevent admin account deletion
+        const [userRecord] = await db
+          .select({ role: userTable.role })
+          .from(userTable)
+          .where(eq(userTable.id, user.id))
+          .limit(1)
+
+        if (userRecord?.role === 'admin') {
+          throw new APIError('BAD_REQUEST', {
+            message: 'Admin accounts cannot be deleted'
+          })
+        }
+      }
+    }
   },
   socialProviders: {
     github: {

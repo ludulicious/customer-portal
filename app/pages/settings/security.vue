@@ -29,6 +29,7 @@ const userStore = useUserStore()
 const { changePasswordAllowed } = storeToRefs(userStore)
 
 const isLoading = ref(false)
+const showDeleteModal = ref(false)
 
 const validate = (state: Partial<PasswordSchema>): FormError[] => {
   const errors: FormError[] = []
@@ -82,6 +83,16 @@ const handleSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
   } finally {
     isLoading.value = false
   }
+}
+
+const handleDeleteSuccess = () => {
+  // Account deletion handled in modal (redirects to home)
+  showDeleteModal.value = false
+}
+
+const handleDeleteError = (message: string) => {
+  // Error already shown in modal via toast
+  console.error('Account deletion error:', message)
 }
 </script>
 
@@ -145,8 +156,21 @@ const handleSubmit = async (event: FormSubmitEvent<PasswordSchema>) => {
       </div>
     </template>
     <template #footer>
-      <UButton :label="t('security.account.deleteButton')" color="error" />
+      <UButton
+        :label="t('security.account.deleteButton')"
+        color="error"
+        @click="showDeleteModal = true"
+      />
       </template>
     </UCard>
+
+    <!-- Delete Account Modal -->
+    <DeleteAccountModal
+      v-if="showDeleteModal"
+      v-model:open="showDeleteModal"
+      :requires-password="changePasswordAllowed"
+      @success="handleDeleteSuccess"
+      @error="handleDeleteError"
+    />
   </div>
 </template>

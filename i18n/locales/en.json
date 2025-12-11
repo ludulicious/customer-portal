@@ -289,7 +289,18 @@
     "account": {
       "title": "Terminate Account",
       "description": "No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.",
-      "deleteButton": "Delete account"
+      "deleteButton": "Delete account",
+      "delete": {
+        "confirmTitle": "Confirm Account Deletion",
+        "confirmMessage": "Are you sure you want to delete your account? This action cannot be undone.",
+        "passwordRequired": "Please enter your password to confirm account deletion",
+        "passwordPlaceholder": "Enter your password",
+        "deleteButton": "Delete Account",
+        "cancelButton": "Cancel",
+        "success": "Account deleted successfully",
+        "error": "Failed to delete account",
+        "emailVerificationSent": "Verification email sent. Please check your email to complete account deletion."
+      }
     }
   },
   "contact": {

@@ -63,3 +63,34 @@ export function getOTPEmailContent(params: OTPEmailParams) {
     }
   }
 }
+
+/**
+ * Centralized account deletion email content
+ * Used for account deletion verification
+ */
+
+export interface DeleteAccountEmailParams {
+  userName: string
+  userEmail: string
+  deletionLink: string
+}
+
+export function getDeleteAccountEmailContent(params: DeleteAccountEmailParams) {
+  const { userName, userEmail, deletionLink } = params
+  const userDisplay = userName || userEmail
+
+  return {
+    subject: 'Confirm Account Deletion',
+    params: {
+      greeting: `Hello ${userDisplay},`,
+      body_text: `You have requested to delete your account. This action cannot be undone. All your data will be permanently deleted.
+             <p style="text-align: center;">
+                <a href="${deletionLink}" class="button">Delete Account</a>
+            </p>
+        `,
+      action_url: deletionLink,
+      action_text: 'Delete Account',
+      footer_text: 'If you did not request to delete your account, please ignore this email and your account will remain active.'
+    }
+  }
+}
