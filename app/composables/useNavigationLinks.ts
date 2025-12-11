@@ -2,6 +2,8 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
   const { t } = useI18n()
+  const userStore = useUserStore()
+  const { isAdmin } = storeToRefs(userStore)
 
   const route = useRoute()
   const isHome = computed(() => route.path === '/')
@@ -73,6 +75,18 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
         sidebarOpen.value = false
       }
     }]
+
+    // Add admin menu if user is admin
+    if (isAdmin.value) {
+      dashboardMainLinks.push({
+        label: t('nav.admin'),
+        icon: 'i-lucide-shield-check',
+        to: '/admin/organizations',
+        onSelect: () => {
+          sidebarOpen.value = false
+        }
+      })
+    }
 
     // const settingsLinks = [{
     //   label: t('menu.settings.title'),

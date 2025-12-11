@@ -263,6 +263,30 @@
     "security": "Security",
     "documentation": "Documentation"
   },
+  "security": {
+    "password": {
+      "title": "Wachtwoord",
+      "description": "Bevestig uw huidige wachtwoord voordat u een nieuw wachtwoord instelt.",
+      "currentPassword": "Huidig wachtwoord",
+      "currentPasswordPlaceholder": "Voer uw huidige wachtwoord in",
+      "newPassword": "Nieuw wachtwoord",
+      "newPasswordPlaceholder": "Voer uw nieuwe wachtwoord in",
+      "updateButton": "Wachtwoord bijwerken",
+      "validation": {
+        "currentPasswordRequired": "Huidig wachtwoord is verplicht",
+        "newPasswordRequired": "Nieuw wachtwoord is verplicht",
+        "passwordsMustBeDifferent": "Nieuw wachtwoord moet verschillen van het huidige wachtwoord",
+        "passwordsMustBeDifferentShort": "Wachtwoorden moeten verschillend zijn"
+      },
+      "success": "Wachtwoord succesvol gewijzigd",
+      "error": "Wachtwoord wijzigen mislukt"
+    },
+    "account": {
+      "title": "Account beëindigen",
+      "description": "Wilt u onze service niet meer gebruiken? U kunt hier uw account verwijderen. Deze actie kan niet ongedaan worden gemaakt. Alle informatie met betrekking tot dit account wordt permanent verwijderd.",
+      "deleteButton": "Account verwijderen"
+    }
+  },
   "contact": {
     "cards": {
       "email": {

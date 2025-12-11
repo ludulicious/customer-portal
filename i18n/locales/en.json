@@ -268,6 +268,30 @@
     "security": "Security",
     "documentation": "Documentation"
   },
+  "security": {
+    "password": {
+      "title": "Password",
+      "description": "Confirm your current password before setting a new one.",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter your current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Enter your new password",
+      "updateButton": "Update Password",
+      "validation": {
+        "currentPasswordRequired": "Current password is required",
+        "newPasswordRequired": "New password is required",
+        "passwordsMustBeDifferent": "New password must be different from current password",
+        "passwordsMustBeDifferentShort": "Passwords must be different"
+      },
+      "success": "Password changed successfully",
+      "error": "Failed to change password"
+    },
+    "account": {
+      "title": "Terminate Account",
+      "description": "No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.",
+      "deleteButton": "Delete account"
+    }
+  },
   "contact": {
     "cards": {
       "email": {
