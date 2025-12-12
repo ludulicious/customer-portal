@@ -25,7 +25,8 @@ const loadData = async () => {
       const newItems = result.items.filter(item => !list.value.some(existing => existing.id === item.id))
       list.value = [...list.value, ...newItems]
     }
-    canLoadMore.value = list.value.length < result.totalCount
+    // canLoadMore.value = list.value.length < result.totalCount
+    canLoadMore.value = false
     console.log('canLoadMore', canLoadMore.value)
     console.log('list', list.value.length)
   } catch (e) {
@@ -82,7 +83,7 @@ useInfiniteScroll(
       </UDashboardNavbar>
     </template>
     <template #body>
-      <div class="h-screen overflow-hidden">
+      <div class="h-screen">
         <div ref="listContainerRef" class="flex-1 overflow-y-auto min-h-0">
           <div class="flex flex-col gap-2 p-4 bg-gray-500/5 rounded-lg">
             <UEmpty v-if="list.length === 0 && !pending" icon="i-lucide-ticket"
