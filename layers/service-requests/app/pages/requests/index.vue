@@ -1,25 +1,44 @@
 <script setup lang="ts">
 import type { QueryResult } from '~~/shared/types'
 
-const { t } = useI18n()
+definePageMeta({
+  layout: false
+})
+const pending = ref(true)
 const currentPage = ref(1)
 const pageSize = ref(20)
-const { data, pending, error, refresh } = await useAsyncData(
-  'service-requests',
-  () => $fetch<QueryResult<ServiceRequestWithRelations>>('/api/service-requests', {
-    query: {
-      skip: (currentPage.value - 1) * pageSize.value,
-      take: pageSize.value
+const canLoadMore = ref(false)
+const error = ref<Error | null>(null)
+const list = ref<ServiceRequestWithRelations[]>([])
+const totalCount = ref(0)
+const loadData = async () => {
+  error.value = null
+  pending.value = true
+  try {
+    const result = await $fetch<QueryResult<ServiceRequestWithRelations>>('/api/service-requests', {
+      query: {
+        skip: (currentPage.value - 1) * pageSize.value,
+        take: pageSize.value
+      }
+    })
+    totalCount.value = result.totalCount
+    if (currentPage.value === 1) {
+      list.value = result.items
+    } else {
+      const newItems = result.items.filter(item => !list.value.some(existing => existing.id === item.id))
+      list.value = [...list.value, ...newItems]
     }
-  }),
-  {
-    default: () => ({ items: [], totalCount: 0 }),
+    canLoadMore.value = list.value.length < result.totalCount
+    console.log('canLoadMore', canLoadMore.value)
+    console.log('list', list.value.length)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    pending.value = false
   }
-)
-const toast = useToast()
-// const { copy } = useClipboard()
+}
 
-const totalCount = computed(() => data.value?.totalCount ?? 0)
+await loadData()
 
 const getPriorityColor = (priority: ServiceRequestPriority) => {
   switch (priority) {
@@ -35,96 +54,27 @@ const formatDate = (date: Date) => {
   return new Date(date).toLocaleDateString()
 }
 
-watch([currentPage, pageSize], async () => {
-  if (currentPage.value === 1) {
-    // Reset list when going back to page 1
-    list.value = []
-  }
-  await refresh()
-})
-
-const list = ref<ServiceRequestWithRelations[]>(data.value?.items ?? [])
-
-watch(data, (newData) => {
-  if (newData && Array.isArray(newData.items)) {
-    if (currentPage.value === 1) {
-      // Replace list on first page or refresh
-      list.value = newData.items
-    } else {
-      // Append items when loading more pages
-      // Check for duplicates just in case
-      const newItems = newData.items.filter(item => !list.value.some(existing => existing.id === item.id))
-      list.value = [...list.value, ...newItems]
-    }
-  }
-}, { immediate: true, deep: true })
-
-const isLoadingMore = ref(false)
-
-const onLoadMore = () => {
-  console.log('onLoadMore', isLoadingMore.value, pending.value, canLoadMore.value)
-  if (isLoadingMore.value || pending.value || !canLoadMore.value) return
-
-  isLoadingMore.value = true
-  currentPage.value++
-}
-
-const canLoadMore = computed(() => {
-  return list.value.length < totalCount.value - 1
-})
-
-watch(pending, (isPending) => {
-  if (!isPending) {
-    isLoadingMore.value = false
-  }
-})
-
-watch(error, (newError) => {
-  if (newError) {
-    toast.add({
-      title: 'Error loading service requests',
-      description: newError.message,
-      color: 'error'
-    })
-    isLoadingMore.value = false
-  }
-})
-
-const listContainerRef = ref<HTMLElement | null>(null)
+const listContainerRef = ref(null)
 useInfiniteScroll(
   listContainerRef,
-  () => {
-    onLoadMore()
+  async () => {
+    currentPage.value++
+    await loadData()
   },
-  { distance: 200 }
+  {
+    distance: 200,
+    canLoadMore: () => canLoadMore.value
+  }
 )
 </script>
 
 <template>
-  <UDashboardPanel id="dashboard" class="lg:pb-8">
-    <template #header>
-      <UDashboardNavbar :title="t('serviceRequest.title')" :ui="{ right: 'gap-3' }">
-        <template #leading>
-          <UDashboardSidebarCollapse />
-        </template>
-
-        <template #right>
-          <UButton icon="i-lucide-plus" size="md" class="rounded-full" to="/requests/new" />
-        </template>
-      </UDashboardNavbar>
-    </template>
-
-    <template #body>
-      <div ref="listContainerRef" class="h-full overflow-y-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <!-- List -->
-          <div v-if="pending && list.length === 0">
-            <USkeleton v-for="i in pageSize" :key="i" class="h-20 w-full mb-2" />
-          </div>
-
-          <UEmpty v-else-if="list.length === 0 && !pending" icon="i-lucide-ticket" description="No service requests found" />
-
-          <div v-else class="space-y-3">
+  <div class="h-screen overflow-hidden">
+    <UCard title="Service Requests" class="h-full flex flex-col">
+      <div ref="listContainerRef" class="flex-1 overflow-y-auto min-h-0">
+        <div class="flex flex-col gap-2 p-4 bg-gray-500/5 rounded-lg">
+          <UEmpty v-if="list.length === 0 && !pending" icon="i-lucide-ticket" description="No service requests found" />
+          <div class="space-y-3">
             <UCard v-for="request in list" :key="request.id"
               class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900">
               <div class="flex justify-between items-start">
@@ -146,13 +96,12 @@ useInfiniteScroll(
                 </div>
               </div>
             </UCard>
-
-            <div v-if="isLoadingMore || (pending && list.length > 0)" class="py-4 space-y-2">
-               <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
-            </div>
+          </div>
+          <div v-if="pending" class="py-4 space-y-2">
+            <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
           </div>
         </div>
       </div>
-    </template>
-  </UDashboardPanel>
+    </UCard>
+  </div>
 </template>

@@ -2,7 +2,7 @@ import { auth } from '~~/server/utils/auth'
 import { filterServiceRequestSchema } from '../../utils/service-request-validation'
 import { buildRequestQuery, verifyServiceRequestAccess } from '../../utils/service-request-helpers'
 import { db } from '~~/server/utils/db'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, asc } from 'drizzle-orm'
 import { serviceRequest } from '~~/server/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
     .select()
     .from(serviceRequest)
     .where(where)
-    .orderBy(desc(serviceRequest.createdAt))
+    .orderBy(desc(serviceRequest.createdAt), asc(serviceRequest.id))
     .offset(filters.skip)
     .limit(filters.take)
 

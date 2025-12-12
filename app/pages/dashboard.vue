@@ -144,9 +144,12 @@ const period = ref<Period>('daily')
 <template>
   <UDashboardPanel id="dashboard" class="lg:pb-8">
     <template #header>
-      <UDashboardNavbar :title="t('dashboard.title')" :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UDashboardSidebarCollapse />
+          <UIcon name="i-lucide-layout-dashboard" class="size-6 shrink-0" />
+          <span class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ t('dashboard.title') }}
+          </span>
         </template>
 
         <template #right>

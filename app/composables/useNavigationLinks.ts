@@ -75,16 +75,6 @@ export const useNavigationLinks = (sidebarOpen: Ref<boolean>) => {
       showInHome: true
     },
     {
-      id: 'inbox',
-      labelKey: 'menu.inbox',
-      icon: 'i-lucide-inbox',
-      to: '/inbox',
-      badge: '4',
-      roles: ['authenticated'],
-      searchGroup: 'navigation',
-      showInRoot: true
-    },
-    {
       id: 'service-requests',
       labelKey: 'menu.serviceRequests.title',
       icon: 'i-lucide-ticket',
