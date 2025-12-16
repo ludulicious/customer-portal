@@ -3,7 +3,7 @@ import type { QueryResult } from '~~/shared/types'
 
 const pending = ref(true)
 const currentPage = ref(1)
-const pageSize = ref(5)
+const pageSize = ref(10)
 const canLoadMore = ref(false)
 const error = ref<Error | null>(null)
 const list = ref<ServiceRequestWithRelations[]>([])
@@ -52,75 +52,30 @@ const formatDate = (date: Date) => {
 }
 
 const listContainerRef = ref<HTMLElement | null>(null)
-const autoFillInProgress = ref(false)
+const loadMoreInProgress = ref(false)
 
-/**
- * If the list container is taller than the content (no scrollbar yet) but we
- * still have more data, keep fetching pages until it becomes scrollable (or we
- * run out of data). This prevents "infinite scroll stuck" on tall viewports.
- */
-const autoFillUntilScrollable = async () => {
-  if (!import.meta.client) return
-  if (autoFillInProgress.value) return
-  if (pending.value || !canLoadMore.value) return
+const loadMore = async () => {
+  if (!initialLoadComplete.value) return
+  if (pending.value || loadMoreInProgress.value) return
+  if (!canLoadMore.value) return
 
-  autoFillInProgress.value = true
+  // Prevent "load everything instantly" when the container isn't scrollable yet.
+  const el = listContainerRef.value
+  if (el && el.scrollHeight <= el.clientHeight + 16) return
+
+  loadMoreInProgress.value = true
   try {
-    let safety = 0
-    // Keep loading while there's no overflow to allow scrolling.
-    while (
-      canLoadMore.value
-      && !pending.value
-      && listContainerRef.value
-      && listContainerRef.value.scrollHeight <= listContainerRef.value.clientHeight + 16
-    ) {
-      if (safety++ > 10) break
-      currentPage.value++
-      await loadData()
-      await nextTick()
-    }
-  } finally {
-    autoFillInProgress.value = false
-  }
-}
-
-// Simple scroll-based infinite scroll
-const handleScroll = (event: Event) => {
-  if (!initialLoadComplete.value || pending.value || !canLoadMore.value) return
-
-  const target = event.target as HTMLElement
-  const { scrollTop, scrollHeight, clientHeight } = target
-  const distanceFromBottom = scrollHeight - scrollTop - clientHeight
-
-  // Load more when within 200px of bottom
-  if (distanceFromBottom < 200) {
     currentPage.value++
-    loadData()
+    await loadData()
+    await nextTick()
+  } finally {
+    loadMoreInProgress.value = false
   }
 }
 
-onMounted(() => {
-  if (listContainerRef.value) {
-    listContainerRef.value.addEventListener('scroll', handleScroll, { passive: true })
-  }
-
-  // After mount we can measure the container; auto-fill if needed.
-  nextTick(() => {
-    autoFillUntilScrollable()
-  })
-})
-
-onUnmounted(() => {
-  if (listContainerRef.value) {
-    listContainerRef.value.removeEventListener('scroll', handleScroll)
-  }
-})
-
-watch([pending, canLoadMore, () => list.value.length], () => {
-  // After any load finishes, ensure the viewport isn't "too tall" for infinite scroll.
-  if (!pending.value && canLoadMore.value) {
-    autoFillUntilScrollable()
-  }
+useInfiniteScroll(listContainerRef, loadMore, {
+  distance: 200,
+  canLoadMore: () => initialLoadComplete.value && canLoadMore.value && !pending.value && !loadMoreInProgress.value
 })
 </script>
 
