@@ -83,7 +83,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
   <UDashboardPanel
     id="service-requests"
     class="lg:pb-8 min-h-0 overflow-hidden"
-    style="height: calc(100dvh - 12rem);"
+    style="height: calc(100dvh - var(--ui-header-height));"
     :ui="{ body: 'flex flex-col gap-4 sm:gap-6 flex-1 min-h-0 p-4 sm:p-6 overflow-hidden' }"
   >
     <template #header>
@@ -101,42 +101,45 @@ useInfiniteScroll(listContainerRef, loadMore, {
       </UDashboardNavbar>
     </template>
     <template #body>
-      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto">
-        <UEmpty
-          v-if="list.length === 0 && !pending"
-          icon="i-lucide-ticket"
-          description="No service requests found"
-        />
+      <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2">
+        <!-- Keep content away from the scrollbar (works even with overlay scrollbars) -->
+        <div class="pr-10">
+          <UEmpty
+            v-if="list.length === 0 && !pending"
+            icon="i-lucide-ticket"
+            description="No service requests found"
+          />
 
-        <div class="space-y-3">
-          <UCard
-            v-for="request in list"
-            :key="request.id"
-            class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
-          >
-            <div class="flex justify-between items-start">
-              <div class="flex-1">
-                <h3 class="font-semibold">{{ request.title }}</h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                  {{ request.description }}
-                </p>
-                <div class="flex gap-2 mt-2 text-xs text-gray-500">
-                  <span>{{ formatDate(request.createdAt) }}</span>
-                  <span v-if="request.category">• {{ request.category }}</span>
+          <div class="space-y-4">
+            <UCard
+              v-for="request in list"
+              :key="request.id"
+              class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+            >
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <h3 class="font-semibold">{{ request.title }}</h3>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                    {{ request.description }}
+                  </p>
+                  <div class="flex gap-2 mt-2 text-xs text-gray-500">
+                    <span>{{ formatDate(request.createdAt) }}</span>
+                    <span v-if="request.category">• {{ request.category }}</span>
+                  </div>
+                </div>
+                <div class="flex flex-col items-end gap-2">
+                  <StatusBadge :status="request.status" />
+                  <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
+                    {{ request.priority }}
+                  </UBadge>
                 </div>
               </div>
-              <div class="flex flex-col items-end gap-2">
-                <StatusBadge :status="request.status" />
-                <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
-                  {{ request.priority }}
-                </UBadge>
-              </div>
-            </div>
-          </UCard>
-        </div>
+            </UCard>
+          </div>
 
-        <div v-if="pending" class="py-4 space-y-2">
-          <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
+          <div v-if="pending" class="py-4 space-y-2">
+            <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
+          </div>
         </div>
       </div>
     </template>
