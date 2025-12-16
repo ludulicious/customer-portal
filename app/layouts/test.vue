@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const route = useRoute()
+const showFooter = computed(() => route.meta?.public === true)
+</script>
+
 <template>
   <div>
     <AppHeader :show-navigation="true" />
@@ -6,6 +11,6 @@
       <slot />
     </UMain>
 
-    <AppFooter />
+    <AppFooter v-if="showFooter" />
   </div>
 </template>

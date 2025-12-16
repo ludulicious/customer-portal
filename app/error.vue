@@ -8,6 +8,9 @@ defineProps({
   }
 })
 
+const route = useRoute()
+const showFooter = computed(() => route.meta?.public === true)
+
 useHead({
   htmlAttrs: {
     lang: 'en'
@@ -33,7 +36,7 @@ useSeoMeta({
       </UContainer>
     </UMain>
 
-    <AppFooter />
+    <AppFooter v-if="showFooter" />
 
     <UToaster />
   </div>

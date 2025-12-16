@@ -2,6 +2,9 @@
 import type { ContentNavigationItem } from '@nuxt/content'
 
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
+
+const route = useRoute()
+const showFooter = computed(() => route.meta?.public === true)
 </script>
 
 <template>
@@ -29,6 +32,6 @@ const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
       </UContainer>
     </UMain>
 
-    <AppFooter />
+    <AppFooter v-if="showFooter" />
   </div>
 </template>

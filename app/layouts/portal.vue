@@ -2,6 +2,7 @@
 const route = useRoute()
 const toast = useToast()
 const open = ref(false)
+const showFooter = computed(() => route.meta?.public === true)
 
 const { links } = useNavigationLinks(open)
 
@@ -89,6 +90,6 @@ onMounted(async () => {
       </UMain>
     </UDashboardGroup>
 
-    <AppFooter />
+    <AppFooter v-if="showFooter" />
   </div>
 </template>
