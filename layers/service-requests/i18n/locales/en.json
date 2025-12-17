@@ -11,7 +11,19 @@
       "resolved": "Resolved",
       "closed": "Closed"
     },
+    "statusBadge": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
     "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "priorityBadge": {
       "low": "Low",
       "medium": "Medium",
       "high": "High",

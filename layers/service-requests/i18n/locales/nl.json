@@ -11,7 +11,19 @@
       "resolved": "Opgelost",
       "closed": "Gesloten"
     },
+    "statusBadge": {
+      "open": "Open",
+      "in_progress": "In Behandeling",
+      "resolved": "Opgelost",
+      "closed": "Gesloten"
+    },
     "priority": {
+      "low": "Laag",
+      "medium": "Gemiddeld",
+      "high": "Hoog",
+      "urgent": "Urgent"
+    },
+    "priorityBadge": {
       "low": "Laag",
       "medium": "Gemiddeld",
       "high": "Hoog",

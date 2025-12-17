@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { QueryResult } from '~~/shared/types'
 
+const { t } = useI18n()
+
 const pending = ref(true)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -9,15 +11,105 @@ const error = ref<Error | null>(null)
 const list = ref<ServiceRequestWithRelations[]>([])
 const totalCount = ref(0)
 const initialLoadComplete = ref(false)
+
+// Helper function to get status badge text
+const getStatusBadgeText = (status: ServiceRequestStatus): string => {
+  return t(`serviceRequest.statusBadge.${status.toLowerCase()}`)
+}
+
+// Helper function to get priority badge text
+const getPriorityBadgeText = (priority: ServiceRequestPriority): string => {
+  return t(`serviceRequest.priorityBadge.${priority.toLowerCase()}`)
+}
+const getPriorityColor = (priority: ServiceRequestPriority) => {
+  switch (priority) {
+    case 'LOW': return 'success'
+    case 'MEDIUM': return 'info'
+    case 'HIGH': return 'warning'
+    case 'URGENT': return 'error'
+    default: return 'neutral'
+  }
+}
+// Filter state
+const statusFilter = ref<ServiceRequestStatus | undefined>(undefined)
+const priorityFilter = ref<ServiceRequestPriority | undefined>(undefined)
+
+// Filter options
+const statusOptions = computed(() => [
+  { label: 'All Statuses', value: undefined },
+  {
+    label: t('serviceRequest.status.open'),
+    value: 'OPEN' as ServiceRequestStatus,
+    badgeText: getStatusBadgeText('OPEN'),
+    badgeColor: 'primary' as const
+  },
+  {
+    label: t('serviceRequest.status.in_progress'),
+    value: 'IN_PROGRESS' as ServiceRequestStatus,
+    badgeText: getStatusBadgeText('IN_PROGRESS'),
+    badgeColor: 'warning' as const
+  },
+  {
+    label: t('serviceRequest.status.resolved'),
+    value: 'RESOLVED' as ServiceRequestStatus,
+    badgeText: getStatusBadgeText('RESOLVED'),
+    badgeColor: 'success' as const
+  },
+  {
+    label: t('serviceRequest.status.closed'),
+    value: 'CLOSED' as ServiceRequestStatus,
+    badgeText: getStatusBadgeText('CLOSED'),
+    badgeColor: 'neutral' as const
+  }
+])
+
+const priorityOptions = computed(() => [
+  { label: 'All Priorities', value: undefined },
+  {
+    label: t('serviceRequest.priority.low'),
+    value: 'LOW' as ServiceRequestPriority,
+    badgeText: getPriorityBadgeText('LOW'),
+    badgeColor: getPriorityColor('LOW')
+  },
+  {
+    label: t('serviceRequest.priority.medium'),
+    value: 'MEDIUM' as ServiceRequestPriority,
+    badgeText: getPriorityBadgeText('MEDIUM'),
+    badgeColor: getPriorityColor('MEDIUM')
+  },
+  {
+    label: t('serviceRequest.priority.high'),
+    value: 'HIGH' as ServiceRequestPriority,
+    badgeText: getPriorityBadgeText('HIGH'),
+    badgeColor: getPriorityColor('HIGH')
+  },
+  {
+    label: t('serviceRequest.priority.urgent'),
+    value: 'URGENT' as ServiceRequestPriority,
+    badgeText: getPriorityBadgeText('URGENT'),
+    badgeColor: getPriorityColor('URGENT')
+  }
+])
+
 const loadData = async () => {
   error.value = null
   pending.value = true
   try {
+    const query: Record<string, string | number | undefined> = {
+      skip: (currentPage.value - 1) * pageSize.value,
+      take: pageSize.value
+    }
+
+    if (statusFilter.value) {
+      query.status = statusFilter.value
+    }
+
+    if (priorityFilter.value) {
+      query.priority = priorityFilter.value
+    }
+
     const result = await $fetch<QueryResult<ServiceRequestWithRelations>>('/api/service-requests', {
-      query: {
-        skip: (currentPage.value - 1) * pageSize.value,
-        take: pageSize.value
-      }
+      query
     })
     totalCount.value = result.totalCount
     if (currentPage.value === 1) {
@@ -34,18 +126,15 @@ const loadData = async () => {
   }
 }
 
+// Watch filters and reset pagination when they change
+watch([statusFilter, priorityFilter], () => {
+  currentPage.value = 1
+  list.value = []
+  loadData()
+})
+
 await loadData()
 initialLoadComplete.value = true
-
-const getPriorityColor = (priority: ServiceRequestPriority) => {
-  switch (priority) {
-    case 'LOW': return 'success'
-    case 'MEDIUM': return 'info'
-    case 'HIGH': return 'warning'
-    case 'URGENT': return 'error'
-    default: return 'neutral'
-  }
-}
 
 const formatDate = (date: Date) => {
   return new Date(date).toLocaleDateString()
@@ -89,7 +178,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
     <template #header>
       <UDashboardNavbar :ui="{ right: 'gap-3' }">
         <template #leading>
-          <UIcon name="i-lucide-layout-ticket" class="size-6 shrink-0" />
+          <UIcon name="i-lucide-ticket" class="size-6 shrink-0" />
           <span class="text-lg font-semibold text-gray-900 dark:text-white">
             Service Requests
           </span>
@@ -99,6 +188,51 @@ useInfiniteScroll(listContainerRef, loadMore, {
           <UButton icon="i-lucide-plus" size="md" class="rounded-full" title="New Service Request" />
         </template>
       </UDashboardNavbar>
+
+      <UDashboardToolbar>
+        <template #left>
+          <USelect
+            v-model="statusFilter"
+            :items="statusOptions"
+            placeholder="Filter by status"
+            class="w-48"
+          >
+            <template #item="{ item }">
+              <div class="flex items-center justify-between w-full gap-2">
+                <span class="flex-1 truncate">{{ item.label }}</span>
+                <UBadge
+                  v-if="item.badgeText"
+                  :color="item.badgeColor"
+                  size="xs"
+                  class="shrink-0 min-w-[100px] justify-center"
+                >
+                  {{ item.badgeText }}
+                </UBadge>
+              </div>
+            </template>
+          </USelect>
+          <USelect
+            v-model="priorityFilter"
+            :items="priorityOptions"
+            placeholder="Filter by priority"
+            class="w-48"
+          >
+            <template #item="{ item }">
+              <div class="flex items-center justify-between w-full gap-2">
+                <span class="flex-1 truncate">{{ item.label }}</span>
+                <UBadge
+                  v-if="item.badgeText"
+                  :color="item.badgeColor as any"
+                  size="xs"
+                  class="shrink-0 min-w-[100px] justify-center"
+                >
+                  {{ item.badgeText }}
+                </UBadge>
+              </div>
+            </template>
+          </USelect>
+        </template>
+      </UDashboardToolbar>
     </template>
     <template #body>
       <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2">
@@ -130,7 +264,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
                 <div class="flex flex-col items-end gap-2">
                   <StatusBadge :status="request.status" />
                   <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
-                    {{ request.priority }}
+                    {{ getPriorityBadgeText(request.priority) }}
                   </UBadge>
                 </div>
               </div>
