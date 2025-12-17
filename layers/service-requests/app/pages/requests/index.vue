@@ -33,6 +33,7 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
 // Filter state
 const statusFilter = ref<ServiceRequestStatus | undefined>(undefined)
 const priorityFilter = ref<ServiceRequestPriority | undefined>(undefined)
+const searchQuery = ref('')
 
 // Filter options
 const statusOptions = computed(() => [
@@ -108,6 +109,10 @@ const loadData = async () => {
       query.priority = priorityFilter.value
     }
 
+    if (searchQuery.value.trim()) {
+      query.search = searchQuery.value.trim()
+    }
+
     const result = await $fetch<QueryResult<ServiceRequestWithRelations>>('/api/service-requests', {
       query
     })
@@ -126,11 +131,29 @@ const loadData = async () => {
   }
 }
 
+// Debounced search function
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+const handleSearch = () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 1
+    list.value = []
+    loadData()
+  }, 300) // 300ms debounce
+}
+
 // Watch filters and reset pagination when they change
 watch([statusFilter, priorityFilter], () => {
   currentPage.value = 1
   list.value = []
   loadData()
+})
+
+// Watch search query with debouncing
+watch(searchQuery, () => {
+  handleSearch()
 })
 
 await loadData()
@@ -191,6 +214,16 @@ useInfiniteScroll(listContainerRef, loadMore, {
 
       <UDashboardToolbar>
         <template #left>
+          <UInput
+            v-model="searchQuery"
+            placeholder="Search by title or description..."
+            icon="i-lucide-search"
+            :loading="pending"
+            class="w-full max-w-md"
+            clearable
+          />
+        </template>
+        <template #right>
           <USelect
             v-model="statusFilter"
             :items="statusOptions"
