@@ -3,6 +3,15 @@ import type { QueryResult } from '~~/shared/types'
 
 const { t } = useI18n()
 
+// Mobile breakpoint detection
+const breakpoints = useBreakpoints({
+  mobile: 768
+})
+const isMobile = breakpoints.smaller('mobile')
+
+// Filter modal state
+const showFiltersModal = ref(false)
+
 const pending = ref(true)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -33,6 +42,7 @@ const getPriorityColor = (priority: ServiceRequestPriority) => {
 // Filter state
 const statusFilter = ref<ServiceRequestStatus | undefined>(undefined)
 const priorityFilter = ref<ServiceRequestPriority | undefined>(undefined)
+const categoryFilter = ref<string | undefined>(undefined)
 const searchQuery = ref('')
 
 // Filter options
@@ -92,6 +102,21 @@ const priorityOptions = computed(() => [
   }
 ])
 
+// Extract unique categories from loaded requests
+const categoryOptions = computed(() => {
+  const categories = new Set<string>()
+  list.value.forEach(request => {
+    if (request.category) {
+      categories.add(request.category)
+    }
+  })
+  const sortedCategories = Array.from(categories).sort()
+  return [
+    { label: 'All Categories', value: undefined },
+    ...sortedCategories.map(cat => ({ label: cat, value: cat }))
+  ]
+})
+
 const loadData = async () => {
   error.value = null
   pending.value = true
@@ -107,6 +132,10 @@ const loadData = async () => {
 
     if (priorityFilter.value) {
       query.priority = priorityFilter.value
+    }
+
+    if (categoryFilter.value) {
+      query.category = categoryFilter.value
     }
 
     if (searchQuery.value.trim()) {
@@ -145,7 +174,7 @@ const handleSearch = () => {
 }
 
 // Watch filters and reset pagination when they change
-watch([statusFilter, priorityFilter], () => {
+watch([statusFilter, priorityFilter, categoryFilter], () => {
   currentPage.value = 1
   list.value = []
   loadData()
@@ -214,58 +243,145 @@ useInfiniteScroll(listContainerRef, loadMore, {
 
       <UDashboardToolbar>
         <template #left>
-          <UInput
-            v-model="searchQuery"
-            placeholder="Search by title or description..."
-            icon="i-lucide-search"
-            :loading="pending"
-            class="w-full max-w-md"
-            clearable
-          />
+          <div class="flex items-center gap-2 w-full">
+            <UInput
+              v-model="searchQuery"
+              placeholder="Search by title or description..."
+              icon="i-lucide-search"
+              :loading="pending"
+              class="flex-1 max-w-md"
+              clearable
+            />
+            <UButton
+              v-if="isMobile"
+              icon="i-lucide-filter"
+              variant="outline"
+              @click="showFiltersModal = true"
+            >
+              Filters
+            </UButton>
+          </div>
         </template>
         <template #right>
-          <USelect
-            v-model="statusFilter"
-            :items="statusOptions"
-            placeholder="Filter by status"
-            class="w-48"
-          >
-            <template #item="{ item }">
-              <div class="flex items-center justify-between w-full gap-2">
-                <span class="flex-1 truncate">{{ item.label }}</span>
-                <UBadge
-                  v-if="item.badgeText"
-                  :color="item.badgeColor"
-                  size="xs"
-                  class="shrink-0 min-w-[100px] justify-center"
-                >
-                  {{ item.badgeText }}
-                </UBadge>
-              </div>
-            </template>
-          </USelect>
-          <USelect
-            v-model="priorityFilter"
-            :items="priorityOptions"
-            placeholder="Filter by priority"
-            class="w-48"
-          >
-            <template #item="{ item }">
-              <div class="flex items-center justify-between w-full gap-2">
-                <span class="flex-1 truncate">{{ item.label }}</span>
-                <UBadge
-                  v-if="item.badgeText"
-                  :color="item.badgeColor as any"
-                  size="xs"
-                  class="shrink-0 min-w-[100px] justify-center"
-                >
-                  {{ item.badgeText }}
-                </UBadge>
-              </div>
-            </template>
-          </USelect>
+          <div v-if="!isMobile" class="flex items-center gap-2">
+            <USelect
+              v-model="statusFilter"
+              :items="statusOptions"
+              placeholder="Filter by status"
+              class="w-48"
+            >
+              <template #item="{ item }">
+                <div class="flex items-center justify-between w-full gap-2">
+                  <span class="flex-1 truncate">{{ item.label }}</span>
+                  <UBadge
+                    v-if="item.badgeText"
+                    :color="item.badgeColor"
+                    size="xs"
+                    class="shrink-0 min-w-[100px] justify-center"
+                  >
+                    {{ item.badgeText }}
+                  </UBadge>
+                </div>
+              </template>
+            </USelect>
+            <USelect
+              v-model="priorityFilter"
+              :items="priorityOptions"
+              placeholder="Filter by priority"
+              class="w-48"
+            >
+              <template #item="{ item }">
+                <div class="flex items-center justify-between w-full gap-2">
+                  <span class="flex-1 truncate">{{ item.label }}</span>
+                  <UBadge
+                    v-if="item.badgeText"
+                    :color="item.badgeColor as any"
+                    size="xs"
+                    class="shrink-0 min-w-[100px] justify-center"
+                  >
+                    {{ item.badgeText }}
+                  </UBadge>
+                </div>
+              </template>
+            </USelect>
+            <USelect
+              v-model="categoryFilter"
+              :items="categoryOptions"
+              placeholder="Filter by category"
+              class="w-48"
+            />
+          </div>
         </template>
       </UDashboardToolbar>
+
+      <!-- Mobile Filters Modal -->
+      <UModal v-model:open="showFiltersModal" title="Filters" :ui="{ content: 'w-full sm:max-w-md' }">
+        <template #body>
+          <div class="space-y-4">
+            <UFormField label="Status">
+              <USelect
+                v-model="statusFilter"
+                :items="statusOptions"
+                placeholder="Filter by status"
+              >
+                <template #item="{ item }">
+                  <div class="flex items-center justify-between w-full gap-2">
+                    <span class="flex-1 truncate">{{ item.label }}</span>
+                    <UBadge
+                      v-if="item.badgeText"
+                      :color="item.badgeColor"
+                      size="xs"
+                      class="shrink-0 min-w-[100px] justify-center"
+                    >
+                      {{ item.badgeText }}
+                    </UBadge>
+                  </div>
+                </template>
+              </USelect>
+            </UFormField>
+
+            <UFormField label="Priority">
+              <USelect
+                v-model="priorityFilter"
+                :items="priorityOptions"
+                placeholder="Filter by priority"
+              >
+                <template #item="{ item }">
+                  <div class="flex items-center justify-between w-full gap-2">
+                    <span class="flex-1 truncate">{{ item.label }}</span>
+                    <UBadge
+                      v-if="item.badgeText"
+                      :color="item.badgeColor as any"
+                      size="xs"
+                      class="shrink-0 min-w-[100px] justify-center"
+                    >
+                      {{ item.badgeText }}
+                    </UBadge>
+                  </div>
+                </template>
+              </USelect>
+            </UFormField>
+
+            <UFormField label="Category">
+              <USelect
+                v-model="categoryFilter"
+                :items="categoryOptions"
+                placeholder="Filter by category"
+              />
+            </UFormField>
+          </div>
+        </template>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton
+              variant="outline"
+              @click="showFiltersModal = false"
+            >
+              Close
+            </UButton>
+          </div>
+        </template>
+      </UModal>
     </template>
     <template #body>
       <div ref="listContainerRef" class="flex-1 min-h-0 overflow-y-auto p-2">
