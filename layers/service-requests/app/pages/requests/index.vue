@@ -160,6 +160,11 @@ const loadData = async () => {
   }
 }
 
+const refresh = async () => {
+  currentPage.value = 1
+  list.value = []
+  await loadData()
+}
 // Debounced search function
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const handleSearch = () => {
@@ -237,7 +242,24 @@ useInfiniteScroll(listContainerRef, loadMore, {
         </template>
 
         <template #right>
-          <UButton icon="i-lucide-plus" size="md" class="rounded-full" title="New Service Request" />
+          <div class="flex gap-2 w-full sm:w-auto">
+          <UButton
+            icon="i-lucide-plus"
+            color="primary"
+            :to="'/admin/organizations/create'"
+            class="flex-1 sm:flex-none"
+          >
+            {{ t('serviceRequest.create') }}
+          </UButton>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            variant="outline"
+            :loading="pending"
+            class="flex-1 sm:flex-none"
+            :title="t('common.refresh')"
+            @click="refresh"
+          />
+        </div>
         </template>
       </UDashboardNavbar>
 
