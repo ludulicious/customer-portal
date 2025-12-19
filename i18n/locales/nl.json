@@ -96,7 +96,6 @@
       "list": {
         "title": "Alle Organisaties",
         "createButton": "Organisatie Aanmaken",
-        "refresh": "Vernieuwen",
         "loading": "Organisaties laden...",
         "empty": "Geen organisaties gevonden",
         "view": "Bekijken"
@@ -113,9 +112,7 @@
       "name": "Naam",
       "noUsersFound": "Geen gebruikers gevonden",
       "notAvailable": "N.v.t.",
-      "refresh": "Vernieuwen",
       "role": "Rol",
-      "searchPlaceholder": "Zoeken op naam of e-mail...",
       "title": "Alle Gebruikers",
       "verified": "Geverifieerd"
     },
@@ -225,12 +222,15 @@
     "edit": "Bewerken",
     "error": "Er is een fout opgetreden",
     "learnMore": "Meer informatie",
+    "loaded": "Geladen",
     "loading": "Laden...",
     "readMore": "Lees meer",
     "reset": "Resetten",
     "confirm": "Bevestigen",
     "save": "Opslaan",
     "success": "Succesvol!",
+    "totalRecords": "Totaal records",
+    "searchPlaceholder": "Zoeken...",
     "view": "Bekijken"
   },
   "menu": {

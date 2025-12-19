@@ -54,7 +54,7 @@ onMounted(() => {
             class="flex-1 sm:flex-none"
             @click="loadOrganizations"
           >
-            {{ t('admin.organization.list.refresh') }}
+            {{ t('common.refresh') }}
           </UButton>
         </div>
       </div>

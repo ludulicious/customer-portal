@@ -101,7 +101,6 @@
       "list": {
         "title": "All Organizations",
         "createButton": "Create Organization",
-        "refresh": "Refresh",
         "loading": "Loading organizations...",
         "empty": "No organizations found",
         "view": "View"
@@ -118,9 +117,7 @@
       "name": "Name",
       "noUsersFound": "No users found",
       "notAvailable": "N/A",
-      "refresh": "Refresh",
       "role": "Role",
-      "searchPlaceholder": "Search by name or email...",
       "title": "All Users",
       "verified": "Verified"
     },
@@ -231,11 +228,14 @@
     "edit": "Edit",
     "error": "An error occurred",
     "learnMore": "Learn more",
+    "loaded": "Loaded",
     "loading": "Loading...",
     "readMore": "Read more",
     "reset": "Reset",
     "save": "Save",
     "success": "Success",
+    "totalRecords": "Total records",
+    "searchPlaceholder": "Search...",
     "view": "View"
   },
   "menu": {

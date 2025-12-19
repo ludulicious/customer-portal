@@ -246,7 +246,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
           <div class="flex items-center gap-2 w-full">
             <UInput
               v-model="searchQuery"
-              placeholder="Search by title or description..."
+              :placeholder="t('common.searchPlaceholder')"
               icon="i-lucide-search"
               :loading="pending"
               class="flex-1 max-w-md"
@@ -424,6 +424,15 @@ useInfiniteScroll(listContainerRef, loadMore, {
             <USkeleton v-for="i in 2" :key="i" class="h-20 w-full" />
           </div>
         </div>
+      </div>
+
+      <div class="shrink-0 border-t border-default px-4 py-2 text-sm text-muted flex items-center justify-between">
+        <span>
+          {{ t('common.totalRecords') }}: <span class="font-medium text-highlighted">{{ totalCount }}</span>
+        </span>
+        <span>
+          {{ t('common.loaded') }}: <span class="font-medium text-highlighted">{{ list.length }}</span>
+        </span>
       </div>
     </template>
   </UDashboardPanel>

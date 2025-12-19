@@ -256,7 +256,7 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => {
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-semibold">{{ t('admin.table.title') }}</h2>
           <UButton icon="i-lucide-refresh-cw" variant="outline" :loading="loading" @click="loadUsers">
-            {{ t('admin.table.refresh') }}
+            {{ t('common.refresh') }}
           </UButton>
         </div>
       </template>
@@ -264,7 +264,7 @@ const columns = computed<TableColumn<AdminUserResponse>[]>(() => {
       <div class="mb-4">
         <UInput
           v-model="searchQuery"
-          :placeholder="t('admin.table.searchPlaceholder')"
+          :placeholder="t('common.searchPlaceholder')"
           icon="i-lucide-search"
           :loading="loading"
           class="w-full max-w-md"
