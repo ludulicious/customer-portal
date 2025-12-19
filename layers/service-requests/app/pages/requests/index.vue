@@ -11,6 +11,7 @@ const isMobile = breakpoints.smaller('mobile')
 
 // Filter modal state
 const showFiltersModal = ref(false)
+const showSortModal = ref(false)
 
 const pending = ref(true)
 const currentPage = ref(1)
@@ -44,6 +45,34 @@ const statusFilter = ref<ServiceRequestStatus | undefined>(undefined)
 const priorityFilter = ref<ServiceRequestPriority | undefined>(undefined)
 const categoryFilter = ref<string | undefined>(undefined)
 const searchQuery = ref('')
+
+// Sort state
+const sortBy = ref<'createdAt' | 'status' | 'priority'>('createdAt')
+const sortDir = ref<'asc' | 'desc'>('desc')
+
+const sortOptions = computed(() => [
+  { label: t('serviceRequest.fields.createdAt'), value: 'createdAt' as const },
+  { label: t('serviceRequest.fields.status'), value: 'status' as const },
+  { label: t('serviceRequest.fields.priority'), value: 'priority' as const }
+])
+
+const currentSortLabel = computed(() => {
+  return sortOptions.value.find(o => o.value === sortBy.value)?.label || ''
+})
+
+const sortDropdownItems = computed(() => [
+  sortOptions.value.map(option => ({
+    label: option.label,
+    icon: sortBy.value === option.value ? 'i-lucide-check' : undefined,
+    onSelect: () => {
+      sortBy.value = option.value
+    }
+  }))
+])
+
+const toggleSortDir = () => {
+  sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+}
 
 // Filter options
 const statusOptions = computed(() => [
@@ -142,6 +171,9 @@ const loadData = async () => {
       query.search = searchQuery.value.trim()
     }
 
+    query.sortBy = sortBy.value
+    query.sortDir = sortDir.value
+
     const result = await $fetch<QueryResult<ServiceRequestWithRelations>>('/api/service-requests', {
       query
     })
@@ -180,6 +212,12 @@ const handleSearch = () => {
 
 // Watch filters and reset pagination when they change
 watch([statusFilter, priorityFilter, categoryFilter], () => {
+  currentPage.value = 1
+  list.value = []
+  loadData()
+})
+
+watch([sortBy, sortDir], () => {
   currentPage.value = 1
   list.value = []
   loadData()
@@ -233,7 +271,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
     :ui="{ body: 'flex flex-col gap-4 sm:gap-6 flex-1 min-h-0 p-4 sm:p-6 overflow-hidden' }"
   >
     <template #header>
-      <UDashboardNavbar :ui="{ right: 'gap-3' }">
+      <UDashboardNavbar :ui="{ right: 'gap-3' }" :toggle="false">
         <template #leading>
           <UIcon name="i-lucide-ticket" class="size-6 shrink-0" />
           <span class="text-lg font-semibold text-gray-900 dark:text-white">
@@ -248,9 +286,8 @@ useInfiniteScroll(listContainerRef, loadMore, {
             color="primary"
             :to="'/admin/organizations/create'"
             class="flex-1 sm:flex-none"
-          >
-            {{ t('serviceRequest.create') }}
-          </UButton>
+            :title="t('serviceRequest.create')"
+          />
           <UButton
             icon="i-lucide-refresh-cw"
             variant="outline"
@@ -274,19 +311,8 @@ useInfiniteScroll(listContainerRef, loadMore, {
               class="flex-1 max-w-md"
               clearable
             />
-            <UButton
-              v-if="isMobile"
-              icon="i-lucide-filter"
-              variant="outline"
-              @click="showFiltersModal = true"
-            >
-              Filters
-            </UButton>
-          </div>
-        </template>
-        <template #right>
-          <div v-if="!isMobile" class="flex items-center gap-2">
             <USelect
+              v-if="!isMobile"
               v-model="statusFilter"
               :items="statusOptions"
               placeholder="Filter by status"
@@ -307,6 +333,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
               </template>
             </USelect>
             <USelect
+              v-if="!isMobile"
               v-model="priorityFilter"
               :items="priorityOptions"
               placeholder="Filter by priority"
@@ -327,10 +354,54 @@ useInfiniteScroll(listContainerRef, loadMore, {
               </template>
             </USelect>
             <USelect
+              v-if="!isMobile"
               v-model="categoryFilter"
               :items="categoryOptions"
               placeholder="Filter by category"
               class="w-48"
+            />
+          </div>
+        </template>
+        <template #right>
+          <div class="flex items-center gap-2">
+            <UButton
+              v-if="isMobile"
+              icon="i-lucide-filter"
+              variant="outline"
+              @click="showFiltersModal = true"
+            >
+              Filters
+            </UButton>
+            <UButton
+              v-if="isMobile"
+              icon="i-lucide-arrow-down-up"
+              variant="outline"
+              :title="t('common.sort')"
+              @click="showSortModal = true"
+            >
+              {{ t('common.sort') }}
+            </UButton>
+
+            <UDropdownMenu
+              v-if="!isMobile"
+              :items="sortDropdownItems"
+              :content="{ align: 'end', collisionPadding: 12 }"
+            >
+              <UButton
+                icon="i-lucide-arrow-down-up"
+                variant="outline"
+                class="w-48 justify-between"
+              >
+                <span class="truncate">{{ currentSortLabel }}</span>
+                <UIcon name="i-lucide-chevron-down" class="size-4 opacity-60" />
+              </UButton>
+            </UDropdownMenu>
+            <UButton
+              v-if="!isMobile"
+              :icon="sortDir === 'asc' ? 'i-lucide-arrow-up-narrow-wide' : 'i-lucide-arrow-down-wide-narrow'"
+              variant="outline"
+              :title="sortDir === 'asc' ? t('common.ascending') : t('common.descending')"
+              @click="toggleSortDir"
             />
           </div>
         </template>
@@ -343,6 +414,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
             <UFormField label="Status">
               <USelect
                 v-model="statusFilter"
+                class="w-full"
                 :items="statusOptions"
                 placeholder="Filter by status"
               >
@@ -367,6 +439,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
                 v-model="priorityFilter"
                 :items="priorityOptions"
                 placeholder="Filter by priority"
+                class="w-full"
               >
                 <template #item="{ item }">
                   <div class="flex items-center justify-between w-full gap-2">
@@ -387,6 +460,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
             <UFormField label="Category">
               <USelect
                 v-model="categoryFilter"
+                class="w-full"
                 :items="categoryOptions"
                 placeholder="Filter by category"
               />
@@ -400,6 +474,50 @@ useInfiniteScroll(listContainerRef, loadMore, {
               @click="showFiltersModal = false"
             >
               Close
+            </UButton>
+          </div>
+        </template>
+      </UModal>
+
+      <!-- Mobile Sort Modal -->
+      <UModal v-model:open="showSortModal" :title="t('common.sort')" :ui="{ content: 'w-full sm:max-w-md' }">
+        <template #body>
+          <div class="space-y-4">
+            <UFormField :label="t('common.sortBy')">
+              <USelect
+                v-model="sortBy"
+                class="w-full"
+                :items="sortOptions"
+                :placeholder="t('common.sortBy')"
+              />
+            </UFormField>
+
+            <UFormField :label="t('common.direction')">
+              <div class="flex gap-2">
+                <UButton
+                  class="flex-1"
+                  :variant="sortDir === 'asc' ? 'solid' : 'outline'"
+                  :icon="sortDir === 'asc' ? 'i-lucide-check' : undefined"
+                  @click="sortDir = 'asc'"
+                >
+                  {{ t('common.ascending') }}
+                </UButton>
+                <UButton
+                  class="flex-1"
+                  :variant="sortDir === 'desc' ? 'solid' : 'outline'"
+                  :icon="sortDir === 'desc' ? 'i-lucide-check' : undefined"
+                  @click="sortDir = 'desc'"
+                >
+                  {{ t('common.descending') }}
+                </UButton>
+              </div>
+            </UFormField>
+          </div>
+        </template>
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <UButton variant="outline" @click="showSortModal = false">
+              {{ t('common.close') }}
             </UButton>
           </div>
         </template>

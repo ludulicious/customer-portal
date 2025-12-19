@@ -2,7 +2,7 @@ import { auth } from '~~/server/utils/auth'
 import { filterServiceRequestSchema } from '../../utils/service-request-validation'
 import { buildRequestQuery, verifyServiceRequestAccess } from '../../utils/service-request-helpers'
 import { db } from '~~/server/utils/db'
-import { and, desc, eq, asc } from 'drizzle-orm'
+import { and, desc, eq, asc, sql } from 'drizzle-orm'
 import { serviceRequest } from '~~/server/db/schema/service-requests'
 
 export default defineEventHandler(async (event) => {
@@ -44,7 +44,28 @@ export default defineEventHandler(async (event) => {
     .select()
     .from(serviceRequest)
     .where(where)
-    .orderBy(desc(serviceRequest.createdAt), asc(serviceRequest.id))
+    .orderBy(
+      (() => {
+        if (filters.sortBy === 'status') {
+          return (filters.sortDir === 'asc' ? asc(serviceRequest.status) : desc(serviceRequest.status))
+        }
+        if (filters.sortBy === 'priority') {
+          const priorityRank = sql<number>`case
+            when ${serviceRequest.priority} = 'URGENT' then 4
+            when ${serviceRequest.priority} = 'HIGH' then 3
+            when ${serviceRequest.priority} = 'MEDIUM' then 2
+            when ${serviceRequest.priority} = 'LOW' then 1
+            else 0
+          end`
+          return (filters.sortDir === 'asc' ? asc(priorityRank) : desc(priorityRank))
+        }
+        // createdAt (default)
+        return (filters.sortDir === 'asc' ? asc(serviceRequest.createdAt) : desc(serviceRequest.createdAt))
+      })(),
+      // stable tie-breakers
+      desc(serviceRequest.createdAt),
+      asc(serviceRequest.id)
+    )
     .offset(filters.skip)
     .limit(filters.take)
 

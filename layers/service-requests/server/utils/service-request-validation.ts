@@ -27,6 +27,8 @@ export const filterServiceRequestSchema = z.object({
   assignedToId: z.string().optional(),
   createdById: z.string().optional(),
   search: z.string().optional(),
+  sortBy: z.enum(['createdAt', 'status', 'priority']).optional().default('createdAt'),
+  sortDir: z.enum(['asc', 'desc']).optional().default('desc'),
   skip: z.coerce.number().int().nonnegative().optional().default(0),
   take: z.coerce.number().int().positive().max(1000).optional().default(20)
 })

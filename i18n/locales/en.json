@@ -225,6 +225,8 @@
     "confirm": "Confirm",
     "createdAt": "Created at",
     "delete": "Delete",
+    "descending": "Descending",
+    "direction": "Direction",
     "edit": "Edit",
     "error": "An error occurred",
     "learnMore": "Learn more",
@@ -233,9 +235,12 @@
     "readMore": "Read more",
     "reset": "Reset",
     "save": "Save",
+    "sort": "Sort",
+    "sortBy": "Sort by",
     "success": "Success",
     "totalRecords": "Total records",
     "searchPlaceholder": "Search...",
+    "ascending": "Ascending",
     "view": "View"
   },
   "menu": {

@@ -219,6 +219,8 @@
     "close": "Sluiten",
     "createdAt": "Aangemaakt op",
     "delete": "Verwijderen",
+    "descending": "Aflopend",
+    "direction": "Richting",
     "edit": "Bewerken",
     "error": "Er is een fout opgetreden",
     "learnMore": "Meer informatie",
@@ -228,9 +230,12 @@
     "reset": "Resetten",
     "confirm": "Bevestigen",
     "save": "Opslaan",
+    "sort": "Sorteren",
+    "sortBy": "Sorteren op",
     "success": "Succesvol!",
     "totalRecords": "Totaal records",
     "searchPlaceholder": "Zoeken...",
+    "ascending": "Oplopend",
     "view": "Bekijken"
   },
   "menu": {
