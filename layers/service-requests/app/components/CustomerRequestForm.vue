@@ -17,7 +17,8 @@ const state = reactive({
   title: props.initialData?.title || '',
   description: props.initialData?.description || '',
   priority: props.initialData?.priority || 'MEDIUM',
-  category: props.initialData?.category || ''
+  category: props.initialData?.category || '',
+  status: props.initialData?.status || 'OPEN'
 })
 
 const schema = z.object({
@@ -27,12 +28,8 @@ const schema = z.object({
   category: z.string().max(100).optional()
 })
 
-const priorityOptions = [
-  { label: 'Low', value: 'LOW' },
-  { label: 'Medium', value: 'MEDIUM' },
-  { label: 'High', value: 'HIGH' },
-  { label: 'Urgent', value: 'URGENT' }
-]
+const { priorityOptions } = useServiceRequests()
+const { statusOptions } = useServiceRequests()
 
 const handleSubmit = () => {
   emit('submit', state)
@@ -41,29 +38,38 @@ const handleSubmit = () => {
 
 <template>
   <UForm :state="state" :schema="schema" @submit="handleSubmit">
-    <UFormField label="Title" name="title" required>
-      <UInput v-model="state.title" placeholder="Brief description of your request" />
+    <UFormField label="Title" name="title">
+      <UInput v-model="state.title" placeholder="Brief description of your request!" class="w-full"/>
     </UFormField>
-    
-    <UFormField label="Description" name="description" required>
-      <UTextarea 
-        v-model="state.description" 
+
+    <UFormField label="Description" name="description" required class="w-full">
+      <UTextarea
+        v-model="state.description"
+        class="w-full"
         placeholder="Provide detailed information about your request"
         :rows="6"
       />
     </UFormField>
-    
-    <UFormField label="Priority" name="priority">
-      <USelect 
-        v-model="state.priority" 
-        :options="priorityOptions"
+
+    <UFormField label="Priority" name="priority" class="w-full">
+      <USelect
+        v-model="state.priority"
+        class="w-full"
+        :items="priorityOptions"
       />
     </UFormField>
-    
-    <UFormField label="Category" name="category">
+    <UFormField label="Status" name="status" class="w-full">
+      <USelect
+        v-model="state.status"
+        class="w-full"
+        :items="statusOptions"
+      />
+    </UFormField>
+
+    <UFormField label="Category" name="category" class="w-full">
       <UInput v-model="state.category" placeholder="e.g., Technical, Billing, General" />
     </UFormField>
-    
+
     <div class="flex gap-2">
       <UButton type="submit" :loading="loading">
         {{ editMode ? 'Update Request' : 'Submit Request' }}

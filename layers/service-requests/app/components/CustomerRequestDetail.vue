@@ -1,24 +1,17 @@
 <script setup lang="ts">
 const props = defineProps<{
-  request: ServiceRequestWithRelations
+  requestId: string
   canEdit?: boolean
   canDelete?: boolean
 }>()
-
+const { t } = useI18n()
+const { getPriorityColor } = useServiceRequests()
 const emit = defineEmits<{
   edit: []
   delete: []
 }>()
-
-const getPriorityColor = (priority: ServiceRequestPriority) => {
-  switch (priority) {
-    case 'LOW': return 'green'
-    case 'MEDIUM': return 'blue'
-    case 'HIGH': return 'orange'
-    case 'URGENT': return 'red'
-    default: return 'gray'
-  }
-}
+const { getRequest } = useServiceRequests()
+const request = ref<ServiceRequest | null>(await getRequest(props.requestId))
 
 const formatDate = (date: Date) => {
   return new Date(date).toLocaleDateString()
@@ -29,12 +22,11 @@ const formatDate = (date: Date) => {
   <div v-if="request" class="space-y-6">
     <div class="flex justify-between items-start">
       <div>
-        <h1 class="text-3xl font-bold">{{ request.title }}</h1>
         <div class="flex gap-2 mt-2">
-          <ServiceRequestStatusBadge :status="request.status" />
           <UBadge :color="getPriorityColor(request.priority)">
             {{ request.priority }}
           </UBadge>
+          <StatusBadge :status="request.status" />
           <UBadge v-if="request.category" variant="soft">
             {{ request.category }}
           </UBadge>
@@ -60,28 +52,28 @@ const formatDate = (date: Date) => {
       </div>
     </div>
 
-    <UDivider />
+    <USeparator />
 
     <div class="prose dark:prose-invert max-w-none">
-      <h3>Description</h3>
+      <h3>{{ t('serviceRequest.fields.description') }}</h3>
       <p>{{ request.description }}</p>
     </div>
 
-    <UDivider />
+    <USeparator />
 
     <div class="grid grid-cols-2 gap-4 text-sm">
-      <div>
-        <span class="font-semibold">Created by:</span>
-        {{ request.createdBy.name || request.createdBy.email }}
-      </div>
+      <!-- <div>
+        <span class="font-semibold">{{ t('serviceRequest.fields.createdBy') }}:</span>
+        {{ request.createdBy?.name || request.createdBy?.email }}
+      </div> -->
       <div>
         <span class="font-semibold">Created at:</span>
         {{ formatDate(request.createdAt) }}
       </div>
-      <div v-if="request.assignedTo">
+      <!-- <div v-if="request.assignedTo">
         <span class="font-semibold">Assigned to:</span>
         {{ request.assignedTo.name || request.assignedTo.email }}
-      </div>
+      </div> -->
       <div v-if="request.resolvedAt">
         <span class="font-semibold">Resolved at:</span>
         {{ formatDate(request.resolvedAt) }}

@@ -7,7 +7,7 @@ export const useServiceRequestWidget = () => {
     try {
       const { data: member } = await authClient.organization.getActiveMember()
       if (member?.organizationId) {
-        await fetchRequests({ limit: 5 })
+        await fetchRequests({ page: 1, limit: 5 })
       }
     } catch (error) {
       console.error('Failed to check organization membership:', error)

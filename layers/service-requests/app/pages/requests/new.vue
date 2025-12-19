@@ -11,6 +11,7 @@ const handleSubmit = async (data: ServiceRequestCreateInput) => {
     })
     navigateTo('/requests')
   } catch (error) {
+    console.error(error)
     toast.add({
       title: 'Error',
       description: 'Failed to create service request',
@@ -19,9 +20,6 @@ const handleSubmit = async (data: ServiceRequestCreateInput) => {
   }
 }
 
-definePageMeta({
-  middleware: 'auth'
-})
 </script>
 
 <template>

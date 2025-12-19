@@ -2,6 +2,10 @@
 import type { QueryResult } from '~~/shared/types'
 
 const { t } = useI18n()
+const toast = useToast()
+const userStore = useUserStore()
+
+const { getStatusColor, getStatusBadgeText, getPriorityBadgeText, getPriorityColor, statusOptions, priorityOptions } = useServiceRequests()
 
 // Mobile breakpoint detection
 const breakpoints = useBreakpoints({
@@ -22,24 +26,45 @@ const list = ref<ServiceRequestWithRelations[]>([])
 const totalCount = ref(0)
 const initialLoadComplete = ref(false)
 
-// Helper function to get status badge text
-const getStatusBadgeText = (status: ServiceRequestStatus): string => {
-  return t(`serviceRequest.statusBadge.${status.toLowerCase()}`)
+// Drawer state (create / view / edit)
+type DrawerMode = 'create' | 'view' | 'edit'
+const drawerOpen = ref(false)
+const drawerMode = ref<DrawerMode>('view')
+const selectedRequest = ref<ServiceRequest | null>(null)
+const mutationPending = ref(false)
+
+const drawerTitle = computed(() => {
+  if (drawerMode.value === 'create') return t('serviceRequest.create')
+  if (drawerMode.value === 'edit') return t('serviceRequest.edit')
+  return selectedRequest.value?.title || t('serviceRequest.title')
+})
+
+const canCreate = computed(() => userStore.hasPermission('service-request', 'create'))
+const isOwner = computed(() => {
+  if (!selectedRequest.value?.createdById) return false
+  return selectedRequest.value.createdById === userStore.currentUser?.id
+})
+const canEdit = computed(() => isOwner.value || userStore.hasPermission('service-request', 'update'))
+const canDelete = computed(() => isOwner.value || userStore.hasPermission('service-request', 'delete'))
+
+const showDeleteConfirm = ref(false)
+
+const openCreateDrawer = () => {
+  drawerMode.value = 'create'
+  selectedRequest.value = null
+  drawerOpen.value = true
 }
 
-// Helper function to get priority badge text
-const getPriorityBadgeText = (priority: ServiceRequestPriority): string => {
-  return t(`serviceRequest.priorityBadge.${priority.toLowerCase()}`)
+const openViewDrawer = async (request: ServiceRequest) => {
+  drawerMode.value = 'view'
+  selectedRequest.value = request
+  drawerOpen.value = true
 }
-const getPriorityColor = (priority: ServiceRequestPriority) => {
-  switch (priority) {
-    case 'LOW': return 'success'
-    case 'MEDIUM': return 'info'
-    case 'HIGH': return 'warning'
-    case 'URGENT': return 'error'
-    default: return 'neutral'
-  }
+
+const closeDrawer = () => {
+  drawerOpen.value = false
 }
+
 // Filter state
 const statusFilter = ref<ServiceRequestStatus | undefined>(undefined)
 const priorityFilter = ref<ServiceRequestPriority | undefined>(undefined)
@@ -73,63 +98,6 @@ const sortDropdownItems = computed(() => [
 const toggleSortDir = () => {
   sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
 }
-
-// Filter options
-const statusOptions = computed(() => [
-  { label: 'All Statuses', value: undefined },
-  {
-    label: t('serviceRequest.status.open'),
-    value: 'OPEN' as ServiceRequestStatus,
-    badgeText: getStatusBadgeText('OPEN'),
-    badgeColor: 'primary' as const
-  },
-  {
-    label: t('serviceRequest.status.in_progress'),
-    value: 'IN_PROGRESS' as ServiceRequestStatus,
-    badgeText: getStatusBadgeText('IN_PROGRESS'),
-    badgeColor: 'warning' as const
-  },
-  {
-    label: t('serviceRequest.status.resolved'),
-    value: 'RESOLVED' as ServiceRequestStatus,
-    badgeText: getStatusBadgeText('RESOLVED'),
-    badgeColor: 'success' as const
-  },
-  {
-    label: t('serviceRequest.status.closed'),
-    value: 'CLOSED' as ServiceRequestStatus,
-    badgeText: getStatusBadgeText('CLOSED'),
-    badgeColor: 'neutral' as const
-  }
-])
-
-const priorityOptions = computed(() => [
-  { label: 'All Priorities', value: undefined },
-  {
-    label: t('serviceRequest.priority.low'),
-    value: 'LOW' as ServiceRequestPriority,
-    badgeText: getPriorityBadgeText('LOW'),
-    badgeColor: getPriorityColor('LOW')
-  },
-  {
-    label: t('serviceRequest.priority.medium'),
-    value: 'MEDIUM' as ServiceRequestPriority,
-    badgeText: getPriorityBadgeText('MEDIUM'),
-    badgeColor: getPriorityColor('MEDIUM')
-  },
-  {
-    label: t('serviceRequest.priority.high'),
-    value: 'HIGH' as ServiceRequestPriority,
-    badgeText: getPriorityBadgeText('HIGH'),
-    badgeColor: getPriorityColor('HIGH')
-  },
-  {
-    label: t('serviceRequest.priority.urgent'),
-    value: 'URGENT' as ServiceRequestPriority,
-    badgeText: getPriorityBadgeText('URGENT'),
-    badgeColor: getPriorityColor('URGENT')
-  }
-])
 
 // Extract unique categories from loaded requests
 const categoryOptions = computed(() => {
@@ -197,6 +165,109 @@ const refresh = async () => {
   list.value = []
   await loadData()
 }
+
+type WithOptionalCategory = { category?: string }
+const sanitizeCreateOrUpdatePayload = <T extends WithOptionalCategory>(data: T): T => {
+  // Avoid storing empty-string category
+  const payload = { ...data } as T & WithOptionalCategory
+  if (typeof payload.category === 'string' && payload.category.trim() === '') {
+    delete (payload as WithOptionalCategory).category
+  }
+  return payload
+}
+
+const handleCreate = async (data: ServiceRequestCreateInput) => {
+  mutationPending.value = true
+  try {
+    await $fetch<ServiceRequest>('/api/service-requests', {
+      method: 'POST',
+      body: sanitizeCreateOrUpdatePayload(data)
+    })
+
+    toast.add({
+      title: t('common.success'),
+      description: t('serviceRequest.messages.createSuccess')
+    })
+
+    closeDrawer()
+    await refresh()
+  } catch (e) {
+    console.error(e)
+    toast.add({
+      title: t('common.error'),
+      description: t('serviceRequest.messages.createError'),
+      color: 'error'
+    })
+  } finally {
+    mutationPending.value = false
+  }
+}
+
+const handleUpdate = async (data: ServiceRequestCreateInput) => {
+  if (!selectedRequest.value?.id) return
+
+  mutationPending.value = true
+  try {
+    const updated = await $fetch<ServiceRequest>(`/api/service-requests/${selectedRequest.value.id}`, {
+      method: 'PATCH',
+      body: sanitizeCreateOrUpdatePayload(data as ServiceRequestUpdateInput)
+    })
+
+    // Keep local selection in sync
+    selectedRequest.value = updated
+
+    toast.add({
+      title: t('common.success'),
+      description: t('serviceRequest.messages.updateSuccess')
+    })
+
+    closeDrawer()
+    await refresh()
+  } catch (e) {
+    console.error(e)
+    toast.add({
+      title: t('common.error'),
+      description: t('serviceRequest.messages.updateError'),
+      color: 'error'
+    })
+  } finally {
+    mutationPending.value = false
+  }
+}
+
+const handleDelete = async () => {
+  if (!selectedRequest.value?.id) return
+
+  mutationPending.value = true
+  try {
+    await $fetch(`/api/service-requests/${selectedRequest.value.id}`, {
+      method: 'DELETE'
+    })
+
+    toast.add({
+      title: t('common.success'),
+      description: t('serviceRequest.messages.deleteSuccess')
+    })
+
+    closeDrawer()
+    await refresh()
+  } catch (e) {
+    console.error(e)
+    toast.add({
+      title: t('common.error'),
+      description: t('serviceRequest.messages.deleteError'),
+      color: 'error'
+    })
+  } finally {
+    mutationPending.value = false
+  }
+}
+
+const editInitialData = computed<Partial<ServiceRequest> | undefined>(() => {
+  if (drawerMode.value !== 'edit') return undefined
+  return selectedRequest.value ?? undefined
+})
+
 // Debounced search function
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 const handleSearch = () => {
@@ -281,22 +352,23 @@ useInfiniteScroll(listContainerRef, loadMore, {
 
         <template #right>
           <div class="flex gap-2 w-full sm:w-auto">
-          <UButton
-            icon="i-lucide-plus"
-            color="primary"
-            :to="'/admin/organizations/create'"
-            class="flex-1 sm:flex-none"
-            :title="t('serviceRequest.create')"
-          />
-          <UButton
-            icon="i-lucide-refresh-cw"
-            variant="outline"
-            :loading="pending"
-            class="flex-1 sm:flex-none"
-            :title="t('common.refresh')"
-            @click="refresh"
-          />
-        </div>
+            <UButton
+              icon="i-lucide-plus"
+              color="primary"
+              class="flex-1 sm:flex-none"
+              :title="t('serviceRequest.create')"
+              :disabled="!canCreate"
+              @click="openCreateDrawer"
+            />
+            <UButton
+              icon="i-lucide-refresh-cw"
+              variant="outline"
+              :loading="pending"
+              class="flex-1 sm:flex-none"
+              :title="t('common.refresh')"
+              @click="refresh"
+            />
+          </div>
         </template>
       </UDashboardNavbar>
 
@@ -323,7 +395,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
                   <span class="flex-1 truncate">{{ item.label }}</span>
                   <UBadge
                     v-if="item.badgeText"
-                    :color="item.badgeColor"
+                    :color="item.badgeColor as any"
                     size="xs"
                     class="shrink-0 min-w-[100px] justify-center"
                   >
@@ -423,7 +495,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
                     <span class="flex-1 truncate">{{ item.label }}</span>
                     <UBadge
                       v-if="item.badgeText"
-                      :color="item.badgeColor"
+                      :color="item.badgeColor as any"
                       size="xs"
                       class="shrink-0 min-w-[100px] justify-center"
                     >
@@ -538,6 +610,7 @@ useInfiniteScroll(listContainerRef, loadMore, {
               v-for="request in list"
               :key="request.id"
               class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900"
+              @click="openViewDrawer(request)"
             >
               <div class="flex justify-between items-start">
                 <div class="flex-1">
@@ -551,8 +624,10 @@ useInfiniteScroll(listContainerRef, loadMore, {
                   </div>
                 </div>
                 <div class="flex flex-col items-end gap-2">
-                  <StatusBadge :status="request.status" />
-                  <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="xs">
+                  <UBadge :color="getStatusColor(request.status)" variant="solid" size="md">
+                    {{ getStatusBadgeText(request.status) }}
+                  </UBadge>
+                  <UBadge :color="getPriorityColor(request.priority)" variant="soft" size="md">
                     {{ getPriorityBadgeText(request.priority) }}
                   </UBadge>
                 </div>
@@ -574,6 +649,53 @@ useInfiniteScroll(listContainerRef, loadMore, {
           {{ t('common.loaded') }}: <span class="font-medium text-highlighted">{{ list.length }}</span>
         </span>
       </div>
+
+      <!-- Drawer (create / view / edit) -->
+      <USlideover v-if="drawerOpen" v-model:open="drawerOpen" :title="drawerTitle" :ui="{ content: 'w-full sm:max-w-lg' }">
+        <template #body>
+          <div class="space-y-4">
+            <template v-if="drawerMode === 'view' && selectedRequest">
+              <CustomerRequestDetail
+                :request-id="selectedRequest.id"
+                :can-edit="canEdit"
+                :can-delete="canDelete"
+                @edit="drawerMode = 'edit'"
+                @delete="showDeleteConfirm = true"
+              />
+            </template>
+
+            <template v-else>
+              <CustomerRequestForm
+                :initial-data="editInitialData"
+                :loading="mutationPending"
+                @submit="drawerMode === 'create' ? handleCreate($event) : handleUpdate($event)"
+                @cancel="closeDrawer"
+              />
+
+              <div v-if="drawerMode === 'edit' && canDelete" class="pt-2">
+                <UButton
+                  color="error"
+                  variant="outline"
+                  icon="i-lucide-trash-2"
+                  :loading="mutationPending"
+                  @click="showDeleteConfirm = true"
+                >
+                  {{ t('common.delete') }}
+                </UButton>
+              </div>
+            </template>
+          </div>
+
+          <ConfirmationModal
+            v-model:open="showDeleteConfirm"
+            title="serviceRequest.delete"
+            message="serviceRequest.confirmDelete"
+            confirm-color="error"
+            confirm-text="common.delete"
+            @confirm="handleDelete"
+          />
+        </template>
+      </USlideover>
     </template>
   </UDashboardPanel>
 </template>

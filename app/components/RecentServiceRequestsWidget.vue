@@ -3,19 +3,19 @@
 const widget = useServiceRequestWidget?.()
 
 // Initialize with fallback values
-const requests = ref<ServiceRequestWithRelations[]>([])
+const requests = ref<ServiceRequest[]>([])
 const loading = ref(false)
 
 if (widget) {
   const { requests: widgetRequests, loading: widgetLoading, initializeWidget } = widget
 
   // Update refs with widget values
-  requests.value = [...widgetRequests.value]
+  requests.value = Array.isArray(widgetRequests.value) ? [...widgetRequests.value] : []
   loading.value = widgetLoading.value
 
   // Watch for changes
   watch(widgetRequests, (newRequests) => {
-    requests.value = [...newRequests]
+    requests.value = Array.isArray(newRequests) ? [...newRequests] : []
   })
 
   watch(widgetLoading, (newLoading) => {

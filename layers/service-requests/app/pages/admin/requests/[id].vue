@@ -92,7 +92,7 @@ definePageMeta({
       <!-- Full request details with admin controls -->
       <CustomerRequestDetail :request="request" />
 
-      <UDivider />
+      <USeparator />
 
       <!-- Admin Actions -->
       <UCard>

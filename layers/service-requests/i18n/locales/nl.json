@@ -49,6 +49,8 @@
       "updateError": "Serviceaanvraag bijwerken mislukt",
       "deleteError": "Serviceaanvraag verwijderen mislukt"
     }
+    ,
+    "confirmDelete": "Weet je zeker dat je deze serviceaanvraag wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt."
   }
 }
 
