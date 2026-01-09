@@ -1,84 +1,82 @@
-# Nuxt SaaS Template
+# Customer Portal (Nuxt)
 
-[![Nuxt UI](https://img.shields.io/badge/Made%20with-Nuxt%20UI-00DC82?logo=nuxt&labelColor=020420)](https://ui.nuxt.com)
+A Nuxt application (Nuxt 4) with authentication (Better Auth), organizations, and a PostgreSQL database via Drizzle.
 
-Fully built SaaS application to launch your next project with a landing page, a pricing page, a documentation and a blog powered by [Nuxt UI](https://ui.nuxt.com) components.
+## Quick start (scaffold from GitHub template)
 
-- [Live demo](https://saas-template.nuxt.dev/)
-- [Documentation](https://ui.nuxt.com/docs/getting-started/installation/nuxt)
+Use Nuxt’s initializer (powered by `unjs/giget`) to create a new project from this repository:
 
-<a href="https://saas-template.nuxt.dev/" target="_blank">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://ui.nuxt.com/assets/templates/nuxt/saas-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="https://ui.nuxt.com/assets/templates/nuxt/saas-light.png">
-    <img alt="Nuxt SaaS Template" src="https://ui.nuxt.com/assets/templates/nuxt/saas-light.png">
-  </picture>
-</a>
-
-## Quick Start
-
-```bash [Terminal]
-npm create nuxt@latest -- -t github:nuxt-ui-templates/saas
+```bash
+npx nuxi init -t github:<org>/<repo> my-customer-portal
 ```
 
-## Deploy your own
+If you prefer the `create-nuxt` wrapper:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-name=saas&repository-url=https%3A%2F%2Fgithub.com%2Fnuxt-ui-templates%2Fsaas&demo-image=https%3A%2F%2Fui.nuxt.com%2Fassets%2Ftemplates%2Fnuxt%2Fsaas-dark.png&demo-url=https%3A%2F%2Fsaas-template.nuxt.dev%2F&demo-title=Nuxt%20SaaS%20Template&demo-description=A%20SaaS%20template%20with%20landing%2C%20pricing%2C%20docs%20and%20blog%20powered%20by%20Nuxt%20Content.)
+```bash
+npm create nuxt@latest -- -t github:<org>/<repo> my-customer-portal
+```
+
+Tip: pin a stable tag/branch if you publish releases for your template:
+
+```bash
+npx nuxi init -t github:<org>/<repo>#<tag-or-branch> my-customer-portal
+```
 
 ## Setup
 
-Make sure to install the dependencies:
+Install dependencies:
 
 ```bash
 pnpm install
 ```
 
-## Development Server
+Create your local env file from the example:
 
-Start the development server on `http://localhost:3000`:
+```bash
+# macOS / Linux
+cp .env.example .env
+
+# Windows (cmd)
+copy .env.example .env
+```
+
+At minimum, set `DATABASE_URL` in `.env`. Optional providers (Resend, GitHub OAuth) can be left empty until you enable them.
+
+## Development
+
+Start the dev server:
 
 ```bash
 pnpm dev
 ```
 
+By default this repo runs on `http://localhost:3051` (see `nuxt.config.ts` → `devServer.port`).
+
 ## Production
 
-Build the application for production:
+Build:
 
 ```bash
 pnpm build
 ```
 
-Locally preview production build:
+Preview:
 
 ```bash
 pnpm preview
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## Docker
 
-## Renovate integration
-
-Install [Renovate GitHub app](https://github.com/apps/renovate/installations/select_target) on your repository and you are good to go.
-
-
-## Deployment in docker
-
-To build the docker container:
+Build the image:
 
 ```bash
 docker build -t customer-portal .
 ```
 
-command:
-
-To run the container on port 3000:
+Run (provide your own `DATABASE_URL`):
 
 ```bash
-docker run --rm  -p 3000:3000 -e DB_HOST=host.docker.internal -e DATABASE_URL="postgresql://postgres:M0reComplex!@host.docker.internal:5432/apexpro-drizzle?schema=public" customer-portal
-
-# interactive:
-
-docker run -it --rm  -p 3000:3000 -e DATABASE_URL="postgresql://postgres:M0reComplex!@host.docker.internal:5432/apexprotest?schema=public" --entrypoint /bin/sh customer-portal
+docker run --rm -p 3000:3000 -e DATABASE_URL="postgresql://user:pass@host:5432/dbname?schema=public" customer-portal
 ```
 
