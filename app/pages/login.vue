@@ -17,7 +17,6 @@ useSeoMeta({
   description: t('login.title')
 })
 
-const toast = useToast()
 const router = useRouter()
 const route = useRoute()
 const fields = computed(() => [{
@@ -40,8 +39,8 @@ const fields = computed(() => [{
 const providers = computed(() => [{
   label: t('login.providers.google'),
   icon: 'i-simple-icons-google',
-  onClick: () => {
-    toast.add({ title: t('login.providers.google'), description: t('login.providers.googleDescription') })
+  onClick: async () => {
+    await handleGoogleLogin()
   }
 }, {
   label: t('login.providers.github'),
@@ -143,6 +142,19 @@ const handleGitHubLogin = async () => {
     loading.value = false
   }
 }
+
+const handleGoogleLogin = async () => {
+  loading.value = true
+  errorMessage.value = null
+  try {
+    const redirectTo = route.query.redirect?.toString() || '/dashboard'
+    await signIn.social({ provider: 'google', callbackURL: redirectTo })
+  } catch (error) {
+    console.error('Google sign in initiation failed:', error)
+    errorMessage.value = t('login.errors.googleError')
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -156,7 +168,7 @@ const handleGitHubLogin = async () => {
     </div>
 
     <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('login.title')" icon="i-lucide-lock"
-      @submit="onSubmit">
+      :loading="loading" @submit="onSubmit">
       <template #description>
         {{ t('login.description') }} <ULink to="/signup" class="text-primary font-medium">{{ t('login.signupLink') }}
         </ULink>.

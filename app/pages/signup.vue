@@ -38,14 +38,14 @@ const fields = computed(() => [{
 const providers = computed(() => [{
   label: t('signup.providers.google'),
   icon: 'i-simple-icons-google',
-  onClick: () => {
-    toast.add({ title: t('signup.providers.google'), description: t('signup.providers.googleDescription') })
+  onClick: async () => {
+    await handleGoogleLogin()
   }
 }, {
   label: t('signup.providers.github'),
   icon: 'i-simple-icons-github',
-  onClick: () => {
-    toast.add({ title: t('signup.providers.github'), description: t('signup.providers.githubDescription') })
+  onClick: async () => {
+    await handleGitHubLogin()
   }
 }])
 
@@ -270,16 +270,45 @@ if (invId) {
   }
 }
 
+const loading = ref(false)
+const errorMessage = ref<string | null>(null)
+const handleGitHubLogin = async () => {
+  loading.value = true
+  errorMessage.value = null
+  try {
+    const redirectTo = route.query.redirect?.toString() || '/dashboard'
+    await signIn.social({ provider: 'github', callbackURL: redirectTo })
+  } catch (error) {
+    console.error('GitHub sign in initiation failed:', error)
+    errorMessage.value = t('login.errors.githubError')
+    loading.value = false
+  }
+}
+
+const handleGoogleLogin = async () => {
+  loading.value = true
+  errorMessage.value = null
+  try {
+    const redirectTo = route.query.redirect?.toString() || '/dashboard'
+    await signIn.social({ provider: 'google', callbackURL: redirectTo })
+  } catch (error) {
+    console.error('Google sign in initiation failed:', error)
+    errorMessage.value = t('login.errors.googleError')
+    loading.value = false
+  }
+}
+
 </script>
 
 <template>
   <div>
+    <UAlert v-if="errorMessage" color="error" variant="soft" :description="errorMessage" />
     <!-- Company Logo -->
     <div class="flex justify-center mb-8">
       <AppLogo class="w-auto h-8 shrink-0" />
     </div>
 
-    <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')"
+    <UAuthForm :fields="fields" :schema="schema" :providers="providers" :title="t('signup.title')" :loading="loading"
       :submit="{ label: t('signup.submitButton') }" @submit="onSubmit">
       <template #description>
         {{ t('signup.description') }} <ULink to="/login" class="text-primary font-medium">{{ t('signup.loginLink') }}
