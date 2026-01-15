@@ -38,6 +38,13 @@ const userOrganizationRole = computed(() => {
 
 // Load organization details
 const loadOrganization = async () => {
+  if (!activeOrganizationId.value) {
+    loading.value = false
+    organization.value = null
+    members.value = []
+    invitations.value = []
+    return
+  }
   try {
     loading.value = true
     error.value = ''
@@ -191,7 +198,16 @@ const invitationsColumns = computed<TableColumn<Invitation>[]>(() => {
   ]
 })
 
-await loadOrganization()
+watch(activeOrganizationId, (id) => {
+  if (id) {
+    void loadOrganization()
+  } else {
+    loading.value = false
+    organization.value = null
+    members.value = []
+    invitations.value = []
+  }
+}, { immediate: true })
 
 </script>
 
