@@ -23,6 +23,7 @@ const invitations = ref<OrganizationInvitationsResponse>([])
 const showInviteModal = ref(false)
 const showResendModal = ref(false)
 const showDeleteModal = ref(false)
+const showEditModal = ref(false)
 const selectedInvitation = ref<{ id: string, email: string, role: string } | null>(null)
 const deleteInvitationId = ref<string | null>(null)
 
@@ -161,6 +162,11 @@ const handleDeleteInvitation = async () => {
   }
 }
 
+const handleOrganizationUpdated = async () => {
+  showEditModal.value = false
+  await loadOrganization()
+}
+
 // Members table columns
 const membersColumns = computed<TableColumn<OrganizationMemberWithUser>[]>(() => {
   // On mobile, only show Name and Role
@@ -247,6 +253,16 @@ watch(activeOrganizationId, (id) => {
           <div>
             <span class="text-sm text-gray-600 dark:text-gray-400">{{ t('admin.organization.detail.created') }}</span>
             <p>{{ new Date(organization.createdAt).toLocaleDateString() }}</p>
+          </div>
+          <div v-if="userOrganizationRole === 'owner'" class="pt-2">
+            <UButton
+              icon="i-lucide-pencil"
+              color="primary"
+              variant="outline"
+              @click="showEditModal = true"
+            >
+              Edit organization
+            </UButton>
           </div>
         </div>
       </AppCard>
@@ -341,6 +357,12 @@ watch(activeOrganizationId, (id) => {
     <!-- Invite Member Modal -->
     <AdminInviteMemberModal v-if="showInviteModal && organization" v-model:open="showInviteModal"
       :organization-id="organization.id" @success="handleInviteSuccess" />
+
+    <UModal v-model:open="showEditModal" title="Edit organization" :ui="{ footer: 'justify-end' }">
+      <template #body>
+        <OrganizationSettings @updated="handleOrganizationUpdated" @canceled="showEditModal = false" />
+      </template>
+    </UModal>
 
     <!-- Resend Invitation Confirmation Modal -->
     <ConfirmationModal v-if="showResendModal && selectedInvitation" v-model:open="showResendModal"

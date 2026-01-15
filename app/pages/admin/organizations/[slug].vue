@@ -17,31 +17,6 @@ const breakpoints = useBreakpoints({
 })
 const isMobile = breakpoints.smaller('mobile')
 
-// Check access: admin OR (member of organization AND has organization.read permission)
-const accessReady = computed(() => {
-  return isAdmin.value || myOrganizations.value !== null && myOrganizations.value !== undefined
-})
-
-const hasOrgAccess = computed(() => {
-  if (isAdmin.value) {
-    return true
-  }
-  if (!accessReady.value) {
-    // Defer access checks until organizations have loaded
-    return true
-  }
-  const isMember = myOrganizations.value?.some(org => org.slug === slug) ?? false
-  const hasReadPermission = hasPermission('organization', 'read')
-  return isMember && hasReadPermission
-})
-
-// Check access once organization data is ready
-watchEffect(() => {
-  if (accessReady.value && !hasOrgAccess.value) {
-    throw createError({ statusCode: 403, message: 'Access denied. You must be an admin or a member of this organization with read permissions.' })
-  }
-})
-
 // Check if back button should be shown
 // For admins, always show back button (defaults to admin organizations list)
 // For non-admins, only show when navigating from my-organizations

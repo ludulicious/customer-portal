@@ -5,7 +5,7 @@ import { sendEmail } from './email'
 import { getInvitationEmailContent, getOTPEmailContent, getDeleteAccountEmailContent } from './email-texts'
 import { admin, customSession, emailOTP, organization } from 'better-auth/plugins'
 import { db } from './db'
-import { eq } from 'drizzle-orm'
+import { and, eq, gt, or } from 'drizzle-orm'
 import { user as userTable, account as accountTable, session as sessionTable, verification as verificationTable, organization as organizationTable, member as organizationMemberTable, invitation as organizationInvitationTable } from '../db/schema/auth-schema'
 import { ac, user, admin as adminRole } from '../../shared/permissions'
 import { nanoid } from 'nanoid'
@@ -103,8 +103,54 @@ export const auth = betterAuth({
             await db.update(userTable).set({ role: 'admin' }).where(eq(userTable.id, createdUser.id))
           }
 
-          // Note: Auto-organization creation removed for B2B model
-          // Organizations are now created by admins only, and users join via invitations
+          const [invitation] = await db
+            .select({
+              id: organizationInvitationTable.id,
+              status: organizationInvitationTable.status,
+              expiresAt: organizationInvitationTable.expiresAt
+            })
+            .from(organizationInvitationTable)
+            .where(and(
+              eq(organizationInvitationTable.email, createdUser.email),
+              or(
+                eq(organizationInvitationTable.status, 'accepted'),
+                and(
+                  eq(organizationInvitationTable.status, 'pending'),
+                  gt(organizationInvitationTable.expiresAt, new Date())
+                )
+              )
+            ))
+            .limit(1)
+
+          if (invitation) {
+            return
+          }
+
+          const rawName = (createdUser.name || createdUser.email?.split('@')[0] || 'User').trim()
+          const baseSlug = rawName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '') || 'user'
+
+          const orgSlug = `${baseSlug}-${createdUser.id.slice(0, 8)}`
+          const orgName = `${rawName}'s Organization`
+
+          try {
+            await auth.api.createOrganization({
+              body: {
+                name: orgName,
+                slug: orgSlug,
+                userId: createdUser.id,
+                keepCurrentActiveOrganization: false,
+                metadata: {
+                  autoCreated: true,
+                  createdForUserId: createdUser.id
+                }
+              }
+            })
+          } catch (error) {
+            console.error('Error auto-creating organization for user:', error)
+          }
         }
       }
     },
@@ -127,16 +173,7 @@ export const auth = betterAuth({
   },
   plugins: [
     organization({
-      allowUserToCreateOrganization: async (user) => {
-        // Only admins can create organizations
-        // Check if user has admin role
-        const [userRecord] = await db
-          .select({ role: userTable.role })
-          .from(userTable)
-          .where(eq(userTable.id, user.id))
-          .limit(1)
-        return userRecord?.role === 'admin'
-      },
+      allowUserToCreateOrganization: true,
       sendInvitationEmail: async ({ invitation, organization, inviter }) => {
         const baseURL = process.env.BETTER_AUTH_URL || process.env.PUBLIC_URL || 'http://localhost:3000'
         const invitationLink = `${baseURL}/signup?invitationId=${invitation.id}`
@@ -158,13 +195,14 @@ export const auth = betterAuth({
         afterCreateOrganization: async ({ organization, member, user }) => {
           // If the creator is an admin, remove them as a member
           // Admins should not be members of organizations they create
+          const isAutoCreated = organization?.metadata?.autoCreated === true
           const [userRecord] = await db
             .select({ role: userTable.role })
             .from(userTable)
             .where(eq(userTable.id, user.id))
             .limit(1)
 
-          if (userRecord?.role === 'admin' && member) {
+          if (userRecord?.role === 'admin' && member && !isAutoCreated) {
             // Remove the admin member from the organization
             await db
               .delete(organizationMemberTable)
