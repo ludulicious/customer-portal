@@ -69,6 +69,7 @@ const loadOrganization = async () => {
     loading.value = false
   }
 }
+await loadOrganization()
 
 const isOwner = computed(() => memberRole.value === 'owner')
 const slugChanged = computed(() => normalizeSlug(formState.slug) !== normalizeSlug(originalSlug.value))
@@ -195,24 +196,7 @@ onUnmounted(() => {
   }
 })
 
-const deleteOrganization = async () => {
-  if (!confirm('Are you sure you want to delete this organization?')) return
 
-  try {
-    await authClient.organization.delete({
-      organizationId: formState.id
-    })
-    // Redirect to organization list or create new
-    await navigateTo('/organizations')
-  } catch (err) {
-    const apiError = err as ApiError
-    error.value = apiError.message || 'Failed to delete organization'
-  }
-}
-
-onMounted(() => {
-  loadOrganization()
-})
 </script>
 
 <template>
