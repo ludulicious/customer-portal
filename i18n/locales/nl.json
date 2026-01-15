@@ -563,6 +563,34 @@
     "profile": "Profiel"
   },
   "organization": {
+    "settings": {
+      "editTitle": "Organisatie bewerken",
+      "editButton": "Organisatie bewerken",
+      "nameLabel": "Organisatienaam",
+      "namePlaceholder": "Organisatienaam",
+      "slugLabel": "Organisatie Slug",
+      "slugPlaceholder": "organisatie-slug",
+      "slugHint": "URL-vriendelijke identifier voor je organisatie",
+      "slugChecking": "Beschikbaarheid controleren...",
+      "slugAvailable": "Slug is beschikbaar",
+      "slugUnavailable": "Slug is al in gebruik",
+      "slugError": "Slug beschikbaarheid controleren mislukt",
+      "logoLabel": "Organisatielogo",
+      "logoChoose": "Logo kiezen",
+      "logoHint": "Upload een PNG, JPG of GIF. Aanbevolen formaat: 280×160.",
+      "ownerOnly": "Alleen organisatie-eigenaren kunnen naam of slug wijzigen.",
+      "errors": {
+        "loadFailed": "Organisatie laden mislukt",
+        "updateFailed": "Organisatie bijwerken mislukt",
+        "slugTaken": "Organisatie slug is al in gebruik"
+      },
+      "validation": {
+        "nameRequired": "Organisatienaam is verplicht",
+        "slugRequired": "Organisatie slug is verplicht",
+        "slugInvalid": "Slug mag alleen kleine letters, cijfers en streepjes bevatten",
+        "logoInvalid": "Logo moet een geldige URL zijn"
+      }
+    },
     "members": {
       "loading": "Organisatiegegevens laden...",
       "title": "Leden",

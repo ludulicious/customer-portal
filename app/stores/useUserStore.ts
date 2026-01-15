@@ -70,6 +70,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }))
 
+  const refreshOrganizations = async () => {
+    await fetchOrganizations()
+  }
+
   // Watch authentication status and fetch organizations when user becomes authenticated
   watch(currentUser, (user, oldUser) => {
     if (user && !oldUser) {
@@ -411,6 +415,7 @@ export const useUserStore = defineStore('user', () => {
     activeOrganizationRole,
     myOrganizations,
     loadingOrganization,
+    refreshOrganizations,
     fetchUserPermissions,
     hasPermission,
     clearUserData,

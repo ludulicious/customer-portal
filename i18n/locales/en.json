@@ -569,6 +569,34 @@
     "profile": "Profile"
   },
   "organization": {
+    "settings": {
+      "editTitle": "Edit organization",
+      "editButton": "Edit organization",
+      "nameLabel": "Organization Name",
+      "namePlaceholder": "Organization name",
+      "slugLabel": "Organization Slug",
+      "slugPlaceholder": "organization-slug",
+      "slugHint": "URL-friendly identifier for your organization",
+      "slugChecking": "Checking availability...",
+      "slugAvailable": "Slug is available",
+      "slugUnavailable": "Slug is already in use",
+      "slugError": "Unable to check slug availability",
+      "logoLabel": "Organization Logo",
+      "logoChoose": "Choose logo",
+      "logoHint": "Upload a PNG, JPG, or GIF. Recommended size: 280×160.",
+      "ownerOnly": "Only organization owners can edit name or slug.",
+      "errors": {
+        "loadFailed": "Failed to load organization",
+        "updateFailed": "Failed to update organization",
+        "slugTaken": "Organization slug is already taken"
+      },
+      "validation": {
+        "nameRequired": "Organization name is required",
+        "slugRequired": "Organization slug is required",
+        "slugInvalid": "Slug must be lowercase letters, numbers, and hyphens only",
+        "logoInvalid": "Logo must be a valid URL"
+      }
+    },
     "members": {
       "loading": "Loading organization data...",
       "title": "Members",

@@ -33,7 +33,7 @@ type OrganizationWithRole = Organization & { role?: string | null }
 // Get user's role in this organization
 const userOrganizationRole = computed(() => {
   if (!myOrganizations.value || !organization.value) return null
-  const org = myOrganizations.value.find(org => org.slug === organization.value?.slug) as OrganizationWithRole | undefined
+  const org = myOrganizations.value.find(org => org.id === organization.value?.id) as OrganizationWithRole | undefined
   return org?.role || null
 })
 
@@ -261,7 +261,7 @@ watch(activeOrganizationId, (id) => {
               variant="outline"
               @click="showEditModal = true"
             >
-              Edit organization
+              {{ t('organization.settings.editButton') }}
             </UButton>
           </div>
         </div>
@@ -358,7 +358,7 @@ watch(activeOrganizationId, (id) => {
     <AdminInviteMemberModal v-if="showInviteModal && organization" v-model:open="showInviteModal"
       :organization-id="organization.id" @success="handleInviteSuccess" />
 
-    <UModal v-model:open="showEditModal" title="Edit organization" :ui="{ footer: 'justify-end' }">
+    <UModal v-model:open="showEditModal" :title="t('organization.settings.editTitle')" :ui="{ footer: 'justify-end' }">
       <template #body>
         <OrganizationSettings @updated="handleOrganizationUpdated" @canceled="showEditModal = false" />
       </template>
